@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="darkreader-lock" />
+  <meta name="theme-color" content="#0a1126" />
+  <title>山野星辰 · 行者的六颗星球 | TRAILS AMONG THE STARS</title>
+  <link
+    rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230a1126'/%3E%3Cpath d='M32 8 L36.5 27.5 L56 32 L36.5 36.5 L32 56 L27.5 36.5 L8 32 L27.5 27.5 Z' fill='%23f0c768'/%3E%3Ccircle cx='32' cy='32' r='3.5' fill='%23fff8e7'/%3E%3C/svg%3E"
+  />
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Hidden SVG filters for organic deckled/torn vintage parchment borders -->
+  <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="torn-paper" x="-6%" y="-6%" width="112%" height="112%">
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.038"
+          numOctaves="4"
+          seed="17"
+          result="roughNoise"
+        />
+        <feDisplacementMap
+          in="SourceGraphic"
+          in2="roughNoise"
+          scale="8.5"
+          xChannelSelector="R"
+          yChannelSelector="G"
+        />
+      </filter>
+      <filter id="torn-postcard" x="-6%" y="-6%" width="112%" height="112%">
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.045"
+          numOctaves="3"
+          seed="29"
+          result="cardNoise"
+        />
+        <feDisplacementMap
+          in="SourceGraphic"
+          in2="cardNoise"
+          scale="6"
+          xChannelSelector="R"
+          yChannelSelector="G"
+        />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- 1. Fixed Full-Screen 3D WebGL Canvas Container -->
+  <div id="webgl-container" aria-hidden="true"></div>
+
+  <!-- Subtle Starlight Vignette Overlay -->
+  <div class="starry-vignette" aria-hidden="true"></div>
+
+  <!-- 2. Global Top-Right Subtle Sound Toggle -->
+  <button id="btn-global-sound" type="button" title="音乐与环境声 [M]" aria-label="音乐与环境声 [M]">
+    ♪ 星音
+  </button>
+
+  <!-- 3. Screen 1 — Title Screen -->
+  <section id="screen-title" class="screen active" aria-label="扉页">
+    <div class="title-composition">
+      <div class="title-eyebrow">
+        <span class="star-glyph" aria-hidden="true">✦</span>
+        <span>TRAILS AMONG THE STARS · 山野星辰</span>
+      </div>
+      <h1 class="title-heading">行者的六颗星球</h1>
+      <div class="title-ornament" aria-hidden="true">
+        <span class="ornament-line"></span>
+        <span class="ornament-star">✦</span>
+        <span class="ornament-dot">·</span>
+        <span class="ornament-line"></span>
+      </div>
+      <p class="title-poem">
+        有些山川太过辽阔，记忆便把走过的每一段路，凝成了一颗只属于行者的星球。
+      </p>
+    </div>
+
+    <div class="title-bottom-cta">
+      <button id="btn-start-journey" type="button">✦ 点击 · 开始旅程</button>
+    </div>
+  </section>
+
+  <!-- 4. Screen 2 — Torn-Edge Parchment Star Scroll -->
+  <section id="screen-map" class="screen" aria-label="行者的旅程星图卷轴">
+    <article class="parchment-scroll">
+      <!-- Torn organic paper surface & watercolor sky-blue cloud washes -->
+      <div class="parchment-paper-bg" aria-hidden="true"></div>
+      <div class="parchment-watercolor" aria-hidden="true">
+        <span class="wc-cloud wc-cloud-1"></span>
+        <span class="wc-cloud wc-cloud-2"></span>
+        <span class="wc-cloud wc-cloud-3"></span>
+        <span class="wc-cloud wc-cloud-4"></span>
+      </div>
+
+      <!-- Decorative Golden 4-Point Stars on Scroll -->
+      <div class="parchment-stars" aria-hidden="true">
+        <span class="p-star p-star-tl">✦</span>
+        <span class="p-star p-star-tr">✦</span>
+        <span class="p-star p-star-ml">✧</span>
+        <span class="p-star p-star-mr">✦</span>
+        <span class="p-star p-star-bl">✦</span>
+        <span class="p-star p-star-br">✧</span>
+      </div>
+
+      <!-- Scroll Header -->
+      <header class="scroll-header">
+        <p class="scroll-latin">LE VOYAGE DU RANDONNEUR</p>
+        <h1 class="scroll-heading">行 者 的 旅 程</h1>
+        <p class="scroll-subtitle">系紧鞋带以后，他去拜访远方的山海星球</p>
+      </header>
+
+      <!-- Planet Grid + Dashed Constellation Trail -->
+      <div class="scroll-constellation-stage">
+        <svg
+          class="constellation-trail-svg"
+          viewBox="0 0 780 320"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <!-- Soft warm golden glow beneath trail -->
+          <path
+            class="trail-glow"
+            d="M 130 78 C 215 36, 305 112, 390 76 C 475 40, 565 110, 650 78 C 726 52, 728 206, 650 236 C 565 268, 475 202, 390 236 C 305 270, 215 204, 130 236"
+          />
+          <!-- Main hand-inked dashed star path connecting the 6 planets -->
+          <path
+            class="trail-dashed"
+            d="M 130 78 C 215 36, 305 112, 390 76 C 475 40, 565 110, 650 78 C 726 52, 728 206, 650 236 C 565 268, 475 202, 390 236 C 305 270, 215 204, 130 236"
+          />
+          <!-- Tiny celestial star ticks along curve -->
+          <circle cx="260" cy="74" r="2.2" class="trail-star-dot" />
+          <circle cx="520" cy="75" r="2.2" class="trail-star-dot" />
+          <circle cx="706" cy="156" r="2.6" class="trail-star-dot" />
+          <circle cx="520" cy="235" r="2.2" class="trail-star-dot" />
+          <circle cx="260" cy="237" r="2.2" class="trail-star-dot" />
+        </svg>
+
+        <div id="scroll-planet-grid" role="listbox" aria-label="六颗徒步星球"></div>
+      </div>
+
+      <!-- Divider -->
+      <div class="scroll-divider" aria-hidden="true">
+        <span class="divider-wing"></span>
+        <span class="divider-star">✦</span>
+        <span class="divider-wing"></span>
+      </div>
+
+      <!-- Scroll Footer Details Panel -->
+      <footer class="scroll-footer">
+        <div id="map-chapter">第一颗星</div>
+        <h2 id="map-title">腾格里沙漠 · 星球 B-105</h2>
+        <div id="map-stats"></div>
+        <p id="map-quote">
+          “沙漠之所以美丽，是因为它在某个地方藏着一口井，和一颗滚烫的红色心脏。”
+        </p>
+        <button id="btn-enter-planet" type="button">✦ 前去徒步</button>
+      </footer>
+    </article>
+
+    <!-- Bottom-left Subtle Return Hint -->
+    <button id="btn-back-title" type="button">← 扉页</button>
+  </section>
+
+  <!-- 5. Screen 3 — 3D Planet Exploration HUD -->
+  <section id="screen-hud" class="screen" aria-label="星球徒步探索界面">
+    <!-- Top-Left Glass / Parchment-Tinted Minimal HUD Bar -->
+    <div class="hud-top-left">
+      <button id="btn-back-map" type="button">
+        ← 星图卷轴 <kbd>Esc</kbd>
+      </button>
+      <div class="hud-planet-info">
+        <span id="hud-planet-name">腾格里沙漠</span>
+        <span class="hud-sep" aria-hidden="true">·</span>
+        <span id="hud-altitude">海拔 1,300 m</span>
+        <span class="hud-sep" aria-hidden="true">·</span>
+        <span id="hud-steps">0 步</span>
+      </div>
+    </div>
+
+    <!-- Top-Right Waypoint Tracker & Tools (neatly offset left of #btn-global-sound) -->
+    <div class="hud-top-right">
+      <div id="hud-waypoints" aria-label="星球路标收集进度"></div>
+      <div class="hud-tools">
+        <button id="btn-toggle-night" type="button">☾ 星夜 <kbd>L</kbd></button>
+        <button id="btn-photo-mode" type="button">📷 留影 <kbd>P</kbd></button>
+      </div>
+    </div>
+
+    <!-- Route Completion Toast Banner -->
+    <div id="banner-complete" class="hidden" role="status" aria-live="polite">
+      <span class="banner-star" aria-hidden="true">✦</span>
+      <span id="banner-complete-text"></span>
+      <span class="banner-star" aria-hidden="true">✦</span>
+    </div>
+
+    <!-- Bottom-Center Interaction Prompt & Subtle Controls Guide -->
+    <div class="hud-bottom-center">
+      <button id="prompt-interact" type="button" class="hidden">
+        <span class="sparkle">✦</span>
+        <span id="prompt-interact-text">按 [E] · 阅读路标手记</span>
+      </button>
+      <div id="hud-controls-hint">
+        WASD / 方向键漫步 · Shift 轻跑 · 拖拽旋转视角 · 点击星球寻路 · 点击右上星标引路
+      </div>
+    </div>
+
+    <!-- Journal Postcard Modal -->
+    <div id="modal-journal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="journal-title">
+      <article class="journal-postcard">
+        <div class="postcard-paper-bg" aria-hidden="true"></div>
+        <div class="postcard-watercolor" aria-hidden="true"></div>
+        <div class="postcard-stamp-mark" aria-hidden="true">
+          <span>STAR</span>
+          <strong>✦</strong>
+          <span>TRAIL</span>
+        </div>
+
+        <div class="postcard-content">
+          <div id="journal-chapter"></div>
+          <h3 id="journal-title"></h3>
+          <div id="journal-elevation"></div>
+
+          <div class="journal-star-divider" aria-hidden="true">
+            <span></span>
+            <i>✦</i>
+            <span></span>
+          </div>
+
+          <p id="journal-poem"></p>
+          <div id="journal-progress"></div>
+
+          <button id="btn-close-journal" type="button">
+            ✦ 收好手记 · 继续前行 <kbd>E / Space</kbd>
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <!-- Photo Mode Exit Floating Hint -->
+    <button id="photo-exit-hint" type="button" class="hidden">退出留影模式 [P]</button>
+  </section>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
