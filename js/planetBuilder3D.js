@@ -839,16 +839,16 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
       group.add(ark);
     }
     const fullMoon = new THREE.Mesh(
-      new THREE.SphereGeometry(0.85, 24, 20),
-      new THREE.MeshBasicMaterial({ color: "#fff8d6" })
+      new THREE.SphereGeometry(0.88, 24, 20),
+      new THREE.MeshBasicMaterial({ color: "#ffd24a" })
     );
     fullMoon.position.copy(latLonToUnitVec(-32, -68)).multiplyScalar(PLANET_RADIUS + 4.2);
     const moonGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(1.4, 20, 16),
+      new THREE.SphereGeometry(1.48, 20, 16),
       new THREE.MeshBasicMaterial({
-        color: "#ffeeb0",
+        color: "#ffb62e",
         transparent: true,
-        opacity: 0.26,
+        opacity: 0.36,
         blending: THREE.AdditiveBlending,
       })
     );

@@ -1109,7 +1109,16 @@ body.photo-mode #btn-global-sound {
     font-size: 11px;
   }
   #hud-terrain-tag {
-    display: none !important;
+    position: fixed;
+    top: 112px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 12px;
+    font-size: 11px;
+    z-index: 15;
+    max-width: 88vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .hud-top-right {
     top: 10px;
