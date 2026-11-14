@@ -112,6 +112,27 @@ let currentWorld = null;
 let isNight = false;
 let isPhotoMode = false;
 let journalOpen = false;
+let journalPage = 1;
+let currentJournalWp = null;
+let photoLoadSeq = 0;
+const preloadedImages = new Map();
+
+function preloadUrl(url) {
+  if (!url || preloadedImages.has(url)) return preloadedImages.get(url);
+  const img = new Image();
+  img.decoding = "async";
+  img.src = url;
+  preloadedImages.set(url, img);
+  return img;
+}
+
+function prefetchPlanetPhotos(planet) {
+  if (!planet?.waypoints) return;
+  for (const w of planet.waypoints) {
+    if (w.photo) preloadUrl(w.photo);
+    if (w.photo2) preloadUrl(w.photo2);
+  }
+}
 
 const hiker = buildHikerCharacter();
 scene.add(hiker.root);
@@ -130,6 +151,8 @@ let introZoomProgress = 1;
 let walkTargetDir = null;
 let activeWaypointNear = null;
 let stepAccum = 0;
+let currentSpeedFactor = 1.0;
+let activeSceneZone = null;
 
 // 点击地面目标光圈 & 路标引路金色光弧
 const clickRing = new THREE.Mesh(
@@ -236,10 +259,10 @@ function updateTitleLayout() {
     camera.position.set(0, 2.2, 39);
     camera.lookAt(0, -2.5, 0);
   } else {
-    currentWorld.group.position.x = 6.2;
-    currentWorld.group.userData.baseY = -1.2;
-    camera.position.set(0, 1.4, 30);
-    camera.lookAt(1.8, 0.5, 0);
+    currentWorld.group.position.x = 9.8;
+    currentWorld.group.userData.baseY = -1.6;
+    camera.position.set(0, 1.8, 37);
+    camera.lookAt(3.2, 0.2, 0);
   }
 }
 
@@ -247,6 +270,7 @@ function setupTitleScene() {
   disposeCurrentWorld();
   activePlanet = null;
   isNight = false;
+  hiker.setOutfit("tengger");
   hiker.setHeadlamp(false);
   sound.setPlanetBGM("space");
 
@@ -329,7 +353,7 @@ function refreshScrollMapBadges() {
     if (!node) return;
     node.classList.toggle("completed", done);
     const stamp = node.querySelector(".planet-stamp");
-    if (stamp) stamp.textContent = done ? "✦ 完走" : `${disc.size}/${p.waypoints.length}`;
+    if (stamp) stamp.textContent = done ? "✦ 走完" : `${disc.size}/${p.waypoints.length}`;
   });
 }
 
@@ -341,16 +365,27 @@ function selectMapPlanet(idx) {
   planetNodeEls.forEach((el, i) => {
     el.classList.toggle("selected", i === selectedPlanetIdx);
   });
+  const tbcBtn = document.getElementById("btn-tbc-planet");
+  if (tbcBtn) tbcBtn.classList.remove("selected");
+  const enterBtn = document.getElementById("btn-enter-planet");
+  if (enterBtn) {
+    enterBtn.disabled = false;
+    enterBtn.style.opacity = "1";
+    enterBtn.textContent = "✦ 前去徒步";
+  }
 
+  const distLabel = /\d/.test(p.stats.distance) ? `全程 ${p.stats.distance}` : p.stats.distance;
   elMapChapter.textContent = `${p.chapter} · ${p.region}`;
   elMapTitle.textContent = `${p.name} · ${p.code}`;
   elMapStats.innerHTML = `
-    <span class="stat-pill">全程 ${p.stats.distance}</span>
+    <span class="stat-pill">${distLabel}</span>
     <span class="stat-pill">最高海拔 ${p.stats.altitude}</span>
     <span class="stat-pill">行程 ${p.stats.days}</span>
     <span class="stat-pill">足迹印记 ${disc.size} / ${p.waypoints.length}</span>
   `;
   elMapQuote.textContent = `“${p.quote}”`;
+  // 在星图浏览时即提前预加载选中星球照片
+  prefetchPlanetPhotos(p);
 }
 
 function openStarMap() {
@@ -376,6 +411,7 @@ function enterPlanet(idx) {
   const p = PLANETS[idx];
   activePlanet = p;
   disposeCurrentWorld();
+  hiker.setOutfit(p.id);
 
   const discSet = getDiscoveredSet(p.id);
   currentWorld = buildPlanetWorld(p, discSet);
@@ -412,6 +448,7 @@ function enterPlanet(idx) {
   sound.init();
   sound.playSelectPlanet();
   sound.setPlanetBGM(p.id);
+  prefetchPlanetPhotos(p);
   setScreen("planet");
 }
 
@@ -460,9 +497,89 @@ function togglePhotoMode(force) {
 }
 
 // ==================== JOURNAL POSTCARD DISCOVERY ====================
+function renderJournalTextPage() {
+  if (!currentJournalWp) return;
+  const poemEl = document.getElementById("journal-poem");
+  const badgeEl = document.getElementById("journal-page-badge");
+  const hintEl = document.getElementById("journal-flip-hint");
+  const captionEl = document.getElementById("journal-caption");
+  const photoEl = document.getElementById("journal-photo");
+  const artCanvas = document.getElementById("journal-art-canvas");
+  if (!poemEl) return;
+
+  const targetPhoto =
+    journalPage === 2
+      ? currentJournalWp.photo2 || currentJournalWp.photo
+      : currentJournalWp.photo;
+  const targetCaption =
+    journalPage === 2
+      ? currentJournalWp.caption2 || currentJournalWp.caption || currentJournalWp.name
+      : currentJournalWp.caption || currentJournalWp.name;
+
+  if (journalPage === 1) {
+    poemEl.textContent = currentJournalWp.poem;
+    if (badgeEl) badgeEl.textContent = "✦ 绘本诗笺 · 1/2";
+    if (hintEl) hintEl.textContent = "查看旅途故事 ↻";
+  } else {
+    poemEl.textContent = currentJournalWp.memory || currentJournalWp.poem;
+    if (badgeEl) badgeEl.textContent = "✎ 旅途故事 · 2/2";
+    if (hintEl) hintEl.textContent = "返回绘本诗笺 ↺";
+  }
+
+  if (captionEl) captionEl.textContent = targetCaption;
+  const mediaBox = photoEl.parentElement;
+  const seq = ++photoLoadSeq;
+
+  if (targetPhoto) {
+    artCanvas.classList.add("hidden");
+    const cached = preloadUrl(targetPhoto);
+    if (cached && cached.complete && cached.naturalWidth > 0) {
+      if (mediaBox) mediaBox.classList.remove("loading");
+      photoEl.src = targetPhoto;
+      photoEl.classList.remove("hidden");
+    } else {
+      // 尚未下载完时立即隐藏上一张旧图并显示显影态，彻底杜绝残留上一次照片
+      photoEl.classList.add("hidden");
+      photoEl.removeAttribute("src");
+      if (mediaBox) mediaBox.classList.add("loading");
+      cached.addEventListener(
+        "load",
+        () => {
+          if (seq !== photoLoadSeq) return;
+          if (mediaBox) mediaBox.classList.remove("loading");
+          photoEl.src = targetPhoto;
+          photoEl.classList.remove("hidden");
+        },
+        { once: true }
+      );
+    }
+  } else if (activePlanet) {
+    if (mediaBox) mediaBox.classList.remove("loading");
+    renderPostcardScene(artCanvas, currentJournalWp, activePlanet);
+    artCanvas.classList.remove("hidden");
+    photoEl.classList.add("hidden");
+  }
+}
+
+function flipJournalPage() {
+  if (!currentJournalWp) return;
+  journalPage = journalPage === 1 ? 2 : 1;
+  const poemEl = document.getElementById("journal-poem");
+  const photoEl = document.getElementById("journal-photo");
+  if (poemEl) poemEl.style.opacity = "0.2";
+  if (photoEl) photoEl.style.opacity = "0.25";
+  setTimeout(() => {
+    renderJournalTextPage();
+    if (poemEl) poemEl.style.opacity = "1";
+    if (photoEl) photoEl.style.opacity = "1";
+  }, 115);
+  sound.playHover();
+}
 function openWaypointJournal(wpObj) {
   if (!activePlanet || !wpObj) return;
   journalOpen = true;
+  journalPage = 1;
+  currentJournalWp = wpObj.data;
   walkTargetDir = null;
   clickRing.visible = false;
 
@@ -483,20 +600,13 @@ function openWaypointJournal(wpObj) {
   document.getElementById("journal-chapter").textContent = `${activePlanet.name} · 行者明信片`;
   document.getElementById("journal-title").textContent = wpObj.data.name;
   document.getElementById("journal-elevation").textContent = `${wpObj.data.elevation}`;
-  document.getElementById("journal-poem").textContent = wpObj.data.poem;
-  document.getElementById("journal-caption").textContent = wpObj.data.caption || wpObj.data.name;
+  renderJournalTextPage();
   document.getElementById("journal-progress").textContent = `当前星球印记收集：${list.length} / ${activePlanet.waypoints.length}`;
 
-  const photoEl = document.getElementById("journal-photo");
-  const artCanvas = document.getElementById("journal-art-canvas");
-  if (wpObj.data.photo) {
-    photoEl.src = wpObj.data.photo;
-    photoEl.classList.remove("hidden");
-    artCanvas.classList.add("hidden");
-  } else {
-    renderPostcardScene(artCanvas, wpObj.data, activePlanet);
-    artCanvas.classList.remove("hidden");
-    photoEl.classList.add("hidden");
+  // 预加载第 2 页照片，让点击「查看旅途故事」时零延迟秒切
+  if (wpObj.data.photo2) {
+    const preload = new Image();
+    preload.src = wpObj.data.photo2;
   }
 
   document.getElementById("modal-journal").classList.remove("hidden");
@@ -539,7 +649,10 @@ window.addEventListener("keydown", (e) => {
     else if (e.code === "Escape") setupTitleScene();
   } else if (mode === "planet") {
     if (journalOpen) {
-      if (e.code === "KeyE" || e.code === "Space" || e.code === "Enter" || e.code === "Escape") {
+      if (e.code === "ArrowRight" || e.code === "ArrowLeft" || e.code === "Tab") {
+        e.preventDefault();
+        flipJournalPage();
+      } else if (e.code === "KeyE" || e.code === "Space" || e.code === "Enter" || e.code === "Escape") {
         e.preventDefault();
         closeJournal();
       }
@@ -642,8 +755,33 @@ document.getElementById("btn-back-title").addEventListener("click", () => {
 });
 
 document.getElementById("btn-enter-planet").addEventListener("click", () => {
+  const enterBtn = document.getElementById("btn-enter-planet");
+  if (enterBtn?.disabled) return;
   enterPlanet(selectedPlanetIdx);
 });
+
+const elTbcBtn = document.getElementById("btn-tbc-planet");
+if (elTbcBtn) {
+  elTbcBtn.addEventListener("click", () => {
+    planetNodeEls.forEach((el) => el.classList.remove("selected"));
+    elTbcBtn.classList.add("selected");
+    elMapChapter.textContent = "未完待续 · TO BE CONTINUED";
+    elMapTitle.textContent = "下一颗星 · 未知的山海远方";
+    elMapStats.innerHTML = `
+      <span class="stat-pill">坐标 尚在风中</span>
+      <span class="stat-pill">海拔 待双脚丈量</span>
+      <span class="stat-pill">状态 步履不停</span>
+    `;
+    elMapQuote.textContent = "“山海从无尽头。只要行者再次系紧鞋带，下一段旅途便会在夜空凝成新的星辰。”";
+    const enterBtn = document.getElementById("btn-enter-planet");
+    if (enterBtn) {
+      enterBtn.disabled = true;
+      enterBtn.style.opacity = "0.65";
+      enterBtn.textContent = "✦ 下一段旅程 · 敬请期待";
+    }
+    sound.playHover();
+  });
+}
 
 document.getElementById("btn-back-map").addEventListener("click", () => {
   openStarMap();
@@ -667,6 +805,11 @@ elPromptInteract.addEventListener("click", () => {
 });
 
 document.getElementById("btn-close-journal").addEventListener("click", closeJournal);
+
+const elJournalTextCard = document.getElementById("journal-text-card");
+if (elJournalTextCard) {
+  elJournalTextCard.addEventListener("click", flipJournalPage);
+}
 
 // 点击拍立得明信片放大查看原图
 const elPolaroid = document.getElementById("journal-polaroid");
@@ -738,8 +881,70 @@ function updatePlanetExploration(dt, elapsed) {
     }
   }
 
+  // 真实地形起伏坡度变速 + 特定险峻路段阻尼（如红军垭口深雪横切、大峰绝望坡、新月流沙梁）
+  let terrainStatusText = "";
+  let zoneSpeedFactor = 1.0;
+  let detectedSoundZone = null;
+
+  for (const wpObj of currentWorld.waypointObjs) {
+    const ang = playerUp.angleTo(wpObj.unitDir);
+    const sz = wpObj.data.slowZone;
+    if (sz && ang < sz.radius) {
+      const blend = 1 - ang / sz.radius;
+      const f = THREE.MathUtils.lerp(1.0, sz.factor, Math.min(1, blend * 1.4));
+      if (f < zoneSpeedFactor) {
+        zoneSpeedFactor = f;
+        terrainStatusText = `⛰ ${sz.label}`;
+      }
+    }
+    if (wpObj.data.soundZone && ang < 0.28) {
+      detectedSoundZone = wpObj.data.soundZone;
+    }
+  }
+
+  // 触发特定场景音效（雪山垭口呼啸风声、咸田湾生日八音盒等）
+  if (detectedSoundZone !== activeSceneZone) {
+    activeSceneZone = detectedSoundZone;
+    sound.setSceneZone(activeSceneZone);
+  }
+  if (!terrainStatusText && activeSceneZone === "birthday_beach") {
+    terrainStatusText = "🎂 咸田湾营地 · 八音盒《生日快乐歌》";
+  } else if (!terrainStatusText && activeSceneZone === "gale_pass") {
+    terrainStatusText = "🌬 高山风口 · 经幡猎猎";
+  }
+
+  let slopeFactor = 1.0;
+  if (moveDir.lengthSq() > 0) {
+    const rNow = getSurfaceRadius(activePlanet.id, playerUp);
+    const aheadDir = playerUp.clone().addScaledVector(moveDir, 0.06).normalize();
+    const rAhead = getSurfaceRadius(activePlanet.id, aheadDir);
+    const dh = rAhead - rNow;
+    if (dh > 0.004) {
+      slopeFactor = THREE.MathUtils.clamp(1.0 - dh * 5.2, 0.56, 1.0);
+      if (!terrainStatusText && slopeFactor < 0.78) {
+        terrainStatusText = "↗ 陡坡爬升中";
+      }
+    } else if (dh < -0.004) {
+      slopeFactor = THREE.MathUtils.clamp(1.0 - dh * 1.8, 1.0, 1.18);
+    }
+  }
+
+  const targetFactor = zoneSpeedFactor * slopeFactor;
+  currentSpeedFactor = THREE.MathUtils.lerp(currentSpeedFactor, targetFactor, Math.min(1, dt * 6));
+
+  const elTerrainTag = document.getElementById("hud-terrain-tag");
+  if (elTerrainTag) {
+    if (terrainStatusText) {
+      elTerrainTag.textContent = terrainStatusText;
+      elTerrainTag.classList.remove("hidden");
+    } else {
+      elTerrainTag.classList.add("hidden");
+    }
+  }
+
   const isRunning = keys["ShiftLeft"] || keys["ShiftRight"];
-  const speed = moveDir.lengthSq() > 0 ? (isRunning ? 5.8 : 3.6) : 0;
+  const baseSpeed = moveDir.lengthSq() > 0 ? (isRunning ? 5.8 : 3.6) : 0;
+  const speed = baseSpeed * currentSpeedFactor;
 
   if (speed > 0) {
     const angularStep = (speed / PLANET_RADIUS) * dt;
@@ -858,6 +1063,14 @@ function animate() {
 window.__game = {
   get mode() { return mode; },
   get activePlanet() { return activePlanet?.id || null; },
+  get currentOutfit() { return hiker.outfit; },
+  get speedFactor() { return currentSpeedFactor; },
+  get activeSoundZone() { return activeSceneZone; },
+  get audioZone() { return sound.activeZone; },
+  walkToWaypoint(idx) {
+    const wpObj = currentWorld?.waypointObjs?.[idx];
+    if (wpObj) walkTargetDir = wpObj.unitDir.clone();
+  },
   enterPlanet,
   openStarMap,
   PLANETS,

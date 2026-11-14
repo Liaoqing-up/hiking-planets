@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark" />
   <meta name="darkreader-lock" />
   <meta name="theme-color" content="#0a1126" />
-  <title>山野星辰 · 行者的六颗星球 | TRAILS AMONG THE STARS</title>
+  <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
   <link
     rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230a1126'/%3E%3Cpath d='M32 8 L36.5 27.5 L56 32 L36.5 36.5 L32 56 L27.5 36.5 L8 32 L27.5 27.5 Z' fill='%23f0c768'/%3E%3Ccircle cx='32' cy='32' r='3.5' fill='%23fff8e7'/%3E%3C/svg%3E"
@@ -75,9 +75,9 @@
     <div class="title-composition">
       <div class="title-eyebrow">
         <span class="star-glyph" aria-hidden="true">✦</span>
-        <span>TRAILS AMONG THE STARS · 山野星辰</span>
+        <span>TRAILS AMONG THE STARS · 山海皆星辰</span>
       </div>
-      <h1 class="title-heading">行者的六颗星球</h1>
+      <h1 class="title-heading">行者的星球</h1>
       <div class="title-ornament" aria-hidden="true">
         <span class="ornament-line"></span>
         <span class="ornament-star">✦</span>
@@ -149,7 +149,13 @@
           <circle cx="260" cy="237" r="2.2" class="trail-star-dot" />
         </svg>
 
-        <div id="scroll-planet-grid" role="listbox" aria-label="六颗徒步星球"></div>
+        <div id="scroll-planet-grid" role="listbox" aria-label="行者的星球"></div>
+        <div class="scroll-tbc-row">
+          <button id="btn-tbc-planet" type="button" class="tbc-badge">
+            <span class="tbc-dot" aria-hidden="true">◌</span>
+            <span>未完待续 · 下一颗山海星球正在路上…</span>
+          </button>
+        </div>
       </div>
 
       <!-- Divider -->
@@ -186,11 +192,12 @@
         <span id="hud-planet-name">腾格里沙漠</span>
         <span class="hud-sep" aria-hidden="true">·</span>
         <span id="hud-altitude">海拔 1,300 m</span>
-        <span class="hud-sep hud-hide-mobile" aria-hidden="true">·</span>
-        <span id="hud-steps" class="hud-hide-mobile">0 步</span>
-        <span class="hud-sep hud-hide-mobile" aria-hidden="true">·</span>
-        <span id="hud-bgm" class="hud-hide-mobile">♪ 星砂与张三的歌</span>
+        <span class="hud-sep" aria-hidden="true">·</span>
+        <span id="hud-steps">0 步</span>
+        <span class="hud-sep" aria-hidden="true">·</span>
+        <span id="hud-bgm">♪ 星砂与远行之歌</span>
       </div>
+      <span id="hud-terrain-tag" class="hidden"></span>
     </div>
 
     <!-- Top-Right Waypoint Tracker & Tools (neatly offset left of #btn-global-sound) -->
@@ -245,7 +252,14 @@
             <div id="journal-caption"></div>
           </div>
 
-          <p id="journal-poem"></p>
+          <!-- 双页双图可切换区：第1页绘本诗笺 ↔ 第2页旅途故事 -->
+          <div id="journal-text-card" class="journal-text-card" role="button" tabindex="0" title="查看旅途故事">
+            <div class="journal-page-header">
+              <span id="journal-page-badge">✦ 绘本诗笺 · 1/2</span>
+              <span id="journal-flip-hint">查看旅途故事 ↻</span>
+            </div>
+            <p id="journal-poem"></p>
+          </div>
           <div id="journal-progress"></div>
 
           <button id="btn-close-journal" type="button">

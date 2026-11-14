@@ -117,6 +117,9 @@ class SoundEngine {
     this.waveLfo = null;
     this.waveLfoGain = null;
     this.currentThemeKey = "space";
+    this.activeZone = null;
+    this.birthdayLastPlayed = 0;
+    this.zoneTimer = null;
     this.stepIndex = 0;
     this.melodyTimer = null;
   }
@@ -221,12 +224,113 @@ class SoundEngine {
       this.currentThemeKey = nextKey;
       this.stepIndex = 0;
     }
+    this.setSceneZone(null);
     if (!this.initialized || !this.ctx) return;
     const theme = THEMES[this.currentThemeKey];
     const now = this.ctx.currentTime;
     this.windFilter.frequency.setTargetAtTime(theme.windFreq, now, 0.9);
+    this.windFilter.Q.setTargetAtTime(1.4, now, 0.9);
     this.windGain.gain.setTargetAtTime(theme.windVol, now, 0.9);
     this.waveLfoGain.gain.setTargetAtTime(theme.seaWave ? 0.055 : 0, now, 0.9);
+  }
+
+  /**
+   * 特定地理场景音效与彩蛋旋律触发器
+   * 支持: gale_pass (雪山垭口呼啸风声) | birthday_beach (咸田湾生日八音盒) | campfire_firework | water | pasture_bells
+   */
+  setSceneZone(zone = null) {
+    if (this.activeZone === zone) return;
+    this.activeZone = zone;
+    if (this.zoneTimer) {
+      clearInterval(this.zoneTimer);
+      this.zoneTimer = null;
+    }
+    if (!this.initialized || !this.ctx) return;
+
+    const theme = THEMES[this.currentThemeKey] || THEMES.space;
+    const now = this.ctx.currentTime;
+
+    if (!zone) {
+      this.windFilter.frequency.setTargetAtTime(theme.windFreq, now, 0.8);
+      this.windFilter.Q.setTargetAtTime(1.4, now, 0.8);
+      this.windGain.gain.setTargetAtTime(theme.windVol, now, 0.8);
+      this.waveLfoGain.gain.setTargetAtTime(theme.seaWave ? 0.055 : 0, now, 0.8);
+      return;
+    }
+
+    if (zone === "gale_pass") {
+      // 高海拔雪山垭口：凛冽呼啸风声（高共振风口啸叫感）
+      this.windFilter.frequency.setTargetAtTime(860, now, 0.6);
+      this.windFilter.Q.setTargetAtTime(4.8, now, 0.6);
+      this.windGain.gain.setTargetAtTime(0.18, now, 0.6);
+    } else if (zone === "water") {
+      // 溪流/湖岸/海岸：清澈水波声浪起伏
+      this.windFilter.frequency.setTargetAtTime(520, now, 0.7);
+      this.windFilter.Q.setTargetAtTime(2.2, now, 0.7);
+      this.windGain.gain.setTargetAtTime(0.13, now, 0.7);
+      this.waveLfoGain.gain.setTargetAtTime(0.05, now, 0.7);
+    } else if (zone === "birthday_beach") {
+      // 麦理浩径咸田湾海滩营地：温柔海浪 + 水晶八音盒《生日快乐歌》
+      this.windFilter.frequency.setTargetAtTime(420, now, 0.7);
+      this.windGain.gain.setTargetAtTime(0.1, now, 0.7);
+      this.waveLfoGain.gain.setTargetAtTime(0.045, now, 0.7);
+      if (this.enabled && Date.now() - this.birthdayLastPlayed > 14000) {
+        this.birthdayLastPlayed = Date.now();
+        this.playBirthdayMusicBox();
+      }
+    } else if (zone === "campfire_firework") {
+      // 腾格里星空营地：篝火暖风与偶发夜空烟花绽放音
+      this.playFireworkSparkle();
+      this.zoneTimer = setInterval(() => {
+        if (this.enabled && this.activeZone === "campfire_firework") {
+          this.playFireworkSparkle();
+        }
+      }, 4200);
+    } else if (zone === "pasture_bells") {
+      // 唐布拉冬牧场：清脆悠远的牧场马铃泛音
+      this.playPastureBell();
+      this.zoneTimer = setInterval(() => {
+        if (this.enabled && this.activeZone === "pasture_bells") {
+          this.playPastureBell();
+        }
+      }, 3600);
+    }
+  }
+
+  playBirthdayMusicBox() {
+    if (!this.initialized || !this.enabled || !this.ctx) return;
+    // 《生日快乐歌》温柔八音盒旋律 (G4 G4 A4 G4 C5 B4 | G4 G4 A4 G4 D5 C5 | G4 G4 G5 E5 C5 B4 A4 | F5 F5 E5 C5 D5 C5)
+    const notes = [
+      [392.0, 0.0, 0.35], [392.0, 0.38, 0.25], [440.0, 0.68, 0.55], [392.0, 1.28, 0.55], [523.25, 1.88, 0.55], [493.88, 2.48, 1.0],
+      [392.0, 3.65, 0.35], [392.0, 4.03, 0.25], [440.0, 4.33, 0.55], [392.0, 4.93, 0.55], [587.33, 5.53, 0.55], [523.25, 6.13, 1.0],
+      [392.0, 7.3, 0.35], [392.0, 7.68, 0.25], [783.99, 7.98, 0.55], [659.25, 8.58, 0.55], [523.25, 9.18, 0.55], [493.88, 9.78, 0.55], [440.0, 10.38, 0.9],
+      [698.46, 11.45, 0.35], [698.46, 11.83, 0.25], [659.25, 12.13, 0.55], [523.25, 12.73, 0.55], [587.33, 13.33, 0.6], [523.25, 13.98, 1.4],
+    ];
+    for (const [f, delay, dur] of notes) {
+      this.playTone(f, {
+        duration: dur + 1.1,
+        volume: 0.048,
+        delay,
+        waveMain: "sine",
+        waveSub: "triangle",
+        harmonicRatio: 2,
+        harmonicGain: 0.2,
+        attack: 0.015,
+      });
+    }
+  }
+
+  playFireworkSparkle() {
+    if (!this.initialized || !this.enabled || !this.ctx) return;
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
+      this.playTone(f, { duration: 1.4, volume: 0.025, delay: 0.15 + i * 0.06, attack: 0.01 });
+    });
+  }
+
+  playPastureBell() {
+    if (!this.initialized || !this.enabled || !this.ctx) return;
+    this.playTone(880.0, { duration: 2.2, volume: 0.026, harmonicRatio: 2.5, harmonicGain: 0.18, attack: 0.01 });
+    this.playTone(1174.66, { duration: 1.9, volume: 0.018, delay: 0.45, harmonicRatio: 2, harmonicGain: 0.15, attack: 0.01 });
   }
 
   // 兼容旧调用接口
@@ -285,9 +389,11 @@ class SoundEngine {
     const tick = () => {
       const theme = THEMES[this.currentThemeKey] || THEMES.space;
       if (this.enabled && this.ctx && this.ctx.state === "running") {
+        // 正在播放咸田湾生日八音盒主旋律前 14 秒时，自动降低背景琶音避免抢旋律
+        const birthdayPlaying =
+          this.activeZone === "birthday_beach" && Date.now() - this.birthdayLastPlayed < 14500;
         const idx = this.stepIndex % theme.melody.length;
-        // 偶发留白呼吸一拍，让轻音乐自然不机械
-        const shouldRest = idx % 6 === 5 && Math.random() > 0.55;
+        const shouldRest = birthdayPlaying || (idx % 6 === 5 && Math.random() > 0.55);
         if (!shouldRest) {
           const freq = theme.melody[idx];
           this.playTone(freq, {
