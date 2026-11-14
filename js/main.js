@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { PLANETS } from "./data.js";
 import { sound } from "./audio.js";
-import { renderPlanetIllustration } from "./planetArt2D.js";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js";
 import {
   PLANET_RADIUS,
   latLonToUnitVec,
@@ -227,11 +227,28 @@ function setScreen(nextMode) {
   if (mode !== "planet" && isPhotoMode) togglePhotoMode(false);
 }
 
+function updateTitleLayout() {
+  if (!currentWorld || mode !== "title") return;
+  const isMobile = window.innerWidth <= 820;
+  if (isMobile) {
+    currentWorld.group.position.x = 0;
+    currentWorld.group.userData.baseY = -10.6;
+    camera.position.set(0, 2.2, 39);
+    camera.lookAt(0, -2.5, 0);
+  } else {
+    currentWorld.group.position.x = 6.2;
+    currentWorld.group.userData.baseY = -1.2;
+    camera.position.set(0, 1.4, 30);
+    camera.lookAt(1.8, 0.5, 0);
+  }
+}
+
 function setupTitleScene() {
   disposeCurrentWorld();
   activePlanet = null;
   isNight = false;
   hiker.setHeadlamp(false);
+  sound.setPlanetBGM("space");
 
   currentWorld = buildPlanetWorld({
     id: "title",
@@ -245,6 +262,7 @@ function setupTitleScene() {
     },
     waypoints: [],
   });
+  currentWorld.group.userData.baseY = -1.2;
   currentWorld.group.position.set(6.2, -1.2, 0);
   currentWorld.group.visible = true;
   hiker.root.visible = true;
@@ -256,9 +274,8 @@ function setupTitleScene() {
 
   scene.background.set("#0a1228");
   camera.up.set(0, 1, 0);
-  camera.position.set(0, 1.4, 30);
-  camera.lookAt(1.8, 0.5, 0);
   setScreen("title");
+  updateTitleLayout();
 }
 
 // ==================== PARCHMENT MAP SCROLL ====================
@@ -342,7 +359,7 @@ function openStarMap() {
   scene.background.set("#0a1228");
   refreshScrollMapBadges();
   selectMapPlanet(selectedPlanetIdx);
-  sound.setAtmosphere("space");
+  sound.setPlanetBGM("space");
   setScreen("map");
 }
 
@@ -387,12 +404,14 @@ function enterPlanet(idx) {
 
   elHudName.textContent = `${p.name}`;
   elHudSteps.textContent = `${saveData.steps || 0} 步`;
+  const elBgm = document.getElementById("hud-bgm");
+  if (elBgm) elBgm.textContent = `♪ ${p.bgmName || p.name}`;
   renderHudWaypoints();
   applyLightingTheme(true);
 
   sound.init();
   sound.playSelectPlanet();
-  sound.setAtmosphere(p.palette.particleType);
+  sound.setPlanetBGM(p.id);
   setScreen("planet");
 }
 
@@ -405,8 +424,9 @@ function renderHudWaypoints() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = `wp-pill ${isDone ? "discovered" : ""}`;
-    btn.textContent = `${isDone ? "✦" : "◇"} ${wpObj.data.name}`;
-    btn.title = "点击亮起星光引路弧线";
+    const label = wpObj.data.shortName || wpObj.data.name;
+    btn.textContent = `${isDone ? "✦" : "◇"} ${label}`;
+    btn.title = `${wpObj.data.name}（点击亮起星光引路弧线）`;
     btn.addEventListener("click", () => {
       showGuideArcTo(wpObj, btn);
       sound.playHover();
@@ -460,11 +480,24 @@ function openWaypointJournal(wpObj) {
   const nowAllDone = list.length >= activePlanet.waypoints.length;
   sound.playDiscoverWaypoint(nowAllDone && !wasAlreadyAllDone);
 
-  document.getElementById("journal-chapter").textContent = `${activePlanet.name} · 行者路标手记`;
+  document.getElementById("journal-chapter").textContent = `${activePlanet.name} · 行者明信片`;
   document.getElementById("journal-title").textContent = wpObj.data.name;
-  document.getElementById("journal-elevation").textContent = `海拔记录：${wpObj.data.elevation}`;
+  document.getElementById("journal-elevation").textContent = `${wpObj.data.elevation}`;
   document.getElementById("journal-poem").textContent = wpObj.data.poem;
-  document.getElementById("journal-progress").textContent = `当前星球探索进度：${list.length} / ${activePlanet.waypoints.length}`;
+  document.getElementById("journal-caption").textContent = wpObj.data.caption || wpObj.data.name;
+  document.getElementById("journal-progress").textContent = `当前星球印记收集：${list.length} / ${activePlanet.waypoints.length}`;
+
+  const photoEl = document.getElementById("journal-photo");
+  const artCanvas = document.getElementById("journal-art-canvas");
+  if (wpObj.data.photo) {
+    photoEl.src = wpObj.data.photo;
+    photoEl.classList.remove("hidden");
+    artCanvas.classList.add("hidden");
+  } else {
+    renderPostcardScene(artCanvas, wpObj.data, activePlanet);
+    artCanvas.classList.remove("hidden");
+    photoEl.classList.add("hidden");
+  }
 
   document.getElementById("modal-journal").classList.remove("hidden");
   renderHudWaypoints();
@@ -635,10 +668,31 @@ elPromptInteract.addEventListener("click", () => {
 
 document.getElementById("btn-close-journal").addEventListener("click", closeJournal);
 
+// 点击拍立得明信片放大查看原图
+const elPolaroid = document.getElementById("journal-polaroid");
+const elLightbox = document.getElementById("photo-lightbox");
+const elLightboxImg = document.getElementById("lightbox-img");
+if (elPolaroid && elLightbox && elLightboxImg) {
+  elPolaroid.addEventListener("click", () => {
+    const photoEl = document.getElementById("journal-photo");
+    const artCanvas = document.getElementById("journal-art-canvas");
+    if (!photoEl.classList.contains("hidden") && photoEl.src) {
+      elLightboxImg.src = photoEl.src;
+    } else {
+      elLightboxImg.src = artCanvas.toDataURL("image/jpeg", 0.9);
+    }
+    elLightbox.classList.remove("hidden");
+  });
+  elLightbox.addEventListener("click", () => {
+    elLightbox.classList.add("hidden");
+  });
+}
+
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  updateTitleLayout();
 });
 
 // ==================== MAIN ANIMATION LOOP ====================
@@ -787,7 +841,8 @@ function animate() {
 
   if (mode === "title" && currentWorld) {
     currentWorld.group.rotation.y = elapsed * 0.12;
-    currentWorld.group.position.y = -1.2 + Math.sin(elapsed * 0.9) * 0.25;
+    const baseY = currentWorld.group.userData.baseY ?? -1.2;
+    currentWorld.group.position.y = baseY + Math.sin(elapsed * 0.9) * 0.25;
     hiker.update(dt, elapsed, 0.15);
   } else if (mode === "map" && currentWorld) {
     currentWorld.group.rotation.y = elapsed * 0.06;

@@ -120,7 +120,7 @@
       <header class="scroll-header">
         <p class="scroll-latin">LE VOYAGE DU RANDONNEUR</p>
         <h1 class="scroll-heading">行 者 的 旅 程</h1>
-        <p class="scroll-subtitle">系紧鞋带以后，他去拜访远方的山海星球</p>
+        <p class="scroll-subtitle">系紧鞋带以后，她去拜访远方的山海星球</p>
       </header>
 
       <!-- Planet Grid + Dashed Constellation Trail -->
@@ -186,8 +186,10 @@
         <span id="hud-planet-name">腾格里沙漠</span>
         <span class="hud-sep" aria-hidden="true">·</span>
         <span id="hud-altitude">海拔 1,300 m</span>
-        <span class="hud-sep" aria-hidden="true">·</span>
-        <span id="hud-steps">0 步</span>
+        <span class="hud-sep hud-hide-mobile" aria-hidden="true">·</span>
+        <span id="hud-steps" class="hud-hide-mobile">0 步</span>
+        <span class="hud-sep hud-hide-mobile" aria-hidden="true">·</span>
+        <span id="hud-bgm" class="hud-hide-mobile">♪ 星砂与张三的歌</span>
       </div>
     </div>
 
@@ -234,20 +236,28 @@
           <h3 id="journal-title"></h3>
           <div id="journal-elevation"></div>
 
-          <div class="journal-star-divider" aria-hidden="true">
-            <span></span>
-            <i>✦</i>
-            <span></span>
+          <!-- 拍立得照片明信片相框 -->
+          <div class="polaroid-frame" id="journal-polaroid" title="点击放大查看照片">
+            <div class="polaroid-media">
+              <img id="journal-photo" alt="打卡点实拍明信片" class="hidden" />
+              <canvas id="journal-art-canvas" class="hidden"></canvas>
+            </div>
+            <div id="journal-caption"></div>
           </div>
 
           <p id="journal-poem"></p>
           <div id="journal-progress"></div>
 
           <button id="btn-close-journal" type="button">
-            ✦ 收好手记 · 继续前行 <kbd>E / Space</kbd>
+            ✦ 收好明信片 · 继续前行 <kbd>E / Space</kbd>
           </button>
         </div>
       </article>
+    </div>
+
+    <!-- 照片原图放大灯箱 -->
+    <div id="photo-lightbox" class="modal-backdrop hidden" role="dialog" aria-label="明信片大图预览">
+      <img id="lightbox-img" alt="明信片大图" />
     </div>
 
     <!-- Photo Mode Exit Floating Hint -->

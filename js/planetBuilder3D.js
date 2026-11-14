@@ -332,17 +332,247 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
     }
   }
 
-  // 5. 星球专属 3D 微缩生态与地标道具
+  // 5. 星球专属 3D 微缩生态与朋友圈故事彩蛋景观
   const rand = seededRand(id.charCodeAt(0) * 137 + id.length * 41);
   const wpDirs = waypoints.map((w) => latLonToUnitVec(w.lat, w.lon));
-  const isNearWp = (d) => wpDirs.some((wd) => wd.distanceTo(d) < 0.24);
+  const isNearWp = (d) => wpDirs.some((wd) => wd.distanceTo(d) < 0.2);
+
+  // 放置朋友圈专属地标微缩装置
+  if (id === "tengger") {
+    // ① 绿洲马兰花丛（Day2 绿洲旁）
+    const oasisCenter = latLonToUnitVec(-18, 108);
+    const flowerMat = new THREE.MeshBasicMaterial({ color: "#9b72ff" });
+    for (let f = 0; f < 18; f++) {
+      const fd = oasisCenter
+        .clone()
+        .add(new THREE.Vector3((rand() - 0.5) * 0.35, (rand() - 0.5) * 0.35, (rand() - 0.5) * 0.35))
+        .normalize();
+      const iris = new THREE.Mesh(new THREE.OctahedronGeometry(0.075, 0), flowerMat);
+      placeOnSphere(iris, fd, 0.06, id);
+      group.add(iris);
+    }
+    // ② 篝火荧光棒营地 & 沙漠邮局绿邮筒 + 神树
+    const fireCamp = createCampSite("#e88a34");
+    const glowStick1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.018, 0.018, 0.36, 6),
+      new THREE.MeshBasicMaterial({ color: "#3df5d4" })
+    );
+    glowStick1.position.set(0.54, 0.24, 0.15);
+    glowStick1.rotation.z = -0.4;
+    const glowStick2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.018, 0.018, 0.36, 6),
+      new THREE.MeshBasicMaterial({ color: "#ff66c4" })
+    );
+    glowStick2.position.set(0.24, 0.24, 0.42);
+    glowStick2.rotation.z = 0.45;
+    fireCamp.add(glowStick1, glowStick2);
+    placeOnSphere(fireCamp, latLonToUnitVec(-26, -30), 0, id);
+    group.add(fireCamp);
+    animatedProps.push(fireCamp);
+
+    const postGroup = new THREE.Group();
+    const postBox = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 0.44, 0.18),
+      new THREE.MeshStandardMaterial({ color: "#26734d", roughness: 0.65 })
+    );
+    postBox.position.y = 0.22;
+    const slot = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.04, 0.2),
+      new THREE.MeshBasicMaterial({ color: "#fff2cc" })
+    );
+    slot.position.y = 0.34;
+    const sacredTree = createTree("spruce", "#eb9e2d");
+    sacredTree.scale.setScalar(1.65);
+    sacredTree.position.set(-0.42, 0, -0.1);
+    postGroup.add(postBox, slot, sacredTree);
+    placeOnSphere(postGroup, latLonToUnitVec(32, -106), 0, id);
+    group.add(postGroup);
+  } else if (id === "yading") {
+    // ① 松多垭口五彩经幡阵 & 驮着红色可乐箱的马帮
+    const flagGroup = new THREE.Group();
+    const poleMat = new THREE.MeshStandardMaterial({ color: "#dfd6c7" });
+    const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.85, 6), poleMat);
+    p1.position.set(-0.45, 0.42, 0);
+    const p2 = p1.clone();
+    p2.position.set(0.45, 0.42, 0);
+    flagGroup.add(p1, p2);
+    const fCols = ["#3b82f6", "#ffffff", "#ef4444", "#22c55e", "#eab308"];
+    fCols.forEach((fc, idx) => {
+      const fl = new THREE.Mesh(
+        new THREE.BoxGeometry(0.13, 0.1, 0.02),
+        new THREE.MeshBasicMaterial({ color: fc })
+      );
+      fl.position.set(-0.32 + idx * 0.16, 0.68 - Math.sin((idx / 4) * Math.PI) * 0.08, 0);
+      flagGroup.add(fl);
+    });
+    placeOnSphere(flagGroup, latLonToUnitVec(26, 26), 0, id);
+    group.add(flagGroup);
+
+    // 马帮 + 可乐红箱
+    const horseGroup = new THREE.Group();
+    const horseMat = new THREE.MeshStandardMaterial({ color: "#6e4427", roughness: 0.85 });
+    for (let m = 0; m < 2; m++) {
+      const hBody = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.16, 0.13), horseMat);
+      hBody.position.set(m * 0.46, 0.22, m * 0.18);
+      const hHead = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.09), horseMat);
+      hHead.position.set(m * 0.46 + 0.16, 0.31, m * 0.18);
+      const colaBox = new THREE.Mesh(
+        new THREE.BoxGeometry(0.14, 0.11, 0.18),
+        new THREE.MeshStandardMaterial({ color: "#e02828" })
+      );
+      colaBox.position.set(m * 0.46, 0.33, m * 0.18);
+      horseGroup.add(hBody, hHead, colaBox);
+    }
+    placeOnSphere(horseGroup, latLonToUnitVec(18, 14), 0, id);
+    group.add(horseGroup);
+
+    // ② 暴雪营地 + 重点保护的弯曲帐篷杖杆
+    const snowCamp = createCampSite("#eb9b34");
+    const bentPole = new THREE.Mesh(
+      new THREE.TorusGeometry(0.28, 0.018, 6, 14, Math.PI * 0.65),
+      new THREE.MeshBasicMaterial({ color: "#ff6b6b" })
+    );
+    bentPole.position.set(-0.35, 0.18, 0.15);
+    snowCamp.add(bentPole);
+    placeOnSphere(snowCamp, latLonToUnitVec(-24, -36), 0, id);
+    group.add(snowCamp);
+    animatedProps.push(snowCamp);
+  } else if (id === "zhagana") {
+    // 红军垭口探路小无人机（空中悬停闪烁信号灯）
+    const drone = new THREE.Group();
+    const dBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 0.06, 0.22),
+      new THREE.MeshStandardMaterial({ color: "#dce4ed" })
+    );
+    const dLed = new THREE.Mesh(
+      new THREE.SphereGeometry(0.045, 8, 8),
+      new THREE.MeshBasicMaterial({ color: "#3dff8b" })
+    );
+    dLed.position.y = -0.04;
+    drone.add(dBody, dLed);
+    placeOnSphere(drone, latLonToUnitVec(41, -92), 1.35, id);
+    drone.userData.isDrone = true;
+    drone.userData.basePos = drone.position.clone();
+    group.add(drone);
+    animatedProps.push(drone);
+  } else if (id === "siguniang") {
+    // ① 大峰 5025m 红字圆梦石碑 + 攀登绳索
+    const steleGroup = new THREE.Group();
+    const stele = new THREE.Mesh(
+      new THREE.BoxGeometry(0.36, 0.68, 0.14),
+      new THREE.MeshStandardMaterial({ color: "#cfd6de", roughness: 0.75 })
+    );
+    stele.position.y = 0.34;
+    const redInscr = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.42, 0.155),
+      new THREE.MeshBasicMaterial({ color: "#e02b2b" })
+    );
+    redInscr.position.y = 0.34;
+    steleGroup.add(stele, redInscr);
+    placeOnSphere(steleGroup, latLonToUnitVec(52, -106), 0, id);
+    group.add(steleGroup);
+
+    // ② 大本营圆顶帐篷与热气腾腾的大铜锅火锅
+    const baseCamp = createCampSite("#4a90d9");
+    const hotpot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.16, 0.12, 0.12, 12),
+      new THREE.MeshStandardMaterial({ color: "#c96e32", metalness: 0.45 })
+    );
+    hotpot.position.set(-0.36, 0.08, 0.24);
+    const chimney = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.04, 0.22, 8),
+      hotpot.material
+    );
+    chimney.position.set(-0.36, 0.18, 0.24);
+    baseCamp.add(hotpot, chimney);
+    placeOnSphere(baseCamp, latLonToUnitVec(14, 18), 0, id);
+    group.add(baseCamp);
+    animatedProps.push(baseCamp);
+
+    // ③ 红石滩鲜红岩石群 + 独木桥
+    const redMat = new THREE.MeshStandardMaterial({ color: "#d63e2f", roughness: 0.8 });
+    for (let r = 0; r < 14; r++) {
+      const rd = latLonToUnitVec(-22 + (rand() - 0.5) * 18, -45 + (rand() - 0.5) * 24);
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.14 + rand() * 0.1, 0), redMat);
+      placeOnSphere(rock, rd, 0.02, id);
+      group.add(rock);
+    }
+  } else if (id === "maclehose") {
+    // 咸田湾海平面孤岛与绯红海上日出光球！
+    const sunriseDir = latLonToUnitVec(12, 48);
+    const island = new THREE.Mesh(
+      new THREE.ConeGeometry(0.65, 0.38, 9),
+      new THREE.MeshStandardMaterial({ color: "#243547", roughness: 0.9 })
+    );
+    placeOnSphere(island, sunriseDir, 0.12, id);
+    group.add(island);
+
+    const redSun = new THREE.Mesh(
+      new THREE.SphereGeometry(0.72, 24, 20),
+      new THREE.MeshBasicMaterial({ color: "#ff3b47" })
+    );
+    redSun.position.copy(sunriseDir).multiplyScalar(PLANET_RADIUS + 2.35);
+    const sunHalo = new THREE.Mesh(
+      new THREE.SphereGeometry(1.15, 20, 16),
+      new THREE.MeshBasicMaterial({
+        color: "#ff6b52",
+        transparent: true,
+        opacity: 0.28,
+        blending: THREE.AdditiveBlending,
+      })
+    );
+    redSun.add(sunHalo);
+    group.add(redSun);
+  } else if (id === "yili") {
+    // ① 右手果子沟微缩斜拉大桥（赛里木湖山脊旁）
+    const bridge = new THREE.Group();
+    const deck = new THREE.Mesh(
+      new THREE.BoxGeometry(1.15, 0.045, 0.16),
+      new THREE.MeshStandardMaterial({ color: "#eef3fa" })
+    );
+    deck.position.y = 0.36;
+    const towerMat = new THREE.MeshStandardMaterial({ color: "#ffffff" });
+    [-0.32, 0.32].forEach((tx) => {
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.72, 0.14), towerMat);
+      tower.position.set(tx, 0.36, 0);
+      bridge.add(tower);
+    });
+    bridge.add(deck);
+    placeOnSphere(bridge, latLonToUnitVec(24, 38), 0.05, id);
+    group.add(bridge);
+
+    // ② 大海道风蚀雅丹“诺亚方舟”岩台 + 中秋皎洁大圆月🌕
+    const arkMat = new THREE.MeshStandardMaterial({ color: "#b87c4c", roughness: 0.88 });
+    for (let yk = 0; yk < 6; yk++) {
+      const yd = latLonToUnitVec(-34 + (yk - 2.5) * 4, -42 + (yk % 2) * 8);
+      const ark = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.28 + (yk % 3) * 0.1, 0.18), arkMat);
+      placeOnSphere(ark, yd, 0.06, id);
+      group.add(ark);
+    }
+    const fullMoon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.85, 24, 20),
+      new THREE.MeshBasicMaterial({ color: "#fff8d6" })
+    );
+    fullMoon.position.copy(latLonToUnitVec(-32, -68)).multiplyScalar(PLANET_RADIUS + 4.2);
+    const moonGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(1.4, 20, 16),
+      new THREE.MeshBasicMaterial({
+        color: "#ffeeb0",
+        transparent: true,
+        opacity: 0.26,
+        blending: THREE.AdditiveBlending,
+      })
+    );
+    fullMoon.add(moonGlow);
+    group.add(fullMoon);
+  }
 
   if (id === "title") {
     const camp = createCampSite("#f29638");
     placeOnSphere(camp, latLonToUnitVec(74, 48), 0, id);
     group.add(camp);
     animatedProps.push(camp);
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 34; i++) {
       const d = new THREE.Vector3(rand() * 2 - 1, rand() * 2 - 1, rand() * 2 - 1).normalize();
       if (d.distanceTo(UP) < 0.28) continue;
       const tree = createTree("spruce", i % 3 === 0 ? "#d99838" : "#2f7349");
@@ -351,14 +581,14 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
       group.add(tree);
     }
   } else {
-    // 放置一座温暖露营地
+    // 放置温暖营地
     const campDir = latLonToUnitVec(-8, -12);
     const camp = createCampSite(pal.accent || "#f09436");
     placeOnSphere(camp, campDir, 0, id);
     group.add(camp);
     animatedProps.push(camp);
 
-    const propCount = 85;
+    const propCount = 92;
     for (let i = 0; i < propCount; i++) {
       const d = new THREE.Vector3(rand() * 2 - 1, rand() * 2 - 1, rand() * 2 - 1).normalize();
       if (isNearWp(d) || d.distanceTo(campDir) < 0.22) continue;
@@ -622,6 +852,11 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
         if (camp.userData.fire) {
           camp.userData.fire.scale.setScalar(0.88 + Math.sin(elapsed * 9) * 0.16);
           camp.userData.light.intensity = 2.0 + Math.sin(elapsed * 7.3) * 0.45;
+        } else if (camp.userData.isDrone) {
+          camp.position.copy(camp.userData.basePos).addScaledVector(
+            camp.userData.basePos.clone().normalize(),
+            Math.sin(elapsed * 3.2) * 0.14
+          );
         }
       }
 
@@ -636,116 +871,149 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
 }
 
 export function buildHikerCharacter() {
+  // 复刻腾格里沙漠照造型：酒红冲锋衣 + 深灰宽檐渔夫帽 + 亮橙红镀膜大风镜 + 护脸面罩 + 双小辫女生 + 银灰蛋巢垫毛球重装包
   const root = new THREE.Group();
   const bodyPivot = new THREE.Group();
   root.add(bodyPivot);
 
-  const jacketMat = new THREE.MeshStandardMaterial({ color: "#2e7552", roughness: 0.72 });
-  const pantsMat = new THREE.MeshStandardMaterial({ color: "#2b354a", roughness: 0.85 });
-  const skinMat = new THREE.MeshStandardMaterial({ color: "#fce0c8", roughness: 0.75 });
-  const packMat = new THREE.MeshStandardMaterial({ color: "#c96238", roughness: 0.78 });
-  const goldMat = new THREE.MeshStandardMaterial({
-    color: "#f5c856",
-    emissive: "#d99b26",
-    emissiveIntensity: 0.22,
-    roughness: 0.6,
-  });
+  const jacketMat = new THREE.MeshStandardMaterial({ color: "#a62938", roughness: 0.65 }); // 腾格里酒红冲锋衣
+  const pantsMat = new THREE.MeshStandardMaterial({ color: "#2b303c", roughness: 0.85 });
+  const maskMat = new THREE.MeshStandardMaterial({ color: "#d6d8de", roughness: 0.8 }); // 防风沙护脸面罩
+  const skinMat = new THREE.MeshStandardMaterial({ color: "#fce2cc", roughness: 0.72 });
+  const hairMat = new THREE.MeshStandardMaterial({ color: "#1e1b1c", roughness: 0.82 }); // 深色双小辫
+  const hatMat = new THREE.MeshStandardMaterial({ color: "#32353d", roughness: 0.85 }); // 深炭灰宽檐防晒帽
+  const packMat = new THREE.MeshStandardMaterial({ color: "#6e737d", roughness: 0.78 }); // 灰色重装徒步包
+  const padMat = new THREE.MeshStandardMaterial({ color: "#b8bec8", roughness: 0.55, metalness: 0.25 }); // 银灰折叠蛋巢防潮垫
+  const visorMat = new THREE.MeshStandardMaterial({
+    color: "#ff551a",
+    emissive: "#ff6a1a",
+    emissiveIntensity: 0.45,
+    roughness: 0.18,
+    metalness: 0.75,
+  }); // 炫彩橘红镀膜风镜
 
   // 双腿与登山靴
-  const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.28, 8), pantsMat);
-  leftLeg.position.set(-0.08, 0.14, 0);
+  const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.048, 0.28, 8), pantsMat);
+  leftLeg.position.set(-0.075, 0.14, 0);
   const rightLeg = leftLeg.clone();
-  rightLeg.position.set(0.08, 0.14, 0);
+  rightLeg.position.set(0.075, 0.14, 0);
   bodyPivot.add(leftLeg, rightLeg);
 
-  // 冲锋衣躯干
-  const torso = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.42, 10), jacketMat);
+  // 酒红色冲锋衣躯干 + 连帽领口
+  const torso = new THREE.Mesh(new THREE.ConeGeometry(0.205, 0.43, 12), jacketMat);
   torso.position.y = 0.44;
-  bodyPivot.add(torso);
+  const hoodCollar = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.038, 8, 16), jacketMat);
+  hoodCollar.rotation.x = Math.PI / 2;
+  hoodCollar.position.y = 0.62;
+  bodyPivot.add(torso, hoodCollar);
 
-  // 重装登山背包 + 黄色防潮垫卷
-  const pack = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.3, 0.16), packMat);
-  pack.position.set(0, 0.46, -0.14);
-  const matRoll = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.045, 0.26, 8),
-    goldMat
+  // 60L 重装大包 + 侧面银灰折叠蛋巢防潮垫 + 毛球挂件 + 平安进山小红牌
+  const pack = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.34, 0.17), packMat);
+  pack.position.set(0, 0.47, -0.145);
+  const eggPad = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.32, 0.13), padMat);
+  eggPad.position.set(-0.14, 0.46, -0.145);
+  const pomPom = new THREE.Mesh(
+    new THREE.SphereGeometry(0.048, 10, 8),
+    new THREE.MeshStandardMaterial({ color: "#9e826c", roughness: 1.0 })
   );
-  matRoll.rotation.z = Math.PI / 2;
-  matRoll.position.set(0, 0.63, -0.14);
-  bodyPivot.add(pack, matRoll);
+  pomPom.position.set(-0.18, 0.38, -0.18);
+  const redCharm = new THREE.Mesh(
+    new THREE.BoxGeometry(0.035, 0.07, 0.012),
+    new THREE.MeshBasicMaterial({ color: "#e62e2e" })
+  );
+  redCharm.position.set(0.13, 0.42, -0.22);
+  bodyPivot.add(pack, eggPad, pomPom, redCharm);
 
-  // 头部与户外探险帽
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 16, 14), skinMat);
+  // 头部 + 浅灰防晒护脸面罩 + 亮橙红镀膜大护目镜
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 14), skinMat);
   head.position.y = 0.74;
-  bodyPivot.add(head);
+  const faceMask = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.135, 0.125, 0.12, 14),
+    maskMat
+  );
+  faceMask.position.set(0, 0.69, 0.015);
+  const goggles = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.072, 0.08), visorMat);
+  goggles.position.set(0, 0.755, 0.115);
+  bodyPivot.add(head, faceMask, goggles);
 
-  const hatBrim = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.22, 0.23, 0.03, 16),
-    new THREE.MeshStandardMaterial({ color: "#9c7044", roughness: 0.85 })
-  );
-  hatBrim.position.y = 0.83;
-  const hatCrown = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.15, 0.11, 14),
-    hatBrim.material
-  );
-  hatCrown.position.y = 0.89;
+  // 深炭灰大宽檐户外防晒渔夫帽
+  const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.3, 0.025, 20), hatMat);
+  hatBrim.position.y = 0.825;
+  const hatCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.155, 0.11, 16), hatMat);
+  hatCrown.position.y = 0.885;
   bodyPivot.add(hatBrim, hatCrown);
 
-  // 头灯（星夜模式亮起）
+  // 左右两条灵动俏皮的小辫子（双麻花辫，随步伐轻盈晃动！）
+  function makeBraid(side) {
+    const braidPivot = new THREE.Group();
+    braidPivot.position.set(side * 0.135, 0.73, -0.03);
+    for (let b = 0; b < 4; b++) {
+      const bead = new THREE.Mesh(
+        new THREE.SphereGeometry(0.036 - b * 0.004, 8, 8),
+        hairMat
+      );
+      bead.scale.set(0.9, 1.25, 0.9);
+      bead.position.set(side * b * 0.018, -b * 0.058, -b * 0.015);
+      braidPivot.add(bead);
+    }
+    const tie = new THREE.Mesh(
+      new THREE.TorusGeometry(0.022, 0.008, 6, 10),
+      new THREE.MeshBasicMaterial({ color: "#f5c451" })
+    );
+    tie.rotation.x = Math.PI / 2;
+    tie.position.set(side * 0.054, -0.175, -0.045);
+    braidPivot.add(tie);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.07, 7), hairMat);
+    tip.rotation.x = Math.PI;
+    tip.position.set(side * 0.062, -0.215, -0.055);
+    braidPivot.add(tip);
+    bodyPivot.add(braidPivot);
+    return braidPivot;
+  }
+  const leftBraid = makeBraid(-1);
+  const rightBraid = makeBraid(1);
+
+  // 户外头灯（星夜模式亮起照亮前路）
   const lampLens = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 8, 8),
+    new THREE.SphereGeometry(0.036, 8, 8),
     new THREE.MeshBasicMaterial({ color: "#fff5cc" })
   );
-  lampLens.position.set(0, 0.88, 0.14);
+  lampLens.position.set(0, 0.88, 0.15);
   bodyPivot.add(lampLens);
 
-  const headLight = new THREE.SpotLight("#ffefc2", 0, 9, Math.PI / 4, 0.55, 1.2);
-  headLight.position.set(0, 0.9, 0.16);
-  headLight.target.position.set(0, 0.1, 2.8);
+  const headLight = new THREE.SpotLight("#ffefc2", 0, 10, Math.PI / 3.8, 0.55, 1.1);
+  headLight.position.set(0, 0.9, 0.17);
+  headLight.target.position.set(0, 0.1, 3.0);
   bodyPivot.add(headLight, headLight.target);
   lampLens.visible = false;
 
-  // 左右手臂与双登山杖
+  // 左右酒红袖子 + 深灰手套 + 双登山杖
   function makeArmPole(side) {
     const pivot = new THREE.Group();
-    pivot.position.set(side * 0.18, 0.56, 0);
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.038, 0.22, 7), jacketMat);
+    pivot.position.set(side * 0.185, 0.56, 0);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.22, 8), jacketMat);
     arm.position.set(0, -0.09, 0.04);
     arm.rotation.x = -0.35;
+    const glove = new THREE.Mesh(new THREE.SphereGeometry(0.042, 8, 8), hatMat);
+    glove.position.set(0, -0.19, 0.08);
     const pole = new THREE.Mesh(
       new THREE.CylinderGeometry(0.012, 0.01, 0.62, 6),
-      new THREE.MeshStandardMaterial({ color: "#e5ecf5", metalness: 0.5 })
+      new THREE.MeshStandardMaterial({ color: "#e5ecf5", metalness: 0.55 })
     );
     pole.position.set(0, -0.26, 0.14);
     pole.rotation.x = 0.18;
-    pivot.add(arm, pole);
+    pivot.add(arm, glove, pole);
     bodyPivot.add(pivot);
     return pivot;
   }
   const leftArm = makeArmPole(-1);
   const rightArm = makeArmPole(1);
 
-  // 小王子致敬：随风波浪飘舞的暖金色长围巾
-  const scarfRing = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.036, 8, 16), goldMat);
-  scarfRing.rotation.x = Math.PI / 2;
-  scarfRing.position.y = 0.62;
-  bodyPivot.add(scarfRing);
-
-  const scarfSegments = [];
-  for (let i = 0; i < 6; i++) {
-    const seg = new THREE.Mesh(
-      new THREE.BoxGeometry(0.09 - i * 0.008, 0.025, 0.12),
-      goldMat
-    );
-    bodyPivot.add(seg);
-    scarfSegments.push(seg);
-  }
-
   return {
     root,
     setHeadlamp(on) {
       lampLens.visible = Boolean(on);
-      headLight.intensity = on ? 4.2 : 0;
+      headLight.intensity = on ? 4.6 : 0;
     },
     update(dt, elapsed, speedRatio = 0) {
       const s = THREE.MathUtils.clamp(speedRatio, 0, 1.8);
@@ -760,15 +1028,13 @@ export function buildHikerCharacter() {
       bodyPivot.position.y = Math.abs(Math.sin(walkPhase)) * 0.045 * Math.min(1, s);
       bodyPivot.rotation.x = s * 0.08;
 
-      // 金色围巾在微风与步伐中柔美波动
-      for (let i = 0; i < scarfSegments.length; i++) {
-        const seg = scarfSegments[i];
-        const t = i + 1;
-        const waveX = Math.sin(elapsed * 4.2 - i * 0.65) * (0.03 + i * 0.018);
-        const waveY = Math.cos(elapsed * 3.6 - i * 0.55) * 0.022 + s * 0.02 * i;
-        seg.position.set(waveX, 0.61 - i * 0.018 + waveY, -0.11 - t * 0.095);
-        seg.rotation.y = Math.cos(elapsed * 4.2 - i * 0.65) * 0.22;
-      }
+      // 双小辫随微风与步伐俏皮轻晃
+      const braidBounce = Math.sin(walkPhase * 2) * (0.06 + s * 0.18);
+      const breeze = Math.sin(elapsed * 3.4) * 0.08;
+      leftBraid.rotation.z = -0.18 - Math.abs(braidBounce) * 0.5 + breeze * 0.4;
+      rightBraid.rotation.z = 0.18 + Math.abs(braidBounce) * 0.5 + breeze * 0.4;
+      leftBraid.rotation.x = -0.12 - s * 0.25 + Math.cos(elapsed * 4.1) * 0.06;
+      rightBraid.rotation.x = -0.12 - s * 0.25 + Math.sin(elapsed * 4.1) * 0.06;
     },
   };
 }

@@ -202,7 +202,7 @@ export function renderPlanetIllustration(canvas, planetId) {
 
 function drawPlanetSurfaceBands(ctx, id, cx, cy, r) {
   if (id === "tengger") {
-    // 起伏新月形沙浪与赤红地球之心乌兰湖
+    // 起伏新月形沙浪与马兰花绿洲（神的自留地）
     ctx.fillStyle = "rgba(214, 126, 56, 0.45)";
     ctx.beginPath();
     ctx.moveTo(cx - r, cy - 12);
@@ -212,18 +212,20 @@ function drawPlanetSurfaceBands(ctx, id, cx, cy, r) {
     ctx.lineTo(cx - r, cy + r);
     ctx.fill();
 
-    // 乌兰湖赤红斑块 + 白色盐边
+    // 沙漠腹地绿洲 + 紫色马兰花点缀
     ctx.save();
-    ctx.translate(cx - r * 0.26, cy - r * 0.26);
-    ctx.rotate(-0.2);
-    ctx.fillStyle = "#fff3e0";
+    ctx.translate(cx - r * 0.24, cy - r * 0.26);
+    ctx.rotate(-0.18);
+    ctx.fillStyle = "#62ab56";
     ctx.beginPath();
-    ctx.ellipse(0, 0, 22, 12, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 23, 12, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#cc3535";
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 18, 9, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillStyle = "#8a68e8";
+    [[-8, -2], [4, 3], [11, -3], [-2, 4]].forEach(([fx, fy]) => {
+      ctx.beginPath();
+      ctx.arc(fx, fy, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    });
     ctx.restore();
   } else if (id === "yading") {
     // 金秋草甸 + 宝石蓝牛奶海
@@ -523,4 +525,178 @@ function drawPlanetCrownFront(ctx, id, cx, cy, r) {
       ctx.fill();
     });
   }
+}
+
+/**
+ * 为未上传实拍图的路标生成定制绘本风明信片插画（融合朋友圈专属故事意象）
+ */
+export function renderPostcardScene(canvas, wp, planet) {
+  const w = 640;
+  const h = 380;
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  const art = wp.sceneArt || "starry_forest";
+  const rand = seededRandom((wp.id || "x").split("").reduce((a, c) => a + c.charCodeAt(0), 17));
+
+  // 背景天空渐变
+  const isNightCard = /firework|snow_tent|starry|night_flow|moon|hotpot/.test(art);
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  if (isNightCard) {
+    sky.addColorStop(0, "#0b132b");
+    sky.addColorStop(0.6, "#1b2a52");
+    sky.addColorStop(1, "#2f3d66");
+  } else if (art === "cabin_sunset" || art === "autumn_reeds") {
+    sky.addColorStop(0, "#2b3561");
+    sky.addColorStop(0.55, "#c96d5b");
+    sky.addColorStop(1, "#f5be78");
+  } else {
+    sky.addColorStop(0, "#3b6ea5");
+    sky.addColorStop(0.6, "#88b8de");
+    sky.addColorStop(1, "#e6eef5");
+  }
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+
+  // 繁星或柔云
+  for (let i = 0; i < (isNightCard ? 85 : 18); i++) {
+    const sx = rand() * w;
+    const sy = rand() * h * 0.62;
+    ctx.fillStyle = isNightCard
+      ? `rgba(255, 244, 204, ${0.35 + rand() * 0.65})`
+      : "rgba(255, 255, 255, 0.25)";
+    ctx.beginPath();
+    ctx.arc(sx, sy, isNightCard ? 1 + rand() * 1.8 : 16 + rand() * 26, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 远山/沙丘/海平面轮廓
+  ctx.fillStyle = planet.id === "tengger" ? "#d99b4e" : planet.id === "maclehose" ? "#156d8f" : "#445570";
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  ctx.lineTo(0, h * 0.62);
+  ctx.quadraticCurveTo(w * 0.26, h * 0.42, w * 0.52, h * 0.58);
+  ctx.quadraticCurveTo(w * 0.78, h * 0.4, w, h * 0.56);
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fill();
+
+  // 近景大地
+  ctx.fillStyle =
+    planet.id === "tengger"
+      ? "#c9823c"
+      : planet.id === "yading" || art.includes("snow") || art.includes("winter")
+      ? "#dfe9f5"
+      : "#39524a";
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  ctx.quadraticCurveTo(w * 0.45, h * 0.66, w, h * 0.74);
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fill();
+
+  // 专属故事视觉主角
+  if (art.includes("firework")) {
+    // 篝火 + 挥舞荧光棒 + 远处夜空烟花
+    [
+      [w * 0.72, h * 0.26, "#ff99cc"],
+      [w * 0.82, h * 0.34, "#ffe066"],
+    ].forEach(([fx, fy, col]) => {
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2;
+      for (let k = 0; k < 14; k++) {
+        const a = (k / 14) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(fx, fy);
+        ctx.lineTo(fx + Math.cos(a) * 28, fy + Math.sin(a) * 28);
+        ctx.stroke();
+      }
+    });
+    drawTent(ctx, w * 0.34, h * 0.78, "#e88d38");
+    ctx.fillStyle = "#ffbe42";
+    ctx.beginPath();
+    ctx.arc(w * 0.5, h * 0.79, 12, 0, Math.PI * 2);
+    ctx.fill();
+    // 彩色荧光棒光轨
+    ctx.strokeStyle = "#48f5c8";
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.arc(w * 0.56, h * 0.72, 18, -2.4, -0.4);
+    ctx.stroke();
+  } else if (art === "postbox_tree") {
+    // 沙漠神树 + 沙漠邮局绿色邮筒
+    drawSpruce(ctx, w * 0.38, h * 0.72, 2.1, "#d99830");
+    ctx.fillStyle = "#2d7a53";
+    ctx.fillRect(w * 0.6, h * 0.62, 26, 44);
+    ctx.fillStyle = "#f2e8cf";
+    ctx.fillRect(w * 0.63, h * 0.68, 20, 5);
+  } else if (art === "snow_tent") {
+    // 暴雪帐篷 + 重点保护的弯曲杖杆 + 炊烟
+    drawMountainPeak(ctx, w * 0.68, h * 0.65, 220, 145, "#60738c", "#ffffff");
+    drawTent(ctx, w * 0.38, h * 0.78, "#f0a238");
+    ctx.strokeStyle = "#ff6b6b";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.52, h * 0.8);
+    ctx.quadraticCurveTo(w * 0.56, h * 0.68, w * 0.5, h * 0.62);
+    ctx.stroke();
+  } else if (art === "hotpot_camp") {
+    // 大峰大本营帐篷群 + 热气腾腾的大铜锅火锅
+    drawMountainPeak(ctx, w * 0.3, h * 0.64, 210, 140, "#56637a", "#f5f9ff");
+    drawTent(ctx, w * 0.28, h * 0.78, "#4a90d9");
+    drawTent(ctx, w * 0.42, h * 0.8, "#eba438");
+    // 铜锅火锅
+    ctx.fillStyle = "#c96e32";
+    ctx.beginPath();
+    ctx.ellipse(w * 0.64, h * 0.79, 24, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(w * 0.62, h * 0.69, 8, 12);
+    ctx.strokeStyle = "rgba(255,255,255,0.65)";
+    ctx.lineWidth = 2;
+    [0, 8].forEach((dx) => {
+      ctx.beginPath();
+      ctx.moveTo(w * 0.63 + dx, h * 0.66);
+      ctx.quadraticCurveTo(w * 0.61 + dx, h * 0.58, w * 0.65 + dx, h * 0.52);
+      ctx.stroke();
+    });
+  } else if (art === "yardang_moon") {
+    // 大海道雅丹诺亚方舟 + 皎洁大圆月照亮戈壁
+    ctx.fillStyle = "rgba(255, 249, 222, 0.22)";
+    ctx.beginPath();
+    ctx.arc(w * 0.72, h * 0.28, 62, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff8dc";
+    ctx.beginPath();
+    ctx.arc(w * 0.72, h * 0.28, 36, 0, Math.PI * 2);
+    ctx.fill();
+    // 雅丹风蚀方舟岩台
+    ctx.fillStyle = "#9c6840";
+    ctx.beginPath();
+    ctx.moveTo(w * 0.18, h * 0.76);
+    ctx.lineTo(w * 0.24, h * 0.54);
+    ctx.lineTo(w * 0.52, h * 0.52);
+    ctx.lineTo(w * 0.58, h * 0.76);
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    // 通用唯美雪山/彩林/海岸与双小辫红衣小行者背影
+    drawMountainPeak(ctx, w * 0.5, h * 0.64, 240, 150, "#63768f", "#ffffff");
+    drawSpruce(ctx, w * 0.22, h * 0.76, 1.5, "#3a7d54");
+    drawSpruce(ctx, w * 0.78, h * 0.78, 1.4, "#d98d36");
+  }
+
+  // 右下角手绘背影小签名：红衣宽檐帽小行者剪影
+  const hx = w * 0.48;
+  const hy = h * 0.84;
+  ctx.fillStyle = "#a32938";
+  ctx.beginPath();
+  ctx.moveTo(hx - 10, hy);
+  ctx.lineTo(hx, hy - 26);
+  ctx.lineTo(hx + 10, hy);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#2d3038";
+  ctx.beginPath();
+  ctx.ellipse(hx, hy - 29, 13, 4.5, 0, 0, Math.PI * 2);
+  ctx.fill();
 }
