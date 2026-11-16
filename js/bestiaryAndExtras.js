@@ -1,5 +1,5 @@
 import { renderPlanetIllustration } from "./planetArt2D.js";
-import { drawSiteQrStamp } from "./qrStamp.js";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate } from "./qrStamp.js";
 
 const PORTRAIT_BG = {
   tengger: ["#2e1a12", "#8b4b22"],
@@ -399,17 +399,20 @@ export function capturePhotoWallpaper(
 
   ctx.fillStyle = "#f9eed2";
   ctx.font = "700 38px 'Songti SC', serif";
-  ctx.fillText(planetName, W / 2, fy + fh + 74);
+  ctx.fillText(planetName, W / 2 - 48, fy + fh + 66);
 
   const cleanTraveler = String(travelerName || "").trim().slice(0, 12);
-  const byline = cleanTraveler ? `  ·  旅人 ${cleanTraveler}` : "";
   ctx.fillStyle = "#cbb382";
-  ctx.font = "500 22px 'PingFang SC', sans-serif";
-  ctx.fillText(`${altitudeText}  ·  ${dateStr}${byline}`, W / 2, fy + fh + 116);
+  ctx.font = "500 21px 'PingFang SC', sans-serif";
+  ctx.fillText(`${altitudeText}  ·  ${dateStr}`, W / 2 - 48, fy + fh + 104);
 
-  ctx.fillStyle = "rgba(232, 195, 107, 0.7)";
-  ctx.font = "500 19px Georgia, serif";
-  ctx.fillText("行者的星球 · hikerplanets.netlify.app", W / 2, fy + fh + 156);
+  if (cleanTraveler) {
+    drawTravelerNameplate(ctx, W / 2 - 228, fy + fh + 122, 360, cleanTraveler, "dark");
+  } else {
+    ctx.fillStyle = "rgba(232, 195, 107, 0.72)";
+    ctx.font = "500 19px Georgia, serif";
+    ctx.fillText("行者的星球 · hikerplanets.netlify.app", W / 2 - 48, fy + fh + 152);
+  }
 
   drawSiteQrStamp(ctx, fx + fw - 116, fy + fh + 36, 112, "dark");
 
@@ -495,52 +498,46 @@ export function generateGrandPassportDataUrl(planets, saveData = {}, travelerNam
   const doneWp = planets.reduce((s, p) => s + (saveData.discovered?.[p.id] || []).length, 0);
   const creatureCnt = (saveData.creatures || []).length;
 
-  const boxY = 744;
+  const boxY = 732;
   ctx.fillStyle = "rgba(240, 199, 104, 0.08)";
   ctx.strokeStyle = "rgba(240, 199, 104, 0.35)";
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.roundRect(74, boxY, W - 148, 178, 14);
+  ctx.roundRect(74, boxY, W - 148, 226, 14);
   ctx.fill();
   ctx.stroke();
 
-  const cleanTraveler = String(travelerName || "").trim().slice(0, 12);
-  const travelerLine = cleanTraveler ? `   ·   持照旅人：${cleanTraveler}` : "";
+  drawTravelerNameplate(ctx, 102, boxY + 18, W - 204, travelerName, "dark");
+
   ctx.textAlign = "left";
   ctx.fillStyle = "#f7e7c2";
-  ctx.font = "500 20px 'PingFang SC', sans-serif";
-  ctx.fillText(`🪐 点亮山海星球：${planets.length} / ${planets.length}   ·   旅途明信片：${doneWp} / ${totalWp}`, 108, boxY + 52);
-  ctx.fillText(`🐾 结伴山野小生灵：${creatureCnt} / ${planets.length}${travelerLine}`, 108, boxY + 98);
-  ctx.fillText(`👣 星际累计漫游步数：${saveData.steps || 0} 步`, 108, boxY + 144);
+  ctx.font = "500 19.5px 'PingFang SC', sans-serif";
+  ctx.fillText(`🪐 点亮山海星球：${planets.length} / ${planets.length}   ·   旅途明信片：${doneWp} / ${totalWp}`, 108, boxY + 104);
+  ctx.fillText(`🐾 结伴山野小生灵：${creatureCnt} / ${planets.length}`, 108, boxY + 148);
+  ctx.fillText(`👣 星际累计漫游步数：${saveData.steps || 0} 步`, 108, boxY + 192);
 
-  // 终章寄语与烫金朱砂印鉴
+  // 终章寄语与双环圆形烫金大满贯邮戳
   ctx.textAlign = "left";
   ctx.fillStyle = "#d9c498";
-  ctx.font = "italic 19px 'Songti SC', serif";
-  ctx.fillText("“谢谢你来我的宇宙吹风散步。", 82, 992);
-  ctx.fillText("  愿我们在下一座没有天花板的山海重逢。”", 82, 1028);
+  ctx.font = "italic 18.5px 'Songti SC', serif";
+  ctx.fillText("“谢谢你来我的宇宙吹风散步。", 78, 1018);
+  ctx.fillText("  愿我们在下一座没有天花板的山海重逢。”", 78, 1052);
 
   ctx.fillStyle = "rgba(240, 199, 104, 0.72)";
-  ctx.font = "500 17px Georgia, serif";
-  ctx.fillText("行者的星球 · hikerplanets.netlify.app", 82, 1118);
+  ctx.font = "500 16.5px Georgia, serif";
+  ctx.fillText("行者的星球 · hikerplanets.netlify.app", 78, 1126);
 
-  drawSiteQrStamp(ctx, W - 166, 996, 94, "dark");
+  drawPostmarkSeal(ctx, W - 278, 1068, {
+    radius: 56,
+    bannerText: "全星系大满贯",
+    subText: "山海皆星辰",
+    color: "#f2c864",
+    paperBg: "#0a1126",
+    wavyTail: false,
+    angle: -0.16,
+  });
 
-  ctx.save();
-  ctx.translate(W - 284, 1052);
-  ctx.rotate(-0.16);
-  ctx.strokeStyle = "#f0c768";
-  ctx.lineWidth = 3.5;
-  ctx.beginPath();
-  ctx.roundRect(-84, -48, 168, 96, 12);
-  ctx.stroke();
-  ctx.fillStyle = "#f0c768";
-  ctx.textAlign = "center";
-  ctx.font = "700 22px 'Songti SC', serif";
-  ctx.fillText("✦ 山海皆星辰", 0, -8);
-  ctx.font = "700 24px 'Songti SC', serif";
-  ctx.fillText("全星系大满贯", 0, 26);
-  ctx.restore();
+  drawSiteQrStamp(ctx, W - 166, 1008, 94, "dark");
 
   return canvas.toDataURL("image/png");
 }
@@ -709,22 +706,30 @@ export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName =
     curY += 28;
   });
 
-  // 底部落款与旅人署名
+  // 底部醒目持签旅人铭牌 + 圆形雪山邮戳 + 扫码徽章
   const d = new Date();
   const dateStr = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(
     d.getDate()
   ).padStart(2, "0")}`;
-  const cleanTraveler = String(travelerName || "").trim().slice(0, 12);
-  const signStr = cleanTraveler ? `珍藏旅人：${cleanTraveler}  ·  ${dateStr}` : `珍藏于 ${dateStr}`;
 
+  drawTravelerNameplate(ctx, padX, by + bh - 122, 344, travelerName, "parchment");
+
+  ctx.textAlign = "left";
   ctx.fillStyle = "#7a5b34";
-  ctx.font = "500 15.5px 'PingFang SC', sans-serif";
-  ctx.fillText(signStr, padX, by + bh - 62);
-  ctx.fillStyle = "#8c662c";
-  ctx.font = "600 15px Georgia, serif";
-  ctx.fillText("行者的星球 · hikerplanets.netlify.app", padX, by + bh - 34);
+  ctx.font = "500 14.5px 'PingFang SC', sans-serif";
+  ctx.fillText(`珍藏日期：${dateStr}  ·  hikerplanets.netlify.app`, padX, by + bh - 42);
 
-  drawSiteQrStamp(ctx, bx + bw - 126, by + bh - 124, 88, "parchment");
+  drawPostmarkSeal(ctx, bx + bw - 208, by + bh - 82, {
+    radius: 46,
+    bannerText: "山海典藏",
+    subText: planet.name.slice(0, 5),
+    color: "rgba(182, 36, 28, 0.88)",
+    paperBg: "#ebd9b7",
+    wavyTail: false,
+    angle: -0.18,
+  });
+
+  drawSiteQrStamp(ctx, bx + bw - 124, by + bh - 126, 86, "parchment");
 
   return canvas.toDataURL("image/png");
 }

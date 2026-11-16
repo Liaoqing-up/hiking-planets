@@ -53,7 +53,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=3.5.1" />
+  <link rel="stylesheet" href="./styles.css?v=3.5.2" />
   <script
     defer
     src="https://cloud.umami.is/script.js"
@@ -370,9 +370,18 @@
       <div class="postcard-paper-bg" aria-hidden="true"></div>
       <div class="postcard-watercolor" aria-hidden="true"></div>
       <div class="postcard-stamp-mark" aria-hidden="true">
-        <span>STAR</span>
-        <strong>✦</strong>
-        <span>TRAIL</span>
+        <div class="stamp-inner-art">
+          <span class="stamp-star">✦</span>
+          <span class="stamp-peaks"></span>
+          <span class="stamp-word">山海邮简</span>
+        </div>
+        <svg class="stamp-cancel-seal" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" stroke-width="2.4" />
+          <circle cx="40" cy="40" r="28" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2.5" />
+          <path d="M24 42 L35 26 L43 37 L49 29 L58 42 Z" fill="currentColor" opacity="0.85" />
+          <rect x="10" y="38" width="60" height="15" rx="2" fill="#f3e6ca" stroke="currentColor" stroke-width="1.6" />
+          <text x="40" y="49" text-anchor="middle" font-size="9.5" font-weight="700" fill="currentColor">山海星辰</text>
+        </svg>
       </div>
 
       <div class="postcard-content">
@@ -479,7 +488,7 @@
     </article>
   </div>
 
-  <script type="module" src="./js/main.js?v=3.5.1"></script>
+  <script type="module" src="./js/main.js?v=3.5.2"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       window.addEventListener("load", () => {

@@ -1,5 +1,5 @@
 import { renderPlanetIllustration } from "./planetArt2D.js";
-import { drawSiteQrStamp } from "./qrStamp.js";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate } from "./qrStamp.js";
 
 function loadImg(url) {
   return new Promise((resolve) => {
@@ -43,7 +43,7 @@ export async function generateSummitTicketDataUrl(
   travelerName = ""
 ) {
   const W = 760;
-  const H = 1250;
+  const H = 1280;
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = H;
@@ -241,63 +241,43 @@ export async function generateSummitTicketDataUrl(
     d.getDate()
   ).padStart(2, "0")}`;
 
+  // 6a. 醒目鎏金「持票旅人」专属铭牌（置于副券顶部第一视觉中心）
+  drawTravelerNameplate(ctx, tx + 42, notchY + 26, tw - 84, travelerName, "parchment");
+
+  // 6b. 左侧收集进度与路线详情
   ctx.textAlign = "left";
   ctx.fillStyle = "#5c4326";
-  ctx.font = "600 18.5px 'PingFang SC', sans-serif";
+  ctx.font = "600 17.5px 'PingFang SC', sans-serif";
   ctx.fillText(
     allCleared
-      ? `明信片图鉴：已全部集齐 (${doneCount} / ${totalCount})`
-      : `明信片图鉴：已点亮 ${doneCount} / ${totalCount}（尚有 ${totalCount - doneCount} 处待解锁）`,
+      ? `明信片图鉴：已全部集齐 (${doneCount}/${totalCount})`
+      : `明信片图鉴：已点亮 ${doneCount}/${totalCount}（待解锁 ${totalCount - doneCount}）`,
     tx + 44,
-    notchY + 56
+    notchY + 106
   );
 
   ctx.fillStyle = "#6e5332";
-  ctx.font = "500 17px 'PingFang SC', sans-serif";
-  const cleanTraveler = String(travelerName || "").trim().slice(0, 12);
-  const travelerPart = cleanTraveler ? `持票旅人：${cleanTraveler}  |  ` : "";
-  ctx.fillText(`最高海拔：${planet.stats.altitude}  ·  ${planet.stats.days}`, tx + 44, notchY + 92);
-  ctx.fillText(`徒步路线：${planet.stats.distance}`, tx + 44, notchY + 124);
-  ctx.fillText(`${travelerPart}漫游：${totalSteps} 步  |  ${dateStr}`, tx + 44, notchY + 156);
+  ctx.font = "500 16px 'PingFang SC', sans-serif";
+  ctx.fillText(`最高海拔：${planet.stats.altitude} · ${planet.stats.days}`, tx + 44, notchY + 138);
+  ctx.fillText(`徒步路线：${planet.stats.distance}`, tx + 44, notchY + 168);
+  ctx.fillText(`漫游：${totalSteps} 步  |  签发：${dateStr}`, tx + 44, notchY + 198);
 
   ctx.fillStyle = "#8a6229";
-  ctx.font = "600 16.5px Georgia, 'PingFang SC', serif";
-  ctx.fillText("行者的星球 · hikerplanets.netlify.app", tx + 44, notchY + 206);
+  ctx.font = "600 15.5px Georgia, 'PingFang SC', serif";
+  ctx.fillText("行者的星球 · hikerplanets.netlify.app", tx + 44, notchY + 234);
 
-  // 印章与可扫码登球二维码并列排布（二维码保持正立高反差，微信长按秒识别）
-  drawSiteQrStamp(ctx, tx + tw - 124, notchY + 96, 86, "parchment");
+  // 6c. 右侧博物馆级双环雪山星轨圆形邮戳 + 正立高反差扫码二维码
+  drawPostmarkSeal(ctx, tx + tw - 208, notchY + 168, {
+    radius: 54,
+    bannerText: allCleared ? "全印记走完" : `已点亮 ${doneCount}/${totalCount}`,
+    subText: allCleared ? "山海皆星辰" : "星途漫步中",
+    color: allCleared ? "rgba(182, 36, 28, 0.9)" : "rgba(148, 96, 32, 0.86)",
+    paperBg: "#ecdcb9",
+    wavyTail: false,
+    angle: -0.2,
+  });
 
-  ctx.save();
-  ctx.translate(tx + tw - 224, notchY + 142);
-  ctx.rotate(-0.18);
-  if (allCleared) {
-    ctx.strokeStyle = "rgba(188, 42, 34, 0.88)";
-    ctx.lineWidth = 3.5;
-    ctx.beginPath();
-    ctx.roundRect(-72, -44, 144, 88, 10);
-    ctx.stroke();
-    ctx.fillStyle = "rgba(188, 42, 34, 0.9)";
-    ctx.textAlign = "center";
-    ctx.font = "700 21px 'Songti SC', serif";
-    ctx.fillText("✦ 山海皆星辰", 0, -6);
-    ctx.font = "700 23px 'Songti SC', serif";
-    ctx.fillText("全印记走完", 0, 26);
-  } else {
-    ctx.strokeStyle = "rgba(146, 102, 42, 0.78)";
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.roundRect(-72, -44, 144, 88, 10);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = "rgba(136, 92, 34, 0.88)";
-    ctx.textAlign = "center";
-    ctx.font = "700 20px 'Songti SC', serif";
-    ctx.fillText("✦ 星途漫步中", 0, -6);
-    ctx.font = "700 21px 'PingFang SC', sans-serif";
-    ctx.fillText(`已解锁 ${doneCount}/${totalCount}`, 0, 24);
-  }
-  ctx.restore();
+  drawSiteQrStamp(ctx, tx + tw - 122, notchY + 114, 86, "parchment");
 
   return canvas.toDataURL("image/png");
 }

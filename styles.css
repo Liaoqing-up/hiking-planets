@@ -810,19 +810,56 @@ kbd {
 
 .postcard-stamp-mark {
   position: absolute;
-  top: 22px;
-  right: 26px;
-  width: 52px;
-  height: 60px;
-  border: 1.5px dashed rgba(168, 122, 56, 0.55);
+  top: 18px;
+  right: 22px;
+  width: 58px;
+  height: 68px;
+  padding: 5px;
+  background: radial-gradient(circle at 0 0, transparent 3px, #fffaf0 3.5px) 0 0 / 10px 10px;
+  box-shadow: 0 3px 10px rgba(60, 40, 14, 0.16);
+  transform: rotate(5deg);
+  z-index: 3;
+}
+.stamp-inner-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #162447 0%, #2c4370 62%, #d8a95b 100%);
+  border: 1px solid rgba(212, 168, 86, 0.65);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  color: #9e7332;
-  transform: rotate(6deg);
+  justify-content: space-between;
+  padding: 5px 2px 4px;
+  position: relative;
+  overflow: hidden;
+}
+.stamp-star {
+  color: #fde49b;
+  font-size: 11px;
+  line-height: 1;
+}
+.stamp-peaks {
+  width: 100%;
+  height: 18px;
+  background: linear-gradient(135deg, transparent 42%, #e9eef8 43%) -6px 4px / 22px 18px no-repeat,
+    linear-gradient(225deg, transparent 42%, #cbd7ec 43%) 10px 4px / 22px 18px no-repeat;
+}
+.stamp-word {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: #fff6de;
+  font-weight: 600;
+}
+.stamp-cancel-seal {
+  position: absolute;
+  left: -24px;
+  bottom: -16px;
+  width: 56px;
+  height: 56px;
+  color: rgba(182, 38, 30, 0.82);
+  transform: rotate(-16deg);
+  pointer-events: none;
 }
 
 #journal-chapter {
