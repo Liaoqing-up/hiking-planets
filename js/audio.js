@@ -138,8 +138,11 @@ class SoundEngine {
     this.initialized = true;
 
     this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = this.enabled ? 1.0 : 0.0;
+    this.masterGain.gain.value = 0.0001;
     this.masterGain.connect(this.ctx.destination);
+    if (this.enabled) {
+      this.masterGain.gain.setTargetAtTime(1.0, this.ctx.currentTime, 0.35);
+    }
 
     // 温暖柔和的空间回声延迟网络（让轻音乐如星空般空灵顺滑）
     const delay = this.ctx.createDelay(1.0);
@@ -394,11 +397,12 @@ class SoundEngine {
           this.activeZone === "birthday_beach" && Date.now() - this.birthdayLastPlayed < 14500;
         const idx = this.stepIndex % theme.melody.length;
         const shouldRest = birthdayPlaying || (idx % 6 === 5 && Math.random() > 0.55);
-        if (!shouldRest) {
+        const mScale = this._musicScale ?? 1.0;
+        if (!shouldRest && mScale > 0.01) {
           const freq = theme.melody[idx];
           this.playTone(freq, {
             duration: theme.decay,
-            volume: 0.034,
+            volume: 0.034 * mScale,
             waveMain: theme.waveMain,
             waveSub: theme.waveSub,
             harmonicRatio: theme.harmonicRatio,
@@ -407,11 +411,11 @@ class SoundEngine {
           });
         }
         // 每 3 拍铺垫一颗柔和温暖的根音低音衬底
-        if (idx % 3 === 0 && theme.bass) {
+        if (idx % 3 === 0 && theme.bass && mScale > 0.01) {
           const bFreq = theme.bass[Math.floor(idx / 3) % theme.bass.length];
           this.playTone(bFreq, {
             duration: theme.decay * 1.35,
-            volume: 0.024,
+            volume: 0.024 * mScale,
             waveMain: "sine",
             waveSub: "sine",
             harmonicRatio: 2,
@@ -463,6 +467,68 @@ class SoundEngine {
     gain.connect(this.masterGain);
     osc.start(t);
     osc.stop(t + 0.08);
+  }
+
+  playCreatureChirp(planetId = "siguniang") {
+    if (!this.initialized || !this.enabled || !this.ctx) return;
+    if (planetId === "tengger") {
+      // 清脆双响铜驼铃
+      this.playTone(1318.5, { duration: 1.1, volume: 0.042, attack: 0.008 });
+      this.playTone(1760.0, { duration: 1.2, volume: 0.032, delay: 0.16, attack: 0.008 });
+    } else if (planetId === "yading") {
+      // 土拨鼠俏皮上扬双音
+      this.playTone(783.99, { duration: 0.35, volume: 0.038, attack: 0.01 });
+      this.playTone(1046.5, { duration: 0.45, volume: 0.042, delay: 0.12, attack: 0.01 });
+    } else {
+      [523.25, 659.25, 783.99].forEach((f, i) => {
+        this.playTone(f, { duration: 0.7, volume: 0.034, delay: i * 0.08, attack: 0.012 });
+      });
+    }
+  }
+
+  setCampfireMix({ active = false, fire = 0.7, wind = 0.5, music = 0.7 } = {}) {
+    if (!this.initialized || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    this._campMix = { active, fire, wind, music };
+
+    // 篝火噼啪暖噪声通道路由
+    if (active && !this.campfireGain) {
+      const len = this.ctx.sampleRate * 3;
+      const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
+        last = (last + 0.04 * w) / 1.04;
+        const crackle = Math.random() > 0.9965 ? (Math.random() * 2 - 1) * 0.95 : 0;
+        d[i] = last * 1.8 + crackle;
+      }
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      const bp = this.ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 620;
+      bp.Q.value = 0.7;
+      this.campfireGain = this.ctx.createGain();
+      this.campfireGain.gain.value = 0.0001;
+      src.connect(bp);
+      bp.connect(this.campfireGain);
+      this.campfireGain.connect(this.masterGain);
+      src.start();
+      this.campfireSrc = src;
+    }
+
+    if (this.campfireGain) {
+      const targetFire = active ? Math.max(0.0001, fire * 0.16) : 0.0001;
+      this.campfireGain.gain.setTargetAtTime(targetFire, now, 0.25);
+    }
+    if (this.windGain) {
+      const baseWind = (THEMES[this.currentThemeKey]?.windVol ?? 0.035);
+      const targetWind = active ? Math.max(0.001, wind * 0.14) : baseWind;
+      this.windGain.gain.setTargetAtTime(targetWind, now, 0.3);
+    }
+    this._musicScale = active ? music : 1.0;
   }
 }
 

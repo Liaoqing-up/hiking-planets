@@ -1811,15 +1811,36 @@ export function buildHikerCharacter() {
     }
   }
 
+  let isSitting = false;
+
   return {
     root,
     get outfit() { return currentOutfitId; },
     setOutfit,
+    setSitting(on) {
+      isSitting = Boolean(on);
+      if (!isSitting) {
+        bodyPivot.position.y = 0;
+        bodyPivot.rotation.x = 0;
+      }
+    },
     setHeadlamp(on) {
       lampLens.visible = Boolean(on);
       headLight.intensity = on ? 4.6 : 0;
     },
     update(dt, elapsed, speedRatio = 0) {
+      if (isSitting) {
+        // 营地篝火边盘坐轻晃双脚与辫子
+        bodyPivot.position.y = -0.11;
+        bodyPivot.rotation.x = -0.08;
+        leftLeg.rotation.x = -1.28 + Math.sin(elapsed * 2.2) * 0.08;
+        rightLeg.rotation.x = -1.28 - Math.sin(elapsed * 2.2) * 0.08;
+        leftArm.rotation.x = -0.45;
+        rightArm.rotation.x = -0.45;
+        leftBraid.rotation.z = -0.2 + Math.sin(elapsed * 2.4) * 0.06;
+        rightBraid.rotation.z = 0.2 + Math.cos(elapsed * 2.4) * 0.06;
+        return;
+      }
       const s = THREE.MathUtils.clamp(speedRatio, 0, 1.8);
       const walkPhase = elapsed * (7.5 + s * 3.5);
       const swing = Math.sin(walkPhase) * 0.55 * Math.min(1, s);

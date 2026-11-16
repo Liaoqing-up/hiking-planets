@@ -9,6 +9,18 @@ import {
   buildPlanetWorld,
   buildHikerCharacter,
 } from "./planetBuilder3D.js";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js";
+import { createSkyWonders } from "./skyWonders3D.js";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js";
+import { generateSummitTicketDataUrl } from "./summitTicket.js";
+import { buildCampfireRig } from "./campfireRadio.js";
+import { createFootprintTrail } from "./footprints3D.js";
+import {
+  renderCreaturePortrait,
+  capturePhotoWallpaper,
+  generateGrandPassportDataUrl,
+  generatePostcardBookmarkDataUrl,
+} from "./bestiaryAndExtras.js";
 
 const SAVE_KEY = "hiking_planets_save_v1";
 
@@ -21,6 +33,7 @@ function loadSave() {
 }
 
 const saveData = loadSave();
+if (!Array.isArray(saveData.creatures)) saveData.creatures = [];
 function persistSave() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
@@ -109,11 +122,17 @@ let mode = "title"; // "title" | "map" | "planet"
 let selectedPlanetIdx = 0;
 let activePlanet = null;
 let currentWorld = null;
+let skyPhase = "day"; // "day" (晨曦) | "dusk" (暮霞) | "night" (星夜)
 let isNight = false;
 let isPhotoMode = false;
 let journalOpen = false;
 let journalPage = 1;
 let currentJournalWp = null;
+let currentJournalPlanet = null;
+let atlasModalOpen = false;
+let atlasFilterPlanetId = "all";
+let warpActive = false;
+let warpTimer = 0;
 let photoLoadSeq = 0;
 const preloadedImages = new Map();
 
@@ -153,6 +172,31 @@ let activeWaypointNear = null;
 let stepAccum = 0;
 let currentSpeedFactor = 1.0;
 let activeSceneZone = null;
+let activeCreature = null;
+let activeSkyWonders = null;
+let activeManiCairn = null;
+let activeFootprints = null;
+let activeManiNear = false;
+let maniModalOpen = false;
+let ticketModalOpen = false;
+let bestiaryModalOpen = false;
+let finaleModalOpen = false;
+let isCampfireMode = false;
+let isTelescopeMode = false;
+let idleSeconds = 0;
+let wonderToastTimer = null;
+
+const campfireRig = buildCampfireRig();
+scene.add(campfireRig.group);
+
+function showWonderToast(msg, durationMs = 4200) {
+  const el = document.getElementById("wonder-toast");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove("hidden");
+  if (wonderToastTimer) clearTimeout(wonderToastTimer);
+  wonderToastTimer = setTimeout(() => el.classList.add("hidden"), durationMs);
+}
 
 // 点击地面目标光圈 & 路标引路金色光弧
 const clickRing = new THREE.Mesh(
@@ -180,40 +224,84 @@ function clearGuideArc() {
   document.querySelectorAll(".wp-pill").forEach((el) => el.classList.remove("guiding"));
 }
 
-function showGuideArcTo(wpObj, pillEl) {
+function showGuideArcToDir(targetUnitDir, colorHex = "#ffe594", pillEl = null) {
   clearGuideArc();
-  if (!activePlanet || !wpObj) return;
+  if (!activePlanet || !targetUnitDir) return;
   const pts = [];
   const segs = 38;
   for (let i = 0; i <= segs; i++) {
     const t = i / segs;
-    const d = new THREE.Vector3().lerpVectors(playerUp, wpObj.unitDir, t).normalize();
+    const d = new THREE.Vector3().lerpVectors(playerUp, targetUnitDir, t).normalize();
     const arch = Math.sin(t * Math.PI) * 1.45;
     const r = getSurfaceRadius(activePlanet.id, d) + 0.28 + arch;
     pts.push(d.multiplyScalar(r));
   }
   const geo = new THREE.BufferGeometry().setFromPoints(pts);
   const mat = new THREE.LineBasicMaterial({
-    color: "#ffe594",
+    color: colorHex,
     transparent: true,
-    opacity: 0.92,
+    opacity: 0.94,
   });
   guideArcLine = new THREE.Line(geo, mat);
   scene.add(guideArcLine);
-  guideArcTimer = 5.5;
+  guideArcTimer = 6.5;
   if (pillEl) pillEl.classList.add("guiding");
+}
+
+function showGuideArcTo(wpObj, pillEl) {
+  if (!wpObj) return;
+  showGuideArcToDir(wpObj.unitDir, "#ffe594", pillEl);
+}
+
+function triggerHaptic(ms = 14) {
+  try {
+    if (navigator.vibrate) navigator.vibrate(ms);
+  } catch {
+    /* ignore */
+  }
+}
+
+function isAnyModalOpen() {
+  return (
+    journalOpen ||
+    maniModalOpen ||
+    ticketModalOpen ||
+    bestiaryModalOpen ||
+    finaleModalOpen ||
+    atlasModalOpen
+  );
 }
 
 function disposeCurrentWorld() {
   clearGuideArc();
   clickRing.visible = false;
+  campfireRig.hide();
+  isCampfireMode = false;
+  isTelescopeMode = false;
+  activeSceneZone = null;
+  sound.setSceneZone?.(null);
+  activeCreature = null;
+  activeSkyWonders = null;
+  activeManiCairn = null;
+  activeFootprints = null;
+  document.getElementById("campfire-mixer")?.classList.add("hidden");
+  document.getElementById("btn-campfire-mode")?.classList.remove("active");
+  document.getElementById("btn-telescope-mode")?.classList.remove("active");
+  hiker?.setSitting?.(false);
+  // 销毁旧星球前先将主角小人摘回根场景，防止其材质/几何体被一并释放
+  if (hiker?.root && hiker.root.parent !== scene) {
+    scene.add(hiker.root);
+  }
   if (!currentWorld) return;
   scene.remove(currentWorld.group);
   currentWorld.group.traverse((child) => {
     if (child.geometry) child.geometry.dispose();
     if (child.material) {
-      if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
-      else child.material.dispose();
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      mats.forEach((m) => {
+        if (m.map && m.map.isCanvasTexture) m.map.dispose();
+        m.dispose();
+      });
     }
   });
   currentWorld = null;
@@ -269,6 +357,7 @@ function updateTitleLayout() {
 function setupTitleScene() {
   disposeCurrentWorld();
   activePlanet = null;
+  skyPhase = "day";
   isNight = false;
   hiker.setOutfit("tengger");
   hiker.setHeadlamp(false);
@@ -355,6 +444,22 @@ function refreshScrollMapBadges() {
     const stamp = node.querySelector(".planet-stamp");
     if (stamp) stamp.textContent = done ? "✦ 走完" : `${disc.size}/${p.waypoints.length}`;
   });
+
+  // 更新全星系总印记进度、生灵图集计数与 24/24 终章手札解锁状态
+  const totalWp = PLANETS.reduce((s, p) => s + p.waypoints.length, 0);
+  const doneWp = PLANETS.reduce((s, p) => s + getDiscoveredSet(p.id).size, 0);
+  const creatureCount = (saveData.creatures || []).length;
+  const totalEl = document.getElementById("scroll-total-progress");
+  if (totalEl) totalEl.textContent = `✦ 星系印记 ${doneWp} / ${totalWp}`;
+  const mapBestiaryBtn = document.getElementById("btn-map-bestiary");
+  if (mapBestiaryBtn) mapBestiaryBtn.textContent = `🐾 生灵图集 ${creatureCount} / ${PLANETS.length}`;
+  const hudBestiaryBtn = document.getElementById("btn-hud-bestiary");
+  if (hudBestiaryBtn) {
+    hudBestiaryBtn.textContent =
+      creatureCount >= PLANETS.length ? "🐾 生灵 ✦" : `🐾 生灵 ${creatureCount}/${PLANETS.length}`;
+  }
+  const finaleBtn = document.getElementById("btn-grand-finale");
+  if (finaleBtn) finaleBtn.classList.toggle("hidden", doneWp < totalWp);
 }
 
 function selectMapPlanet(idx) {
@@ -388,6 +493,17 @@ function selectMapPlanet(idx) {
   prefetchPlanetPhotos(p);
 }
 
+// 轻量无侵入统计上报（即使被广告拦截器屏蔽也绝不报错）
+function trackEvent(eventName, eventData) {
+  try {
+    if (window.umami && typeof window.umami.track === "function") {
+      window.umami.track(eventName, eventData);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 function openStarMap() {
   if (currentWorld) currentWorld.group.visible = false;
   hiker.root.visible = false;
@@ -396,6 +512,7 @@ function openStarMap() {
   selectMapPlanet(selectedPlanetIdx);
   sound.setPlanetBGM("space");
   setScreen("map");
+  trackEvent("展开星图");
 }
 
 // ==================== ENTER 3D PLANET ====================
@@ -419,6 +536,23 @@ function enterPlanet(idx) {
   currentWorld.group.visible = true;
   hiker.root.visible = true;
   scene.add(currentWorld.group);
+
+  // 挂载 V3.3 星球奇遇实体：山野小生灵(支持结伴跟随与围炉打盹) · 动态脚印 · 远空邻近星系与天气奇遇 · 垭口玛尼堆
+  const alreadyBonded = (saveData.creatures || []).includes(p.id);
+  activeCreature = buildPlanetCreature(p, alreadyBonded);
+  currentWorld.group.add(activeCreature.group);
+
+  activeFootprints = createFootprintTrail(p);
+  currentWorld.group.add(activeFootprints.group);
+
+  activeSkyWonders = createSkyWonders(p, PLANETS);
+  currentWorld.group.add(activeSkyWonders.group);
+
+  activeManiCairn = buildManiCairn3D(p);
+  currentWorld.group.add(activeManiCairn.group);
+  idleSeconds = 0;
+  refreshTicketButtons();
+  refreshScrollMapBadges();
 
   // 初始落点靠近第一个路标附近，方便快速开启徒步
   const startWp = p.waypoints[0];
@@ -450,6 +584,23 @@ function enterPlanet(idx) {
   sound.setPlanetBGM(p.id);
   prefetchPlanetPhotos(p);
   setScreen("planet");
+  trackEvent(`登陆 · ${p.name}`, { planet: p.name, planetId: p.id });
+
+  // 仅在新访客首次登陆第一颗星球时浮现 4.5s 温柔指引，随后永久不再打扰
+  if (!saveData.onboardedPlanet) {
+    saveData.onboardedPlanet = true;
+    persistSave();
+    setTimeout(() => {
+      if (mode !== "planet" || isAnyModalOpen()) return;
+      const mobileGuide = window.innerWidth <= 820;
+      showWonderToast(
+        mobileGuide
+          ? "✦ 轻推左下星芒或点击草坡漫步 · 点上方地名可唤出星光引路"
+          : "✦ 按 WASD 或点击草坡漫步 · 点右上地名可唤出星光引路",
+        4600
+      );
+    }, 1100);
+  }
 }
 
 function renderHudWaypoints() {
@@ -472,28 +623,390 @@ function renderHudWaypoints() {
   });
 }
 
-// ==================== LIGHTING & SHORTCUTS ====================
+// ==================== LIGHTING (晨曦 → 暮霞 → 星夜 三态流转) & SHORTCUTS ====================
+function cycleSkyPhase() {
+  skyPhase = skyPhase === "day" ? "dusk" : skyPhase === "dusk" ? "night" : "day";
+  isNight = skyPhase === "night";
+  applyLightingTheme(false);
+  const labelMap = {
+    day: "☀ 已切换至「清朗晨曦」光影",
+    dusk: "🌇 已切换至「紫金暮霞 · 蓝调时刻」光影",
+    night: "☾ 已切换至「极光星夜」光影 · 头灯已点亮",
+  };
+  showWonderToast(labelMap[skyPhase], 2600);
+}
+
 function applyLightingTheme(immediate = false) {
   const pal = activePlanet ? activePlanet.palette : { skyDay: "#0a1228", skyNight: "#060918" };
-  const targetBg = new THREE.Color(isNight ? pal.skyNight : pal.skyDay);
+  let bgHex = pal.skyDay;
+  if (skyPhase === "night") bgHex = pal.skyNight;
+  else if (skyPhase === "dusk") bgHex = "#24193c";
+
+  const targetBg = new THREE.Color(bgHex);
   if (immediate) scene.background.copy(targetBg);
   else scene.background.lerp(targetBg, 0.08);
 
-  hemiLight.intensity = isNight ? 0.42 : 1.18;
-  sunLight.intensity = isNight ? 0.52 : 1.85;
-  sunLight.color.set(isNight ? "#8fb8ff" : "#fff1d0");
-  hiker.setHeadlamp(isNight && mode === "planet");
+  if (skyPhase === "day") {
+    hemiLight.color.set("#d8e6ff");
+    hemiLight.groundColor.set("#2e3b59");
+    hemiLight.intensity = 1.18;
+    sunLight.intensity = 1.85;
+    sunLight.color.set("#fff1d0");
+  } else if (skyPhase === "dusk") {
+    hemiLight.color.set("#c79ef7");
+    hemiLight.groundColor.set("#3d253b");
+    hemiLight.intensity = 0.88;
+    sunLight.intensity = 1.62;
+    sunLight.color.set("#ff8c42");
+  } else {
+    hemiLight.color.set("#9db8ff");
+    hemiLight.groundColor.set("#1b2540");
+    hemiLight.intensity = 0.42;
+    sunLight.intensity = 0.52;
+    sunLight.color.set("#8fb8ff");
+  }
+  hiker.setHeadlamp(skyPhase === "night" && mode === "planet");
 
   const nightBtn = document.getElementById("btn-toggle-night");
   if (nightBtn) {
-    nightBtn.innerHTML = isNight ? `☀ 晨曦 <kbd>L</kbd>` : `☾ 星夜 <kbd>L</kbd>`;
+    const btnText =
+      skyPhase === "day"
+        ? `🌇 暮霞 <kbd>L</kbd>`
+        : skyPhase === "dusk"
+          ? `☾ 星夜 <kbd>L</kbd>`
+          : `☀ 晨曦 <kbd>L</kbd>`;
+    nightBtn.innerHTML = btnText;
   }
 }
 
 function togglePhotoMode(force) {
   isPhotoMode = typeof force === "boolean" ? force : !isPhotoMode;
   document.body.classList.toggle("photo-mode", isPhotoMode);
-  document.getElementById("photo-exit-hint").classList.toggle("hidden", !isPhotoMode);
+  document.getElementById("photo-mode-bar")?.classList.toggle("hidden", !isPhotoMode);
+}
+
+// 记录当前票根预览窗的渲染源，以便填写专属署名后即时重新烫金绘制
+let currentTicketContext = null;
+
+function getTravelerName() {
+  const input = document.getElementById("ticket-traveler-input");
+  if (input && input.value.trim()) {
+    saveData.travelerName = input.value.trim().slice(0, 12);
+    persistSave();
+  }
+  if (input && !input.value && saveData.travelerName) {
+    input.value = saveData.travelerName;
+  }
+  return saveData.travelerName || "";
+}
+
+async function refreshTicketPreviewImage() {
+  if (!currentTicketContext) return;
+  const traveler = getTravelerName();
+  let dataUrl = "";
+  let fileName = "行者的星球-纪念印记.png";
+  if (currentTicketContext.type === "summit" && activePlanet) {
+    const discSet = getDiscoveredSet(activePlanet.id);
+    dataUrl = await generateSummitTicketDataUrl(activePlanet, discSet, saveData.steps || 0, traveler);
+    fileName = `行者的星球-${activePlanet.name}-登顶纪念票根.png`;
+  } else if (currentTicketContext.type === "passport") {
+    dataUrl = generateGrandPassportDataUrl(PLANETS, saveData, traveler);
+    fileName = "行者的星球-全星系大满贯荣誉护照.png";
+  } else if (currentTicketContext.type === "wallpaper" && currentTicketContext.snapCanvas) {
+    dataUrl = capturePhotoWallpaper(
+      currentTicketContext.snapCanvas,
+      currentTicketContext.planetName,
+      currentTicketContext.altText,
+      traveler
+    );
+    fileName = `行者的星球-${currentTicketContext.planetName}-留影壁纸.png`;
+  } else if (currentTicketContext.type === "bookmark" && currentTicketContext.planet && currentTicketContext.wp) {
+    dataUrl = await generatePostcardBookmarkDataUrl(
+      currentTicketContext.planet,
+      currentTicketContext.wp,
+      traveler
+    );
+    fileName = `行者的星球-${currentTicketContext.wp.shortName || currentTicketContext.wp.name}-故事书签.png`;
+  }
+  const img = document.getElementById("ticket-preview-img");
+  const dl = document.getElementById("btn-download-ticket");
+  if (img && dataUrl) img.src = dataUrl;
+  if (dl && dataUrl) {
+    dl.href = dataUrl;
+    dl.download = fileName;
+  }
+}
+
+function snapPhotoWallpaper() {
+  if (!activePlanet) return;
+  sound.init();
+  sound.playSelectPlanet();
+  renderer.render(scene, camera);
+  // 拷贝当前 WebGL 帧到离屏画布，方便随后随时修改署名重印
+  const snapCanvas = document.createElement("canvas");
+  snapCanvas.width = renderer.domElement.width;
+  snapCanvas.height = renderer.domElement.height;
+  snapCanvas.getContext("2d").drawImage(renderer.domElement, 0, 0);
+  const altText = document.getElementById("hud-altitude")?.textContent || activePlanet.stats.altitude;
+  currentTicketContext = {
+    type: "wallpaper",
+    snapCanvas,
+    planetName: activePlanet.name,
+    altText,
+  };
+  togglePhotoMode(false);
+  refreshTicketPreviewImage();
+  ticketModalOpen = true;
+  document.getElementById("modal-ticket")?.classList.remove("hidden");
+  trackEvent(`咔嚓留影壁纸 · ${activePlanet.name}`, { planet: activePlanet.name });
+}
+
+function guideToPlanetCreature(targetPlanetId) {
+  closeBestiaryModal();
+  const pIdx = PLANETS.findIndex((p) => p.id === targetPlanetId);
+  if (pIdx < 0) return;
+  if (mode !== "planet" || activePlanet?.id !== targetPlanetId) {
+    enterPlanet(pIdx);
+  }
+  if (activeCreature) {
+    showGuideArcToDir(activeCreature.getUnitDir(), "#ffb4c8");
+    showWonderToast("🐾 星尘寻踪已点亮 · 顺着粉金色光弧去偶遇它吧！");
+  }
+}
+
+function openBestiaryModal() {
+  const grid = document.getElementById("bestiary-grid");
+  if (!grid) return;
+  const metSet = new Set(saveData.creatures || []);
+  grid.innerHTML = "";
+  CREATURE_CATALOG.forEach((item) => {
+    const unlocked = metSet.has(item.planetId);
+    const card = document.createElement("div");
+    card.className = `bestiary-card ${unlocked ? "unlocked" : "locked"}`;
+    const c = document.createElement("canvas");
+    renderCreaturePortrait(c, item.planetId, unlocked);
+    const title = document.createElement("div");
+    title.className = "bestiary-name";
+    title.textContent = unlocked ? `${item.emoji} ${item.name}` : "🔒 未知山野小生灵";
+    const sub = document.createElement("div");
+    sub.className = "bestiary-planet";
+    sub.textContent = unlocked ? `✦ 已结伴 · ${item.planetName}` : `栖息线索：${item.planetName}`;
+    const bio = document.createElement("div");
+    bio.className = "bestiary-note";
+    bio.textContent = unlocked ? item.note : "前往该星球漫步走近它，即可建立羁绊同行";
+    const guideBtn = document.createElement("button");
+    guideBtn.type = "button";
+    guideBtn.className = "bestiary-guide-btn";
+    guideBtn.textContent =
+      activePlanet?.id === item.planetId ? "✦ 星尘寻踪引路" : `✦ 前往${item.planetName}寻它`;
+    guideBtn.addEventListener("click", () => guideToPlanetCreature(item.planetId));
+    card.append(c, title, sub, bio, guideBtn);
+    grid.appendChild(card);
+  });
+  bestiaryModalOpen = true;
+  document.getElementById("modal-bestiary")?.classList.remove("hidden");
+  sound.init();
+  sound.playHover();
+  trackEvent("打开小生灵图集", { unlocked: metSet.size });
+}
+
+function closeBestiaryModal() {
+  bestiaryModalOpen = false;
+  document.getElementById("modal-bestiary")?.classList.add("hidden");
+}
+
+async function saveCurrentPostcardBookmark() {
+  const p = currentJournalPlanet || activePlanet;
+  const wp = currentJournalWp;
+  if (!p || !wp) return;
+  closeJournal();
+  sound.init();
+  sound.playSelectPlanet();
+  triggerHaptic(14);
+  currentTicketContext = { type: "bookmark", planet: p, wp };
+  await refreshTicketPreviewImage();
+  ticketModalOpen = true;
+  document.getElementById("modal-ticket")?.classList.remove("hidden");
+  trackEvent(`珍藏双面书签 · ${wp.shortName || wp.name}`, { planet: p.name });
+}
+
+function renderAtlasGridUI() {
+  const tabsEl = document.getElementById("atlas-tabs");
+  const gridEl = document.getElementById("atlas-grid");
+  if (!tabsEl || !gridEl) return;
+
+  const totalWp = PLANETS.reduce((s, p) => s + p.waypoints.length, 0);
+  const doneWp = PLANETS.reduce((s, p) => s + getDiscoveredSet(p.id).size, 0);
+
+  tabsEl.innerHTML = "";
+  const makeTab = (id, label) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = `atlas-tab ${atlasFilterPlanetId === id ? "active" : ""}`;
+    b.textContent = label;
+    b.addEventListener("click", () => {
+      atlasFilterPlanetId = id;
+      sound.playHover();
+      renderAtlasGridUI();
+    });
+    tabsEl.appendChild(b);
+  };
+  makeTab("all", `全部 (${doneWp}/${totalWp})`);
+  PLANETS.forEach((p) => {
+    const cnt = getDiscoveredSet(p.id).size;
+    makeTab(p.id, `${p.name} (${cnt}/${p.waypoints.length})`);
+  });
+
+  gridEl.innerHTML = "";
+  const targetPlanets =
+    atlasFilterPlanetId === "all"
+      ? PLANETS
+      : PLANETS.filter((p) => p.id === atlasFilterPlanetId);
+
+  targetPlanets.forEach((p) => {
+    const pIdx = PLANETS.indexOf(p);
+    const disc = getDiscoveredSet(p.id);
+    p.waypoints.forEach((wp) => {
+      const unlocked = disc.has(wp.id);
+      const card = document.createElement("div");
+      card.className = `atlas-card ${unlocked ? "unlocked" : "locked"}`;
+
+      const thumb = document.createElement("div");
+      thumb.className = "atlas-thumb-wrap";
+      if (unlocked && wp.photo) {
+        const img = document.createElement("img");
+        img.loading = "lazy";
+        img.src = wp.photo;
+        img.alt = wp.name;
+        thumb.appendChild(img);
+      } else {
+        thumb.textContent = "🔒";
+      }
+
+      const title = document.createElement("div");
+      title.className = "atlas-card-title";
+      title.textContent = unlocked ? `✦ ${wp.shortName || wp.name}` : `◇ ${wp.shortName || wp.name}`;
+
+      const meta = document.createElement("div");
+      meta.className = "atlas-card-meta";
+      meta.textContent = unlocked ? `${p.name}` : `${p.name} · 待探访`;
+
+      if (unlocked) {
+        card.title = "点击重温正反双页明信片故事";
+        card.addEventListener("click", () => {
+          closeAtlasModal();
+          openReadOnlyJournal(p, wp);
+        });
+      } else {
+        const goBtn = document.createElement("button");
+        goBtn.type = "button";
+        goBtn.className = "bestiary-guide-btn";
+        goBtn.textContent = "✦ 前往点亮";
+        goBtn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          closeAtlasModal();
+          if (mode !== "planet" || activePlanet?.id !== p.id) {
+            enterPlanet(pIdx);
+          }
+          const wpObj = currentWorld?.waypointObjs?.find((o) => o.data.id === wp.id);
+          if (wpObj) {
+            showGuideArcTo(wpObj, null);
+            showWonderToast(`✦ 星光引路已点亮 · 前往探访「${wp.shortName || wp.name}」`);
+          }
+        });
+        card.append(thumb, title, meta, goBtn);
+        gridEl.appendChild(card);
+        return;
+      }
+
+      card.append(thumb, title, meta);
+      gridEl.appendChild(card);
+    });
+  });
+}
+
+function openAtlasModal() {
+  atlasModalOpen = true;
+  renderAtlasGridUI();
+  document.getElementById("modal-atlas")?.classList.remove("hidden");
+  sound.init();
+  sound.playHover();
+  trackEvent("打开24印记总图集");
+}
+
+function closeAtlasModal() {
+  atlasModalOpen = false;
+  document.getElementById("modal-atlas")?.classList.add("hidden");
+}
+
+function openReadOnlyJournal(planet, wpData) {
+  journalOpen = true;
+  journalPage = 1;
+  currentJournalPlanet = planet;
+  currentJournalWp = wpData;
+  const list = saveData.discovered[planet.id] || [];
+  document.getElementById("journal-chapter").textContent = `${planet.name} · 行者明信片典藏`;
+  document.getElementById("journal-title").textContent = wpData.name;
+  document.getElementById("journal-elevation").textContent = `${wpData.elevation}`;
+  renderJournalTextPage();
+  document.getElementById("journal-progress").textContent = `所属星球收集进度：${list.length} / ${planet.waypoints.length}`;
+  document.getElementById("btn-journal-ticket")?.classList.toggle("hidden", mode !== "planet");
+  if (wpData.photo2) preloadUrl(wpData.photo2);
+  document.getElementById("modal-journal").classList.remove("hidden");
+  sound.init();
+  sound.playHover();
+}
+
+function startStarWarpToPlanet(targetIdx, targetName) {
+  if (warpActive) return;
+  warpActive = true;
+  warpTimer = 0.88;
+  const veil = document.getElementById("warp-veil");
+  const label = document.getElementById("warp-label");
+  if (label) label.textContent = `✦ 星轨穿梭 · 正在飞往「${targetName}」…`;
+  if (veil) {
+    veil.classList.remove("hidden");
+    requestAnimationFrame(() => veil.classList.add("active"));
+  }
+  sound.init();
+  sound.playSelectPlanet();
+  triggerHaptic(20);
+  trackEvent(`星际直飞 · ${targetName}`, { target: targetName });
+
+  setTimeout(() => {
+    enterPlanet(targetIdx);
+  }, 420);
+  setTimeout(() => {
+    if (veil) {
+      veil.classList.remove("active");
+      setTimeout(() => veil.classList.add("hidden"), 320);
+    }
+    camera.fov = 45;
+    camera.updateProjectionMatrix();
+    warpActive = false;
+  }, 880);
+}
+
+function openFinaleModal() {
+  finaleModalOpen = true;
+  document.getElementById("modal-finale")?.classList.remove("hidden");
+  sound.init();
+  sound.playDiscoverWaypoint(true);
+  trackEvent("拆阅24全满贯终章手札");
+}
+
+function closeFinaleModal() {
+  finaleModalOpen = false;
+  document.getElementById("modal-finale")?.classList.add("hidden");
+}
+
+function openGrandPassport() {
+  closeFinaleModal();
+  currentTicketContext = { type: "passport" };
+  refreshTicketPreviewImage();
+  ticketModalOpen = true;
+  document.getElementById("modal-ticket")?.classList.remove("hidden");
+  trackEvent("签发全星系大满贯护照");
 }
 
 // ==================== JOURNAL POSTCARD DISCOVERY ====================
@@ -553,9 +1066,9 @@ function renderJournalTextPage() {
         { once: true }
       );
     }
-  } else if (activePlanet) {
+  } else if (currentJournalPlanet || activePlanet) {
     if (mediaBox) mediaBox.classList.remove("loading");
-    renderPostcardScene(artCanvas, currentJournalWp, activePlanet);
+    renderPostcardScene(artCanvas, currentJournalWp, currentJournalPlanet || activePlanet);
     artCanvas.classList.remove("hidden");
     photoEl.classList.add("hidden");
   }
@@ -564,6 +1077,12 @@ function renderJournalTextPage() {
 function flipJournalPage() {
   if (!currentJournalWp) return;
   journalPage = journalPage === 1 ? 2 : 1;
+  if (journalPage === 2) {
+    trackEvent("翻看第2页故事", {
+      planet: activePlanet ? activePlanet.name : "",
+      waypoint: currentJournalWp.name,
+    });
+  }
   const poemEl = document.getElementById("journal-poem");
   const photoEl = document.getElementById("journal-photo");
   if (poemEl) poemEl.style.opacity = "0.2";
@@ -579,7 +1098,9 @@ function openWaypointJournal(wpObj) {
   if (!activePlanet || !wpObj) return;
   journalOpen = true;
   journalPage = 1;
+  currentJournalPlanet = activePlanet;
   currentJournalWp = wpObj.data;
+  triggerHaptic(16);
   walkTargetDir = null;
   clickRing.visible = false;
 
@@ -612,12 +1133,137 @@ function openWaypointJournal(wpObj) {
   document.getElementById("modal-journal").classList.remove("hidden");
   renderHudWaypoints();
   refreshScrollMapBadges();
+  refreshTicketButtons();
+  trackEvent(`明信片 · ${wpObj.data.shortName || wpObj.data.name}`, {
+    planet: activePlanet.name,
+    waypoint: wpObj.data.name,
+  });
 
   if (nowAllDone && !wasAlreadyAllDone) {
+    trackEvent(`通关 · ${activePlanet.name}`, { planet: activePlanet.name });
     const banner = document.getElementById("banner-complete");
-    document.getElementById("banner-complete-text").textContent = `星辰共鸣 · 已集齐「${activePlanet.name}」全部徒步印记`;
+    const totalWp = PLANETS.reduce((s, p) => s + p.waypoints.length, 0);
+    const doneWp = PLANETS.reduce((s, p) => s + getDiscoveredSet(p.id).size, 0);
+    if (doneWp >= totalWp) {
+      document.getElementById("banner-complete-text").textContent =
+        "🏆 24/24 全星系山海印记大满贯达成！已为你解锁《终章手札》";
+    } else {
+      document.getElementById("banner-complete-text").textContent = `星辰共鸣 · 已集齐「${activePlanet.name}」全部印记 · 可领取纪念票根`;
+    }
     banner.classList.remove("hidden");
-    setTimeout(() => banner.classList.add("hidden"), 5500);
+    setTimeout(() => banner.classList.add("hidden"), 6500);
+  }
+}
+
+function refreshTicketButtons() {
+  if (!activePlanet) return;
+  const count = getDiscoveredSet(activePlanet.id).size;
+  const total = activePlanet.waypoints.length;
+  const done = count >= total;
+  const sideBtn = document.getElementById("btn-summit-ticket");
+  const journalBtn = document.getElementById("btn-journal-ticket");
+  if (sideBtn) {
+    sideBtn.classList.remove("hidden");
+    sideBtn.textContent = done ? "🎫 票根 ✦" : `🎫 票根 ${count}/${total}`;
+  }
+  if (journalBtn) {
+    journalBtn.classList.remove("hidden");
+    journalBtn.textContent = done ? "🎫 领取满贯纪念票根" : `🎫 查看票根图鉴 (${count}/${total})`;
+  }
+}
+
+async function openSummitTicketModal() {
+  if (!activePlanet) return;
+  sound.init();
+  sound.playSelectPlanet();
+  currentTicketContext = { type: "summit" };
+  await refreshTicketPreviewImage();
+  ticketModalOpen = true;
+  document.getElementById("modal-ticket")?.classList.remove("hidden");
+  trackEvent(`领取票根 · ${activePlanet.name}`, { planet: activePlanet.name });
+}
+
+function closeSummitTicketModal() {
+  ticketModalOpen = false;
+  document.getElementById("modal-ticket")?.classList.add("hidden");
+}
+
+function renderManiNotesUI() {
+  if (!activePlanet) return;
+  const listEl = document.getElementById("mani-notes-list");
+  if (!listEl) return;
+  const notes = loadManiNotes(activePlanet.id);
+  listEl.innerHTML = "";
+  notes.forEach((n) => {
+    const row = document.createElement("div");
+    row.className = "mani-note-item";
+    const spanText = document.createElement("span");
+    spanText.textContent = n.text;
+    const spanAuthor = document.createElement("span");
+    spanAuthor.className = "mani-note-author";
+    spanAuthor.textContent = `— ${n.author}`;
+    row.append(spanText, spanAuthor);
+    listEl.appendChild(row);
+  });
+}
+
+function openManiModal() {
+  if (!activePlanet) return;
+  maniModalOpen = true;
+  walkTargetDir = null;
+  clickRing.visible = false;
+  document.getElementById("mani-title").textContent = `${activePlanet.name} · 垭口留痕`;
+  renderManiNotesUI();
+  document.getElementById("modal-mani")?.classList.remove("hidden");
+  sound.playHover();
+  trackEvent(`查看玛尼堆 · ${activePlanet.name}`, { planet: activePlanet.name });
+}
+
+function closeManiModal() {
+  maniModalOpen = false;
+  document.getElementById("modal-mani")?.classList.add("hidden");
+}
+
+function syncCampfireAudio() {
+  const fire = Number(document.getElementById("mix-fire")?.value ?? 75) / 100;
+  const wind = Number(document.getElementById("mix-wind")?.value ?? 55) / 100;
+  const music = Number(document.getElementById("mix-music")?.value ?? 70) / 100;
+  sound.setCampfireMix({ active: isCampfireMode, fire, wind, music });
+}
+
+function toggleCampfireMode(force) {
+  if (mode !== "planet" || !activePlanet) return;
+  isCampfireMode = typeof force === "boolean" ? force : !isCampfireMode;
+  if (isCampfireMode && isTelescopeMode) toggleTelescopeMode(false);
+  sound.init();
+  hiker.setSitting(isCampfireMode);
+  document.getElementById("btn-campfire-mode")?.classList.toggle("active", isCampfireMode);
+  document.getElementById("campfire-mixer")?.classList.toggle("hidden", !isCampfireMode);
+  if (isCampfireMode) {
+    walkTargetDir = null;
+    clickRing.visible = false;
+    campfireRig.placeInFrontOfHiker(playerUp, playerForward, hiker.root.position);
+    syncCampfireAudio();
+    showWonderToast("🔥 已卸下背包围炉而坐 · 可调节下方篝火与风声混音");
+    trackEvent("开启围炉电台", { planet: activePlanet.name });
+  } else {
+    campfireRig.hide();
+    sound.setCampfireMix({ active: false });
+  }
+}
+
+function toggleTelescopeMode(force) {
+  if (mode !== "planet" || !activePlanet) return;
+  isTelescopeMode = typeof force === "boolean" ? force : !isTelescopeMode;
+  if (isTelescopeMode && isCampfireMode) toggleCampfireMode(false);
+  activeSkyWonders?.setTelescopeActive(isTelescopeMode);
+  document.getElementById("btn-telescope-mode")?.classList.toggle("active", isTelescopeMode);
+  if (isTelescopeMode) {
+    camPitch = 0.06; // 仰望远方天际星海
+    showWonderToast("🔭 星际望远镜已开启 · 点击夜空发光的邻近星球即可跨越宇宙直飞！");
+    trackEvent("开启星际望远镜", { planet: activePlanet.name });
+  } else {
+    camPitch = 0.56;
   }
 }
 
@@ -636,6 +1282,34 @@ window.addEventListener("keydown", (e) => {
     document.getElementById("btn-global-sound").textContent = on ? "♪ 星音" : "♪ 静音";
   }
 
+  // 全局跨界面模态框优先响应键盘关闭（星图与星球内统一生效）
+  if (atlasModalOpen) {
+    if (e.code === "Escape" || e.code === "KeyG") closeAtlasModal();
+    return;
+  }
+  if (bestiaryModalOpen) {
+    if (e.code === "Escape" || e.code === "KeyB") closeBestiaryModal();
+    return;
+  }
+  if (finaleModalOpen) {
+    if (e.code === "Escape") closeFinaleModal();
+    return;
+  }
+  if (ticketModalOpen) {
+    if (e.code === "Escape" || e.code === "Space") closeSummitTicketModal();
+    return;
+  }
+  if (journalOpen) {
+    if (e.code === "ArrowRight" || e.code === "ArrowLeft" || e.code === "Tab") {
+      e.preventDefault();
+      flipJournalPage();
+    } else if (e.code === "KeyE" || e.code === "Space" || e.code === "Enter" || e.code === "Escape") {
+      e.preventDefault();
+      closeJournal();
+    }
+    return;
+  }
+
   if (mode === "title" && (e.code === "Enter" || e.code === "Space")) {
     sound.init();
     sound.playSelectPlanet();
@@ -645,24 +1319,29 @@ window.addEventListener("keydown", (e) => {
     else if (e.code === "ArrowLeft" || e.code === "KeyA") selectMapPlanet(selectedPlanetIdx - 1);
     else if (e.code === "ArrowDown" || e.code === "KeyS") selectMapPlanet(selectedPlanetIdx + 3);
     else if (e.code === "ArrowUp" || e.code === "KeyW") selectMapPlanet(selectedPlanetIdx - 3);
+    else if (e.code === "KeyB") openBestiaryModal();
+    else if (e.code === "KeyG") openAtlasModal();
     else if (e.code === "Enter" || e.code === "Space") enterPlanet(selectedPlanetIdx);
     else if (e.code === "Escape") setupTitleScene();
   } else if (mode === "planet") {
-    if (journalOpen) {
-      if (e.code === "ArrowRight" || e.code === "ArrowLeft" || e.code === "Tab") {
-        e.preventDefault();
-        flipJournalPage();
-      } else if (e.code === "KeyE" || e.code === "Space" || e.code === "Enter" || e.code === "Escape") {
-        e.preventDefault();
-        closeJournal();
-      }
+    if (maniModalOpen) {
+      if (e.code === "Escape") closeManiModal();
       return;
     }
     if (e.code === "KeyE" && activeWaypointNear) {
       openWaypointJournal(activeWaypointNear);
+    } else if (e.code === "KeyE" && activeManiNear) {
+      openManiModal();
+    } else if (e.code === "KeyG") {
+      openAtlasModal();
+    } else if (e.code === "KeyB") {
+      openBestiaryModal();
+    } else if (e.code === "KeyC") {
+      toggleCampfireMode();
+    } else if (e.code === "KeyT") {
+      toggleTelescopeMode();
     } else if (e.code === "KeyL") {
-      isNight = !isNight;
-      applyLightingTheme(false);
+      cycleSkyPhase();
     } else if (e.code === "KeyP") {
       togglePhotoMode();
     } else if (e.code === "Escape") {
@@ -676,11 +1355,66 @@ window.addEventListener("keyup", (e) => {
   keys[e.code] = false;
 });
 
-// 鼠标拖拽旋转视角 & 点击星球表面寻路行走
+// 鼠标拖拽旋转视角 · 手机双指捏合缩放视角 · 左下角星芒触控微摇杆 · 点击星球表面寻路
 let isPointerDown = false;
 let pointerMoved = 0;
 let lastPX = 0;
 let lastPY = 0;
+const activePointers = new Map();
+let pinchLastDist = 0;
+
+let joyInputX = 0;
+let joyInputY = 0;
+let joyMagnitude = 0;
+let joyPointerId = null;
+
+const elJoystick = document.getElementById("mobile-joystick");
+const elJoyKnob = document.getElementById("joy-knob");
+if (elJoystick && elJoyKnob) {
+  const maxR = 28;
+  const updateJoyFromEvent = (e) => {
+    const rect = elJoystick.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let dx = e.clientX - cx;
+    let dy = e.clientY - cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist > maxR) {
+      dx = (dx / dist) * maxR;
+      dy = (dy / dist) * maxR;
+    }
+    elJoyKnob.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+    joyInputX = dx / maxR;
+    joyInputY = -dy / maxR;
+    joyMagnitude = Math.min(1, dist / maxR);
+  };
+  const resetJoy = () => {
+    joyPointerId = null;
+    joyInputX = 0;
+    joyInputY = 0;
+    joyMagnitude = 0;
+    elJoyKnob.style.transform = "translate(0px, 0px)";
+    elJoystick.classList.remove("active");
+  };
+  elJoystick.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    sound.init();
+    joyPointerId = e.pointerId;
+    elJoystick.setPointerCapture?.(e.pointerId);
+    elJoystick.classList.add("active");
+    updateJoyFromEvent(e);
+  });
+  elJoystick.addEventListener("pointermove", (e) => {
+    if (e.pointerId !== joyPointerId) return;
+    e.stopPropagation();
+    updateJoyFromEvent(e);
+  });
+  elJoystick.addEventListener("pointerup", (e) => {
+    if (e.pointerId === joyPointerId) resetJoy();
+  });
+  elJoystick.addEventListener("pointercancel", resetJoy);
+}
+
 const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 
@@ -691,7 +1425,14 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
     openStarMap();
     return;
   }
-  if (mode !== "planet" || journalOpen) return;
+  if (mode !== "planet" || isAnyModalOpen()) return;
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (activePointers.size === 2) {
+    const pts = Array.from(activePointers.values());
+    pinchLastDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    isPointerDown = false;
+    return;
+  }
   isPointerDown = true;
   pointerMoved = 0;
   lastPX = e.clientX;
@@ -699,6 +1440,20 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
 });
 
 window.addEventListener("pointermove", (e) => {
+  if (activePointers.has(e.pointerId)) {
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  }
+  if (activePointers.size === 2 && mode === "planet") {
+    const pts = Array.from(activePointers.values());
+    const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    if (pinchLastDist > 0) {
+      const delta = pinchLastDist - d;
+      camDist = THREE.MathUtils.clamp(camDist + delta * 0.038, 6.2, 24);
+    }
+    pinchLastDist = d;
+    pointerMoved = 999;
+    return;
+  }
   if (!isPointerDown || mode !== "planet") return;
   const dx = e.clientX - lastPX;
   const dy = e.clientY - lastPY;
@@ -710,13 +1465,43 @@ window.addEventListener("pointermove", (e) => {
   camPitch = THREE.MathUtils.clamp(camPitch + dy * 0.0055, 0.2, 1.25);
 });
 
+window.addEventListener("pointercancel", (e) => {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size < 2) pinchLastDist = 0;
+});
+
 window.addEventListener("pointerup", (e) => {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size < 2) pinchLastDist = 0;
   if (!isPointerDown) return;
   isPointerDown = false;
-  if (mode === "planet" && !journalOpen && pointerMoved < 6 && currentWorld?.terrainMesh) {
+  if (mode === "planet" && !isAnyModalOpen() && pointerMoved < 6 && currentWorld?.terrainMesh) {
     ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
     ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(ndc, camera);
+
+    // 1. 优先检测是否点击了远空中的邻近星球（0.88s 星轨穿梭直飞跃迁！）
+    if (activeSkyWonders) {
+      const skyHits = raycaster.intersectObjects(activeSkyWonders.getClickableMeshes(), false);
+      if (skyHits.length > 0) {
+        const { targetPlanetIdx, planetName } = skyHits[0].object.userData;
+        if (typeof targetPlanetIdx === "number") {
+          startStarWarpToPlanet(targetPlanetIdx, planetName);
+          return;
+        }
+      }
+    }
+
+    // 2. 检测是否点击了垭口星光玛尼堆
+    if (activeManiCairn) {
+      const maniHits = raycaster.intersectObject(activeManiCairn.group, true);
+      if (maniHits.length > 0) {
+        openManiModal();
+        return;
+      }
+    }
+
+    if (isCampfireMode) return;
     const hits = raycaster.intersectObject(currentWorld.terrainMesh, false);
     if (hits.length > 0) {
       walkTargetDir = hits[0].point.clone().normalize();
@@ -788,8 +1573,7 @@ document.getElementById("btn-back-map").addEventListener("click", () => {
 });
 
 document.getElementById("btn-toggle-night").addEventListener("click", () => {
-  isNight = !isNight;
-  applyLightingTheme(false);
+  cycleSkyPhase();
 });
 
 document.getElementById("btn-photo-mode").addEventListener("click", () => {
@@ -802,6 +1586,62 @@ document.getElementById("photo-exit-hint").addEventListener("click", () => {
 
 elPromptInteract.addEventListener("click", () => {
   if (activeWaypointNear) openWaypointJournal(activeWaypointNear);
+  else if (activeManiNear) openManiModal();
+});
+
+document.getElementById("btn-campfire-mode")?.addEventListener("click", () => toggleCampfireMode());
+document.getElementById("btn-exit-campfire")?.addEventListener("click", () => toggleCampfireMode(false));
+["mix-fire", "mix-wind", "mix-music"].forEach((id) => {
+  document.getElementById(id)?.addEventListener("input", syncCampfireAudio);
+});
+
+document.getElementById("btn-telescope-mode")?.addEventListener("click", () => toggleTelescopeMode());
+document.getElementById("btn-summit-ticket")?.addEventListener("click", openSummitTicketModal);
+document.getElementById("btn-journal-ticket")?.addEventListener("click", () => {
+  closeJournal();
+  openSummitTicketModal();
+});
+document.getElementById("btn-close-ticket")?.addEventListener("click", closeSummitTicketModal);
+document.getElementById("btn-apply-signature")?.addEventListener("click", () => {
+  sound.init();
+  sound.playHover();
+  refreshTicketPreviewImage();
+  showWonderToast("✦ 已将专属署名烫金印上纪念卡片！");
+});
+document.getElementById("ticket-traveler-input")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    refreshTicketPreviewImage();
+  }
+});
+document.getElementById("btn-snap-wallpaper")?.addEventListener("click", snapPhotoWallpaper);
+document.getElementById("btn-save-bookmark")?.addEventListener("click", saveCurrentPostcardBookmark);
+document.getElementById("scroll-total-progress")?.addEventListener("click", openAtlasModal);
+document.getElementById("btn-hud-atlas")?.addEventListener("click", openAtlasModal);
+document.getElementById("btn-close-atlas")?.addEventListener("click", closeAtlasModal);
+document.getElementById("btn-hud-bestiary")?.addEventListener("click", openBestiaryModal);
+document.getElementById("btn-map-bestiary")?.addEventListener("click", openBestiaryModal);
+document.getElementById("btn-close-bestiary")?.addEventListener("click", closeBestiaryModal);
+document.getElementById("btn-grand-finale")?.addEventListener("click", openFinaleModal);
+document.getElementById("btn-close-finale")?.addEventListener("click", closeFinaleModal);
+document.getElementById("btn-generate-passport")?.addEventListener("click", openGrandPassport);
+
+document.getElementById("btn-close-mani")?.addEventListener("click", closeManiModal);
+document.getElementById("mani-form")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!activePlanet) return;
+  const authorInput = document.getElementById("mani-author");
+  const textInput = document.getElementById("mani-text");
+  const text = textInput?.value?.trim();
+  if (!text) return;
+  addManiNote(activePlanet.id, authorInput?.value, text);
+  if (textInput) textInput.value = "";
+  activeManiCairn?.addVisualStone();
+  renderManiNotesUI();
+  sound.init();
+  sound.playDiscoverWaypoint(false);
+  showWonderToast("🪨 已将你的心愿星石垒上垭口玛尼堆！");
+  trackEvent("玛尼堆垒石留言", { planet: activePlanet.name });
 });
 
 document.getElementById("btn-close-journal").addEventListener("click", closeJournal);
@@ -856,11 +1696,15 @@ function updatePlanetExploration(dt, elapsed) {
 
   let inputX = 0;
   let inputY = 0;
-  if (!journalOpen) {
+  if (!isAnyModalOpen() && !isCampfireMode) {
     if (keys["KeyW"] || keys["ArrowUp"]) inputY += 1;
     if (keys["KeyS"] || keys["ArrowDown"]) inputY -= 1;
     if (keys["KeyD"] || keys["ArrowRight"]) inputX += 1;
     if (keys["KeyA"] || keys["ArrowLeft"]) inputX -= 1;
+    if (Math.abs(joyInputX) > 0.08 || Math.abs(joyInputY) > 0.08) {
+      inputX += joyInputX;
+      inputY += joyInputY;
+    }
   }
 
   const moveDir = new THREE.Vector3();
@@ -942,11 +1786,13 @@ function updatePlanetExploration(dt, elapsed) {
     }
   }
 
-  const isRunning = keys["ShiftLeft"] || keys["ShiftRight"];
-  const baseSpeed = moveDir.lengthSq() > 0 ? (isRunning ? 5.8 : 3.6) : 0;
+  const isRunning = keys["ShiftLeft"] || keys["ShiftRight"] || joyMagnitude > 0.85;
+  const joyScale = joyMagnitude > 0.08 && !keys["KeyW"] && !keys["ArrowUp"] ? THREE.MathUtils.lerp(0.55, 1.0, joyMagnitude) : 1.0;
+  const baseSpeed = moveDir.lengthSq() > 0 ? (isRunning ? 5.6 : 3.6) * joyScale : 0;
   const speed = baseSpeed * currentSpeedFactor;
 
   if (speed > 0) {
+    idleSeconds = 0;
     const angularStep = (speed / PLANET_RADIUS) * dt;
     const rotAxis = new THREE.Vector3().crossVectors(playerUp, moveDir).normalize();
     const dq = new THREE.Quaternion().setFromAxisAngle(rotAxis, angularStep);
@@ -963,7 +1809,8 @@ function updatePlanetExploration(dt, elapsed) {
   }
 
   orientHikerOnSphere(scene, playerUp, playerForward, activePlanet.id);
-  hiker.update(dt, elapsed, speed / 3.6);
+  hiker.update(dt, elapsed, isCampfireMode ? 0 : speed / 3.6);
+  if (speed === 0) idleSeconds += dt;
 
   // 动态映射海拔表
   const curR = hiker.root.position.length();
@@ -973,7 +1820,51 @@ function updatePlanetExploration(dt, elapsed) {
   );
   elHudAlt.textContent = `海拔 ${altMeters.toLocaleString()} m`;
 
-  // 检测附近可打卡的徒步路标
+  // 更新 V3.3 星球奇遇实体（小生灵驯养结伴跟随与围炉打盹 · 动态脚印 · 天气奇遇与流星雨 · 玛尼堆 · 营地篝火）
+  if (activeFootprints) {
+    activeFootprints.update(dt, playerUp, playerForward, speed > 0.15 && !isCampfireMode);
+  }
+  if (activeCreature) {
+    activeCreature.update(
+      dt,
+      elapsed,
+      {
+        hikerPos: hiker.root.position,
+        hikerUp: playerUp,
+        hikerForward: playerForward,
+        isCampfire: isCampfireMode,
+      },
+      (info, firstBond) => {
+        sound.init();
+        sound.playCreatureChirp(activePlanet.id);
+        if (firstBond && !(saveData.creatures || []).includes(activePlanet.id)) {
+          saveData.creatures.push(activePlanet.id);
+          persistSave();
+          refreshScrollMapBadges();
+          showWonderToast(`${info.emoji} 已与「${info.name}」结伴并记入生灵图集 · 它会一路陪你漫步！`, 5000);
+          trackEvent(`结伴小生灵 · ${info.name}`, { planet: activePlanet.name });
+        } else {
+          showWonderToast(`${info.emoji} 偶遇「${info.name}」 · ${info.greeting}`);
+        }
+      }
+    );
+  }
+  if (activeSkyWonders) {
+    activeSkyWonders.update(dt, elapsed, {
+      isNight,
+      idleSeconds,
+      normalizedAlt: hRatio,
+      hikerPos: hiker.root.position,
+      playerUp,
+      onWonder: (msg) => showWonderToast(msg, 4800),
+    });
+  }
+  if (activeManiCairn) {
+    activeManiCairn.update(elapsed);
+  }
+  campfireRig.update(elapsed);
+
+  // 检测附近可打卡的徒步路标或垭口星光玛尼堆（当大峰石碑与玛尼堆相邻时，按最近距离精准触发）
   let nearest = null;
   let minAng = 0.21;
   for (const wpObj of currentWorld.waypointObjs) {
@@ -983,9 +1874,28 @@ function updatePlanetExploration(dt, elapsed) {
       nearest = wpObj;
     }
   }
-  activeWaypointNear = nearest;
-  if (nearest && !journalOpen) {
-    elPromptText.textContent = `按 [E] 或点击 · 探访「${nearest.data.name}」`;
+  const maniAng = activeManiCairn ? playerUp.angleTo(activeManiCairn.unitDir) : 999;
+  if (maniAng < 0.19 && maniAng < minAng) {
+    activeWaypointNear = null;
+    activeManiNear = true;
+  } else {
+    activeWaypointNear = nearest;
+    activeManiNear = !nearest && maniAng < 0.19;
+  }
+
+  const isMobileShort = window.innerWidth <= 820;
+  if (activeWaypointNear && !isAnyModalOpen() && !isCampfireMode) {
+    const wpLabel = isMobileShort
+      ? activeWaypointNear.data.shortName || activeWaypointNear.data.name
+      : activeWaypointNear.data.name;
+    elPromptText.textContent = isMobileShort
+      ? `点击探访「${wpLabel}」`
+      : `按 [E] 或点击 · 探访「${wpLabel}」`;
+    elPromptInteract.classList.remove("hidden");
+  } else if (activeManiNear && !isAnyModalOpen() && !isCampfireMode) {
+    elPromptText.textContent = isMobileShort
+      ? "🪨 点击垭口玛尼堆留痕"
+      : "🪨 按 [E] 或点击 · 垭口星光玛尼堆留痕";
     elPromptInteract.classList.remove("hidden");
   } else {
     elPromptInteract.classList.add("hidden");
@@ -998,9 +1908,13 @@ function updatePlanetExploration(dt, elapsed) {
     if (guideArcTimer <= 0) clearGuideArc();
   }
 
-  // 第三人称球面轨道跟随相机（丝滑俯冲 + 全角度极点无死锁）
+  // 第三人称球面轨道跟随相机（丝滑俯冲 + 围炉电影感近景 + 观星广角 + 全角度极点无死锁）
   introZoomProgress = Math.min(1, introZoomProgress + dt * 0.85);
-  const effectiveDist = THREE.MathUtils.lerp(28, camDist, 1 - Math.pow(1 - introZoomProgress, 3));
+  if (isCampfireMode) {
+    camYaw += dt * 0.14;
+  }
+  const modeDist = isCampfireMode ? 6.4 : isTelescopeMode ? 13.5 : camDist;
+  const effectiveDist = THREE.MathUtils.lerp(28, modeDist, 1 - Math.pow(1 - introZoomProgress, 3));
 
   // 构建局部稳定正交切基以支持自由环绕偏航角 camYaw
   const refNorth = new THREE.Vector3(0, 1, 0);
@@ -1019,7 +1933,8 @@ function updatePlanetExploration(dt, elapsed) {
     .normalize();
 
   const desiredCamPos = hiker.root.position.clone().addScaledVector(camOffsetDir, effectiveDist);
-  const desiredTarget = hiker.root.position.clone().addScaledVector(playerUp, 0.9);
+  const lookLift = isTelescopeMode ? 3.8 : isCampfireMode ? 0.55 : 0.9;
+  const desiredTarget = hiker.root.position.clone().addScaledVector(playerUp, lookLift);
 
   const damp = 1 - Math.exp(-6.5 * dt);
   smoothCamPos.lerp(desiredCamPos, damp);
@@ -1056,8 +1971,24 @@ function animate() {
     updatePlanetExploration(dt, elapsed);
   }
 
+  if (warpActive) {
+    warpTimer = Math.max(0, warpTimer - dt);
+    const pulse = Math.sin((1 - warpTimer / 0.88) * Math.PI);
+    camera.fov = 45 + pulse * 24;
+    camera.updateProjectionMatrix();
+  }
+
   renderer.render(scene, camera);
 }
+
+// iOS 微信与移动端浏览器：首次手指触碰屏幕无感唤醒音频通道
+const unlockAudioOnce = () => {
+  if (sound.enabled) sound.init();
+  window.removeEventListener("touchstart", unlockAudioOnce, true);
+  window.removeEventListener("pointerdown", unlockAudioOnce, true);
+};
+window.addEventListener("touchstart", unlockAudioOnce, { capture: true, passive: true });
+window.addEventListener("pointerdown", unlockAudioOnce, { capture: true, passive: true });
 
 // Expose state for inspection/verification
 window.__game = {
@@ -1071,6 +2002,19 @@ window.__game = {
     const wpObj = currentWorld?.waypointObjs?.[idx];
     if (wpObj) walkTargetDir = wpObj.unitDir.clone();
   },
+  walkToCreature() {
+    if (activeCreature) walkTargetDir = activeCreature.getUnitDir();
+  },
+  walkToMani() {
+    if (activeManiCairn) walkTargetDir = activeManiCairn.unitDir.clone();
+  },
+  openManiModal,
+  openAtlasModal,
+  openSummitTicketModal,
+  cycleSkyPhase,
+  startStarWarpToPlanet,
+  toggleCampfireMode,
+  toggleTelescopeMode,
   enterPlanet,
   openStarMap,
   PLANETS,
@@ -1079,3 +2023,14 @@ window.__game = {
 initScrollMapUI();
 setupTitleScene();
 animate();
+
+// 首帧 WebGL 星空就绪后柔和揭开绘本帷幕
+requestAnimationFrame(() => {
+  setTimeout(() => {
+    const curtain = document.getElementById("boot-curtain");
+    if (curtain) {
+      curtain.classList.add("fade-out");
+      setTimeout(() => curtain.remove(), 750);
+    }
+  }, 180);
+});

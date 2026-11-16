@@ -5,13 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="color-scheme" content="dark" />
   <meta name="darkreader-lock" />
-  <meta name="theme-color" content="#0a1126" />
+  <meta name="theme-color" content="#080f24" />
+  <meta name="description" content="有些山川太过辽阔，记忆便把走过的每一段路，凝成了一颗只属于行者的星球。欢迎登陆我的宇宙吹风散步。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="行者的星球 · 山海皆星辰" />
+  <meta property="og:description" content="把走过的沙漠、雪山、垭口、海岸与旷野搓成了星球，欢迎登陆我的宇宙吹风散步🪐" />
+  <meta property="og:url" content="https://hikerplanets.netlify.app/" />
+  <meta property="og:image" content="https://hikerplanets.netlify.app/assets/og-cover.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="行者的星球 · 山海皆星辰" />
+  <meta name="twitter:description" content="把走过的山海搓成了星球，欢迎登陆我的宇宙吹风散步🪐" />
+  <meta name="twitter:image" content="https://hikerplanets.netlify.app/assets/og-cover.jpg" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
   <link
     rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230a1126'/%3E%3Cpath d='M32 8 L36.5 27.5 L56 32 L36.5 36.5 L32 56 L27.5 36.5 L8 32 L27.5 27.5 Z' fill='%23f0c768'/%3E%3Ccircle cx='32' cy='32' r='3.5' fill='%23fff8e7'/%3E%3C/svg%3E"
   />
-  <link rel="stylesheet" href="./styles.css?v=3.1.1" />
+  <style>
+    html, body { background: #080f24; }
+    #boot-curtain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: radial-gradient(circle at 50% 45%, #122044 0%, #080f24 75%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #f4d584;
+      font-family: "Songti SC", Georgia, serif;
+      letter-spacing: 0.18em;
+      font-size: 13px;
+      transition: opacity 0.65s ease, visibility 0.65s ease;
+      pointer-events: none;
+    }
+    #boot-curtain.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+    #boot-curtain .curtain-star {
+      font-size: 22px;
+      animation: bootPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes bootPulse {
+      0%, 100% { transform: scale(0.92); opacity: 0.65; }
+      50% { transform: scale(1.12); opacity: 1; }
+    }
+  </style>
+  <link rel="stylesheet" href="./styles.css?v=3.5.1" />
+  <script
+    defer
+    src="https://cloud.umami.is/script.js"
+    data-website-id="72e08928-ff09-4e3e-b930-2212813f9bc4"
+  ></script>
   <script type="importmap">
     {
       "imports": {
@@ -21,6 +68,18 @@
   </script>
 </head>
 <body>
+  <!-- 立体绘本星光开幕帷幕（首帧 WebGL 渲染就绪后 0.65s 柔和淡出） -->
+  <div id="boot-curtain" aria-hidden="true">
+    <span class="curtain-star">✦</span>
+    <span>正在点亮行者的星空…</span>
+  </div>
+
+  <!-- 跨星球 0.85s 星轨穿越流光帷幕 -->
+  <div id="warp-veil" class="hidden" aria-hidden="true">
+    <div class="warp-streaks"></div>
+    <div id="warp-label">✦ 正在跨越星海…</div>
+  </div>
+
   <!-- Hidden SVG filters for organic deckled/torn vintage parchment borders -->
   <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
     <defs>
@@ -121,6 +180,17 @@
         <p class="scroll-latin">LE VOYAGE DU RANDONNEUR</p>
         <h1 class="scroll-heading">行 者 的 旅 程</h1>
         <p class="scroll-subtitle">系紧鞋带以后，她去拜访远方的山海星球</p>
+        <div class="scroll-progress-bar">
+          <button id="scroll-total-progress" type="button" class="scroll-meta-pill clickable" title="点击翻阅 24 处星系印记明信片总图集">
+            ✦ 星系印记 0 / 24
+          </button>
+          <button id="btn-map-bestiary" type="button" class="scroll-meta-pill clickable">
+            🐾 生灵图集 0 / 6
+          </button>
+          <button id="btn-grand-finale" type="button" class="scroll-meta-pill finale-pill hidden">
+            🏆 拆阅终章手札
+          </button>
+        </div>
       </header>
 
       <!-- Planet Grid + Dashed Constellation Trail -->
@@ -209,11 +279,53 @@
       </div>
     </div>
 
+    <!-- 右侧星旅趣味互动悬浮坞：围炉电台 · 星际望远镜 · 登顶票根 -->
+    <div id="hud-side-dock" aria-label="星球奇遇工具">
+      <button id="btn-campfire-mode" type="button" class="dock-btn" title="营地围炉白噪音电台 [C]">
+        🔥 围炉
+      </button>
+      <button id="btn-telescope-mode" type="button" class="dock-btn" title="峰顶星际望远镜 · 点击星空邻近星球直飞 [T]">
+        🔭 观星
+      </button>
+      <button id="btn-summit-ticket" type="button" class="dock-btn" title="查看本星球明信片收集图鉴与纪念票根">
+        🎫 票根
+      </button>
+      <button id="btn-hud-bestiary" type="button" class="dock-btn" title="查看跨星球偶遇的山野小生灵图集 [B]">
+        🐾 生灵
+      </button>
+      <button id="btn-hud-atlas" type="button" class="dock-btn" title="翻阅全星系 24 处明信片总图集 [G]">
+        📖 印记
+      </button>
+    </div>
+
+    <!-- 奇遇与山野小生灵轻提示条 -->
+    <div id="wonder-toast" class="hidden" role="status" aria-live="polite"></div>
+
+    <!-- 营地围炉白噪音混音浮台 -->
+    <div id="campfire-mixer" class="hidden" role="region" aria-label="营地围炉白噪音电台">
+      <div class="campfire-header">
+        <span>🔥 营地围炉电台 · 卸下背包听会儿风</span>
+        <button id="btn-exit-campfire" type="button">起身前行 ✕</button>
+      </div>
+      <div class="campfire-sliders">
+        <label><span>🔥 篝火</span><input id="mix-fire" type="range" min="0" max="100" value="75" /></label>
+        <label><span>🌬️ 山风</span><input id="mix-wind" type="range" min="0" max="100" value="55" /></label>
+        <label><span>♪ 星音</span><input id="mix-music" type="range" min="0" max="100" value="70" /></label>
+      </div>
+    </div>
+
     <!-- Route Completion Toast Banner -->
     <div id="banner-complete" class="hidden" role="status" aria-live="polite">
       <span class="banner-star" aria-hidden="true">✦</span>
       <span id="banner-complete-text"></span>
       <span class="banner-star" aria-hidden="true">✦</span>
+    </div>
+
+    <!-- 手机触屏左下角半透明「星芒微摇杆」（单手轻推连续漫步） -->
+    <div id="mobile-joystick" aria-label="触屏漫步微摇杆">
+      <div class="joy-ring">
+        <div id="joy-knob" class="joy-knob">✦</div>
+      </div>
     </div>
 
     <!-- Bottom-Center Interaction Prompt & Subtle Controls Guide -->
@@ -227,57 +339,161 @@
       </div>
     </div>
 
-    <!-- Journal Postcard Modal -->
-    <div id="modal-journal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="journal-title">
-      <article class="journal-postcard">
-        <div class="postcard-paper-bg" aria-hidden="true"></div>
-        <div class="postcard-watercolor" aria-hidden="true"></div>
-        <div class="postcard-stamp-mark" aria-hidden="true">
-          <span>STAR</span>
-          <strong>✦</strong>
-          <span>TRAIL</span>
+    <!-- 垭口「星光玛尼堆」旅人留言弹窗 -->
+    <div id="modal-mani" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="mani-title">
+      <article class="mani-card">
+        <div class="mani-header">
+          <div class="mani-eyebrow">✦ STARLIGHT CAIRN · 垭口星光玛尼堆</div>
+          <h3 id="mani-title">四姑娘山 · 垭口留痕</h3>
+          <p class="mani-sub">路过垭口的人，都会捡一颗石头压住风里的心愿</p>
         </div>
-
-        <div class="postcard-content">
-          <div id="journal-chapter"></div>
-          <h3 id="journal-title"></h3>
-          <div id="journal-elevation"></div>
-
-          <!-- 拍立得照片明信片相框 -->
-          <div class="polaroid-frame" id="journal-polaroid" title="点击放大查看照片">
-            <div class="polaroid-media">
-              <img id="journal-photo" alt="打卡点实拍明信片" class="hidden" />
-              <canvas id="journal-art-canvas" class="hidden"></canvas>
-            </div>
-            <div id="journal-caption"></div>
-          </div>
-
-          <!-- 双页双图可切换区：第1页绘本诗笺 ↔ 第2页旅途故事 -->
-          <div id="journal-text-card" class="journal-text-card" role="button" tabindex="0" title="查看旅途故事">
-            <div class="journal-page-header">
-              <span id="journal-page-badge">✦ 绘本诗笺 · 1/2</span>
-              <span id="journal-flip-hint">查看旅途故事 ↻</span>
-            </div>
-            <p id="journal-poem"></p>
-          </div>
-          <div id="journal-progress"></div>
-
-          <button id="btn-close-journal" type="button">
-            ✦ 收好明信片 · 继续前行 <kbd>E / Space</kbd>
-          </button>
-        </div>
+        <div id="mani-notes-list" class="mani-notes-list"></div>
+        <form id="mani-form" class="mani-form">
+          <input id="mani-author" type="text" maxlength="10" placeholder="署名（如：过路搭子）" />
+          <input id="mani-text" type="text" maxlength="28" placeholder="留一句山顶暗语（28字内）…" required />
+          <button type="submit">🪨 垒一颗星石</button>
+        </form>
+        <button id="btn-close-mani" type="button" class="mani-close-btn">收起 · 继续赶路</button>
       </article>
     </div>
 
-    <!-- 照片原图放大灯箱 -->
-    <div id="photo-lightbox" class="modal-backdrop hidden" role="dialog" aria-label="明信片大图预览">
-      <img id="lightbox-img" alt="明信片大图" />
+    <!-- Photo Mode Floating Controls: Snap Wallpaper + Exit -->
+    <div id="photo-mode-bar" class="hidden">
+      <button id="btn-snap-wallpaper" type="button">📸 咔嚓 · 洗印锁屏壁纸</button>
+      <button id="photo-exit-hint" type="button">退出留影 [P]</button>
     </div>
-
-    <!-- Photo Mode Exit Floating Hint -->
-    <button id="photo-exit-hint" type="button" class="hidden">退出留影模式 [P]</button>
   </section>
 
-  <script type="module" src="./js/main.js?v=3.1.1"></script>
+  <!-- 全局跨界面弹窗：明信片阅读窗 · 原图灯箱 · 24处星系印记总图集 · 票根/壁纸/书签预览 · 小生灵图集 · 终章手札 -->
+  <div id="modal-journal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="journal-title">
+    <article class="journal-postcard">
+      <div class="postcard-paper-bg" aria-hidden="true"></div>
+      <div class="postcard-watercolor" aria-hidden="true"></div>
+      <div class="postcard-stamp-mark" aria-hidden="true">
+        <span>STAR</span>
+        <strong>✦</strong>
+        <span>TRAIL</span>
+      </div>
+
+      <div class="postcard-content">
+        <div id="journal-chapter"></div>
+        <h3 id="journal-title"></h3>
+        <div id="journal-elevation"></div>
+
+        <!-- 拍立得照片明信片相框 -->
+        <div class="polaroid-frame" id="journal-polaroid" title="点击放大查看照片">
+          <div class="polaroid-media">
+            <img id="journal-photo" alt="打卡点实拍明信片" class="hidden" />
+            <canvas id="journal-art-canvas" class="hidden"></canvas>
+          </div>
+          <div id="journal-caption"></div>
+        </div>
+
+        <!-- 双页双图可切换区：第1页绘本诗笺 ↔ 第2页旅途故事 -->
+        <div id="journal-text-card" class="journal-text-card" role="button" tabindex="0" title="查看旅途故事">
+          <div class="journal-page-header">
+            <span id="journal-page-badge">✦ 绘本诗笺 · 1/2</span>
+            <span id="journal-flip-hint">查看旅途故事 ↻</span>
+          </div>
+          <p id="journal-poem"></p>
+        </div>
+        <div id="journal-progress"></div>
+
+        <div class="journal-actions-row">
+          <button id="btn-close-journal" type="button">
+            ✦ 收好明信片 <kbd>Space</kbd>
+          </button>
+          <button id="btn-save-bookmark" type="button">
+            💌 珍藏此页书签
+          </button>
+          <button id="btn-journal-ticket" type="button">
+            🎫 查看收集票根
+          </button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- 照片原图放大灯箱 -->
+  <div id="photo-lightbox" class="modal-backdrop hidden" role="dialog" aria-label="明信片大图预览">
+    <img id="lightbox-img" alt="明信片大图" />
+  </div>
+
+  <!-- 全星系 24 处明信片印记总图集弹窗 -->
+  <div id="modal-atlas" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="atlas-title">
+    <article class="bestiary-book atlas-book">
+      <div class="mani-eyebrow">✦ STARLIGHT POSTCARD ATLAS · 全星系印记图集</div>
+      <h3 id="atlas-title">山海二十四帧印记</h3>
+      <p id="atlas-subtitle" class="mani-sub">已点亮的印记可随时点击重温正反双页故事，未解锁印记可一键飞往寻访</p>
+      <div id="atlas-tabs" class="atlas-tabs" role="tablist"></div>
+      <div id="atlas-grid" class="atlas-grid"></div>
+      <button id="btn-close-atlas" type="button" class="mani-close-btn bestiary-close">合上印记册 ✕</button>
+    </article>
+  </div>
+
+  <!-- 全局跨界面弹窗（星图与星球内均可打开）：票根/壁纸预览 · 山野小生灵图集 · 24/24 全星系终章手札 -->
+  <div id="modal-ticket" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="纪念票根与壁纸预览">
+    <div class="ticket-modal-box">
+      <img id="ticket-preview-img" alt="登顶纪念票根" />
+      <div class="ticket-sign-row">
+        <input
+          id="ticket-traveler-input"
+          type="text"
+          maxlength="12"
+          placeholder="印上你的专属署名（如：老韩 / 过路旅人）"
+        />
+        <button id="btn-apply-signature" type="button">✦ 烫金印名</button>
+      </div>
+      <div class="ticket-modal-hint">📱 手机长按上方图片即可保存 · 分享你的山海印记</div>
+      <div class="ticket-modal-btns">
+        <a id="btn-download-ticket" download="行者的星球-纪念票根.png">⬇ 下载高清原图</a>
+        <button id="btn-close-ticket" type="button">收好图片 ✕</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全局跨界面弹窗（星图与星球内均可打开）：山野小生灵图集 & 24/24 全星系终章手札 -->
+  <div id="modal-bestiary" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="bestiary-title">
+    <article class="bestiary-book">
+      <div class="mani-eyebrow">✦ COMPANIONS AMONG THE STARS · 山野小生灵图集</div>
+      <h3 id="bestiary-title">山海偶遇的旅伴</h3>
+      <p id="bestiary-subtitle" class="mani-sub">走近星球上的小动物即可结伴同行，围炉时它会蜷在你身旁打盹</p>
+      <div id="bestiary-grid" class="bestiary-grid"></div>
+      <button id="btn-close-bestiary" type="button" class="mani-close-btn bestiary-close">合上图集 ✕</button>
+    </article>
+  </div>
+
+  <div id="modal-finale" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="finale-title">
+    <article class="finale-letter">
+      <div class="finale-eyebrow">✦ ALL 24 STARLIGHT TRAILS COMPLETED ✦</div>
+      <h3 id="finale-title">致走完所有山海的同路人</h3>
+      <div class="finale-body">
+        <p>真没想到，你竟然耐心地走完了这六颗星球上的全部二十四个角落。</p>
+        <p>从腾格里的夜空烟花、亚丁风雪夜死守的帐篷、扎尕那十一个垭口的白雪，到等了四年的大峰 5025 米石碑、咸田湾的海浪日出，还有伊犁升起的那轮黄月亮——这些原本只属于山野失联时刻的记忆，因为你的驻足，在星空里重新亮起了一遍。</p>
+        <p>谢谢你来我的宇宙吹风散步。山海未完，愿我们在下一座没有天花板的旷野重逢✨</p>
+      </div>
+      <div class="finale-actions">
+        <button id="btn-generate-passport" type="button">🏆 签发全星系大满贯护照</button>
+        <button id="btn-close-finale" type="button">珍藏收起 ✕</button>
+      </div>
+    </article>
+  </div>
+
+  <script type="module" src="./js/main.js?v=3.5.1"></script>
+  <script>
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+    // 自动清理托管平台追加的品牌悬浮组件 (#nl-badge-frame)，保持绘本界面纯净
+    const cleanBadge = () => {
+      document
+        .querySelectorAll('#nl-badge-frame, iframe[id*="nl-badge"], iframe[src*="netlify"], netlify-hud, #netlify-badge, .netlify-badge')
+        .forEach((el) => el.remove());
+    };
+    cleanBadge();
+    new MutationObserver(cleanBadge).observe(document.documentElement, { childList: true, subtree: true });
+  </script>
 </body>
 </html>

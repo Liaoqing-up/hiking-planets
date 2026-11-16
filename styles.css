@@ -927,22 +927,686 @@ kbd {
 body.photo-mode .hud-top-left,
 body.photo-mode .hud-top-right,
 body.photo-mode .hud-bottom-center,
+body.photo-mode #hud-side-dock,
+body.photo-mode #mobile-joystick,
+body.photo-mode #wonder-toast,
+body.photo-mode #campfire-mixer,
+body.photo-mode #banner-complete,
 body.photo-mode #btn-global-sound {
   opacity: 0;
   pointer-events: none;
 }
 
-#photo-exit-hint {
+body:has(#campfire-mixer:not(.hidden)) #mobile-joystick {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 手机触屏左下角半透明「星芒微摇杆」（桌面鼠标默认隐藏，触屏/小屏显示） */
+#mobile-joystick {
+  display: none;
+  position: fixed;
+  left: 16px;
+  bottom: 24px;
+  z-index: 23;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.joy-ring {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 26, 56, 0.48), rgba(10, 17, 38, 0.22));
+  border: 1px solid rgba(240, 199, 104, 0.34);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+#mobile-joystick.active .joy-ring {
+  border-color: rgba(244, 207, 118, 0.78);
+  background: radial-gradient(circle, rgba(24, 38, 76, 0.62), rgba(12, 20, 44, 0.35));
+}
+.joy-knob {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(240, 199, 104, 0.32);
+  border: 1px solid rgba(255, 236, 178, 0.72);
+  color: #fff4d2;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+@media (pointer: coarse), (max-width: 820px) {
+  #mobile-joystick {
+    display: block;
+  }
+}
+
+/* ==================== V3.2 奇遇与星旅新功能样式 ==================== */
+#hud-side-dock {
+  position: fixed;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  z-index: 25;
+  pointer-events: auto;
+}
+
+.dock-btn {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(11, 19, 43, 0.72);
+  border: 1px solid rgba(240, 199, 104, 0.35);
+  color: #f6e7c4;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.dock-btn:hover,
+.dock-btn.active {
+  background: rgba(240, 199, 104, 0.24);
+  border-color: var(--gold-bright);
+  color: #fff6da;
+  transform: translateX(2px);
+}
+
+#wonder-toast {
+  position: fixed;
+  top: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: rgba(12, 22, 48, 0.84);
+  border: 1px solid rgba(244, 207, 118, 0.55);
+  color: #fde9b2;
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  z-index: 26;
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 90vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#campfire-mixer {
+  position: fixed;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(440px, 92vw);
+  padding: 13px 18px 14px;
+  border-radius: 16px;
+  background: rgba(14, 22, 46, 0.86);
+  border: 1px solid rgba(245, 178, 92, 0.48);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  color: #f8ebd0;
+  z-index: 28;
+  pointer-events: auto;
+}
+.campfire-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #fbd38d;
+  margin-bottom: 10px;
+}
+#btn-exit-campfire {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fde9b2;
+  font-size: 11.5px;
+}
+.campfire-sliders {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.campfire-sliders label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #e2d4b7;
+}
+.campfire-sliders input[type="range"] {
+  width: 100%;
+  accent-color: #f4b860;
+}
+
+.journal-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+#btn-journal-ticket,
+#btn-save-bookmark {
+  padding: 8px 15px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+#btn-journal-ticket {
+  background: rgba(188, 48, 38, 0.14);
+  border: 1px solid rgba(188, 48, 38, 0.52);
+  color: #8f231c;
+}
+#btn-save-bookmark {
+  background: rgba(186, 134, 48, 0.18);
+  border: 1px solid rgba(168, 118, 38, 0.52);
+  color: #6b4714;
+}
+
+body:has(#campfire-mixer:not(.hidden)) #hud-controls-hint {
+  opacity: 0;
+  pointer-events: none;
+}
+.mani-card {
+  width: min(440px, 92vw);
+  max-height: 84vh;
+  overflow-y: auto;
+  padding: 24px 22px 20px;
+  border-radius: 18px;
+  background: linear-gradient(165deg, #f7eed8, #ead9b7);
+  color: #2c2013;
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(212, 168, 86, 0.6);
+  pointer-events: auto;
+  text-align: center;
+}
+.mani-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: #8c652b;
+  margin-bottom: 4px;
+}
+#mani-title {
+  font-size: 21px;
+  color: #2b1d0e;
+  margin-bottom: 4px;
+}
+.mani-sub {
+  font-size: 12.5px;
+  color: #6f5535;
+  margin-bottom: 14px;
+}
+.mani-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 210px;
+  overflow-y: auto;
+  margin-bottom: 14px;
+  text-align: left;
+}
+.mani-note-item {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 252, 245, 0.74);
+  border: 1px solid rgba(176, 134, 68, 0.28);
+  font-size: 13px;
+  color: #352718;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mani-note-author {
+  color: #8c6327;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.mani-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.mani-form input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(154, 114, 52, 0.45);
+  background: rgba(255, 253, 248, 0.9);
+  font-size: 13.5px;
+  color: #2b1e10;
+}
+.mani-form button {
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f4cf76, #d99b3c);
+  color: #1c160c;
+  font-weight: 600;
+  font-size: 14px;
+}
+.mani-close-btn {
+  font-size: 12.5px;
+  color: #745938;
+  padding: 4px 12px;
+}
+
+/* 登顶纪念票根弹窗 */
+.ticket-modal-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 92vw;
+  pointer-events: auto;
+}
+#ticket-preview-img {
+  max-height: 66vh;
+  max-width: 88vw;
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.65);
+}
+.ticket-sign-row {
+  display: flex;
+  gap: 8px;
+  width: min(360px, 88vw);
+}
+#ticket-traveler-input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 199, 104, 0.45);
+  background: rgba(12, 20, 44, 0.82);
+  color: #fff5d8;
+  font-size: 12.5px;
+  outline: none;
+}
+#ticket-traveler-input::placeholder {
+  color: rgba(235, 217, 178, 0.58);
+}
+#btn-apply-signature {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(240, 199, 104, 0.22);
+  border: 1px solid rgba(240, 199, 104, 0.58);
+  color: #fde6a2;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.bestiary-guide-btn {
+  margin-top: 3px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(214, 158, 62, 0.22);
+  border: 1px solid rgba(176, 124, 42, 0.45);
+  color: #6b4816;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bestiary-guide-btn:hover {
+  background: rgba(214, 158, 62, 0.38);
+}
+.ticket-modal-hint {
+  font-size: 12.5px;
+  color: #f6dfa4;
+  text-align: center;
+}
+.ticket-modal-btns {
+  display: flex;
+  gap: 12px;
+}
+#btn-download-ticket,
+#btn-close-ticket {
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+#btn-download-ticket {
+  background: linear-gradient(135deg, #f4cf76, #dc9f42);
+  color: #131b33;
+  font-weight: 600;
+}
+#btn-close-ticket {
+  background: rgba(255, 255, 255, 0.14);
+  color: #f8ebd0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+#photo-mode-bar {
   position: fixed;
   bottom: 22px;
-  right: 24px;
+  right: 22px;
+  display: flex;
+  gap: 10px;
+  z-index: 30;
   pointer-events: auto;
-  padding: 7px 16px;
+}
+#btn-snap-wallpaper {
+  padding: 8px 16px;
   border-radius: 999px;
-  background: rgba(12, 20, 44, 0.72);
+  background: linear-gradient(135deg, #f4cf76, #dc9f42);
+  color: #121a30;
+  font-weight: 600;
+  font-size: 12.5px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+#photo-exit-hint {
+  padding: 8px 15px;
+  border-radius: 999px;
+  background: rgba(12, 20, 44, 0.78);
   border: 1px solid rgba(240, 199, 104, 0.45);
   color: var(--gold-bright);
   font-size: 12.5px;
+}
+
+/* 星图顶部总印记与生灵图集徽章栏 */
+.scroll-progress-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.scroll-meta-pill {
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: rgba(168, 124, 54, 0.14);
+  border: 1px solid rgba(152, 108, 42, 0.36);
+  color: #5b401b;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+.scroll-meta-pill.clickable {
+  cursor: pointer;
+  font-weight: 600;
+  background: rgba(212, 160, 68, 0.22);
+}
+.scroll-meta-pill.clickable:hover {
+  background: rgba(212, 160, 68, 0.36);
+}
+.scroll-meta-pill.finale-pill {
+  cursor: pointer;
+  background: linear-gradient(135deg, #2b1d0e, #4a3216);
+  border-color: #d9a441;
+  color: #fde6a2;
+  font-weight: 600;
+}
+
+/* 山野小生灵 6 宫格水彩图集弹窗 */
+.bestiary-book {
+  width: min(680px, 94vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 24px 22px 20px;
+  border-radius: 20px;
+  background: linear-gradient(165deg, #f8efe0, #ead8b5);
+  color: #2c1f11;
+  border: 1px solid rgba(206, 160, 78, 0.65);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  pointer-events: auto;
+}
+#bestiary-title {
+  font-size: 22px;
+  color: #291b0d;
+  margin-bottom: 4px;
+}
+.bestiary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 12px 0 16px;
+}
+.bestiary-card {
+  padding: 12px 10px;
+  border-radius: 14px;
+  background: rgba(255, 252, 245, 0.78);
+  border: 1px solid rgba(176, 134, 68, 0.32);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.bestiary-card.locked {
+  background: rgba(34, 42, 66, 0.08);
+  border-style: dashed;
+}
+.bestiary-card canvas {
+  width: 86px;
+  height: 86px;
+}
+.bestiary-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #2d1f10;
+}
+.bestiary-planet {
+  font-size: 11.5px;
+  color: #84602c;
+}
+.bestiary-note {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #4f3b22;
+}
+.bestiary-close {
+  padding: 8px 24px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f4cf76, #d99b3c);
+  color: #1c150b;
+  font-weight: 600;
+}
+
+/* 跨星球 0.85s 星轨穿梭流光帷幕 */
+#warp-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 232, 162, 0.35), rgba(8, 15, 36, 0.92) 72%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+#warp-veil.active {
+  opacity: 1;
+}
+.warp-streaks {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 226, 138, 0.65);
+  box-shadow: 0 0 60px rgba(244, 202, 100, 0.45);
+  animation: warpSpin 1.2s linear infinite;
+}
+#warp-label {
+  margin-top: 16px;
+  color: #fff2c6;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+}
+@keyframes warpSpin {
+  from { transform: scale(0.75) rotate(0deg); }
+  to { transform: scale(1.25) rotate(180deg); }
+}
+
+/* 全星系 24 处明信片印记总图集弹窗 */
+.atlas-book {
+  width: min(780px, 95vw);
+}
+.atlas-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.atlas-tab {
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(168, 124, 54, 0.14);
+  border: 1px solid rgba(154, 110, 42, 0.34);
+  color: #5f431d;
+  font-size: 12px;
+  cursor: pointer;
+}
+.atlas-tab.active {
+  background: linear-gradient(135deg, #2d1f10, #4d351a);
+  color: #fde8ab;
+  border-color: #c89438;
+  font-weight: 600;
+}
+.atlas-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 11px;
+  margin: 8px 0 16px;
+}
+.atlas-card {
+  padding: 8px;
+  border-radius: 12px;
+  background: #fffdf8;
+  border: 1px solid rgba(176, 134, 68, 0.32);
+  box-shadow: 0 4px 12px rgba(45, 30, 12, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+.atlas-card.unlocked {
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.atlas-card.unlocked:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(45, 30, 12, 0.16);
+}
+.atlas-card.locked {
+  background: rgba(24, 34, 62, 0.09);
+  border-style: dashed;
+}
+.atlas-thumb-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #172340;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f3d792;
+  font-size: 20px;
+}
+.atlas-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.atlas-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2d1f10;
+  line-height: 1.3;
+}
+.atlas-card-meta {
+  font-size: 11px;
+  color: #7d5d32;
+}
+
+/* 24/24 全星系大满贯隐藏终章手札 */
+.finale-letter {
+  width: min(520px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 28px 26px 24px;
+  border-radius: 20px;
+  background: linear-gradient(165deg, #0d1630, #162449);
+  border: 1.5px solid rgba(240, 199, 104, 0.65);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.72);
+  color: #f7ead0;
+  text-align: center;
+  pointer-events: auto;
+}
+.finale-eyebrow {
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  color: #f0c768;
+  margin-bottom: 6px;
+}
+#finale-title {
+  font-size: 24px;
+  color: #fff6dc;
+  margin-bottom: 14px;
+}
+.finale-body {
+  text-align: left;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: #e9dac0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.finale-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+#btn-generate-passport {
+  padding: 9px 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f4cf76, #dc9f42);
+  color: #11192e;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+#btn-close-finale {
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f5e6c8;
+  font-size: 13px;
+}
+
+/* 屏蔽第三方免费托管平台自动注入的右下角悬浮水印徽章 */
+#nl-badge-frame,
+iframe[id*="nl-badge"],
+iframe[src*="netlify"],
+netlify-hud,
+#netlify-badge,
+.netlify-badge,
+a[href*="netlify.com?utm_source"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Mobile & Touch Screen Complete Anti-Overlap Layout */
@@ -1114,16 +1778,31 @@ body.photo-mode #btn-global-sound {
   #hud-bgm {
     font-size: 11px;
   }
+  #mobile-joystick {
+    left: 12px;
+    bottom: 18px;
+  }
+  .joy-ring {
+    width: 68px;
+    height: 68px;
+  }
+  .joy-knob {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
   #hud-terrain-tag {
     position: fixed;
     top: auto;
-    bottom: 74px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 5px 14px;
-    font-size: 11.5px;
+    bottom: 66px;
+    left: 92px;
+    right: 12px;
+    transform: none;
+    padding: 5px 12px;
+    font-size: 11px;
     z-index: 15;
-    max-width: 90vw;
+    max-width: none;
+    text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -1171,13 +1850,18 @@ body.photo-mode #btn-global-sound {
     flex-shrink: 0;
   }
   .hud-bottom-center {
-    bottom: 20px;
-    width: 92vw;
+    bottom: 18px;
+    left: 92px;
+    right: 12px;
+    width: auto;
+    transform: none;
   }
   #prompt-interact {
-    font-size: 13.5px;
-    padding: 9px 18px;
-    max-width: 90vw;
+    font-size: 12.5px;
+    padding: 8px 14px;
+    width: 100%;
+    max-width: none;
+    justify-content: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1214,5 +1898,68 @@ body.photo-mode #btn-global-sound {
   .journal-page-header {
     font-size: 10.5px;
   }
+  #hud-side-dock {
+    left: 10px;
+    right: auto;
+    top: 142px;
+    transform: none;
+    gap: 7px;
+  }
+  .dock-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  #wonder-toast {
+    top: 106px;
+    font-size: 12px;
+    padding: 6px 14px;
+  }
+  .bestiary-grid,
+  .atlas-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 9px;
+  }
+  #photo-mode-bar {
+    right: 12px;
+    left: 12px;
+    justify-content: center;
+  }
 }
+
+/* 5. 手机意外横屏紧凑保护（防止高度不足 480px 时羊皮纸与弹窗纵向挤压） */
+@media (max-height: 500px) and (orientation: landscape) {
+  .parchment-scroll {
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 14px 20px;
+  }
+  .scroll-constellation-stage {
+    padding: 4px 0;
+  }
+  .planet-visual {
+    width: 64px;
+    height: 64px;
+  }
+  .journal-postcard,
+  .bestiary-book,
+  .mani-card,
+  .finale-letter {
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 14px 18px;
+  }
+  #ticket-preview-img {
+    max-height: 56vh;
+  }
+  #hud-side-dock {
+    top: 52%;
+    transform: translateY(-50%);
+    gap: 5px;
+  }
+  .dock-btn {
+    padding: 4px 9px;
+    font-size: 11px;
+  }
+}
+
 
