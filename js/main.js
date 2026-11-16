@@ -12,7 +12,7 @@ import {
 import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js";
 import { createSkyWonders } from "./skyWonders3D.js";
 import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js";
-import { generateSummitTicketDataUrl } from "./summitTicket.js";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js";
 import { buildCampfireRig } from "./campfireRadio.js";
 import { createFootprintTrail } from "./footprints3D.js";
 import {
@@ -442,7 +442,8 @@ function refreshScrollMapBadges() {
     if (!node) return;
     node.classList.toggle("completed", done);
     const stamp = node.querySelector(".planet-stamp");
-    if (stamp) stamp.textContent = done ? "✦ 走完" : `${disc.size}/${p.waypoints.length}`;
+    const sealWord = PLANET_SEAL_TITLE[p.id] || "穿越成功";
+    if (stamp) stamp.textContent = done ? `✦ ${sealWord}` : `${disc.size}/${p.waypoints.length}`;
   });
 
   // 更新全星系总印记进度、生灵图集计数与 24/24 终章手札解锁状态
@@ -1146,9 +1147,10 @@ function openWaypointJournal(wpObj) {
     const doneWp = PLANETS.reduce((s, p) => s + getDiscoveredSet(p.id).size, 0);
     if (doneWp >= totalWp) {
       document.getElementById("banner-complete-text").textContent =
-        "🏆 24/24 全星系山海印记大满贯达成！已为你解锁《终章手札》";
+        "🏆 24/24 全境穿越达成！已为你解锁《终章手札》";
     } else {
-      document.getElementById("banner-complete-text").textContent = `星辰共鸣 · 已集齐「${activePlanet.name}」全部印记 · 可领取纪念票根`;
+      const sealWord = PLANET_SEAL_TITLE[activePlanet.id] || "穿越成功";
+      document.getElementById("banner-complete-text").textContent = `✦ ${sealWord} · 已集齐「${activePlanet.name}」全部印记 · 可领取纪念票根`;
     }
     banner.classList.remove("hidden");
     setTimeout(() => banner.classList.add("hidden"), 6500);
@@ -1651,12 +1653,44 @@ if (elJournalTextCard) {
   elJournalTextCard.addEventListener("click", flipJournalPage);
 }
 
-// 点击拍立得明信片放大查看原图
+// 明信片弹窗支持手机手指左右轻滑翻面（第1页绘本诗笺 ↔ 第2页旅途故事）
+const elJournalPostcard = document.querySelector(".journal-postcard");
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeJustHandled = false;
+if (elJournalPostcard) {
+  elJournalPostcard.addEventListener(
+    "touchstart",
+    (e) => {
+      if (!e.touches || e.touches.length !== 1) return;
+      swipeStartX = e.touches[0].clientX;
+      swipeStartY = e.touches[0].clientY;
+    },
+    { passive: true }
+  );
+  elJournalPostcard.addEventListener(
+    "touchend",
+    (e) => {
+      if (!journalOpen || !e.changedTouches || e.changedTouches.length !== 1) return;
+      const dx = e.changedTouches[0].clientX - swipeStartX;
+      const dy = e.changedTouches[0].clientY - swipeStartY;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.35) {
+        swipeJustHandled = true;
+        setTimeout(() => { swipeJustHandled = false; }, 260);
+        flipJournalPage();
+      }
+    },
+    { passive: true }
+  );
+}
+
+// 点击拍立得明信片放大查看原图（若刚触发左右滑动翻页则不误弹灯箱）
 const elPolaroid = document.getElementById("journal-polaroid");
 const elLightbox = document.getElementById("photo-lightbox");
 const elLightboxImg = document.getElementById("lightbox-img");
 if (elPolaroid && elLightbox && elLightboxImg) {
   elPolaroid.addEventListener("click", () => {
+    if (swipeJustHandled) return;
     const photoEl = document.getElementById("journal-photo");
     const artCanvas = document.getElementById("journal-art-canvas");
     if (!photoEl.classList.contains("hidden") && photoEl.src) {

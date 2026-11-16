@@ -36,7 +36,7 @@ if (typeof CanvasRenderingContext2D !== "undefined" && !CanvasRenderingContext2D
   };
 }
 
-const PLANET_SEAL_TITLE = {
+export const PLANET_SEAL_TITLE = {
   tengger: "穿沙成功",
   yading: "转山圆满",
   zhagana: "穿越成功",

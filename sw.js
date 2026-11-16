@@ -1,4 +1,4 @@
-const CACHE_NAME = "hikerplanets-v3.5.3";
+const CACHE_NAME = "hikerplanets-v3.5.4";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
