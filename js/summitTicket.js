@@ -36,6 +36,15 @@ if (typeof CanvasRenderingContext2D !== "undefined" && !CanvasRenderingContext2D
   };
 }
 
+const PLANET_SEAL_TITLE = {
+  tengger: "穿沙成功",
+  yading: "转山圆满",
+  zhagana: "穿越成功",
+  siguniang: "登顶穿越",
+  maclehose: "逐浪山海",
+  yili: "旷野寻遍",
+};
+
 export async function generateSummitTicketDataUrl(
   planet,
   discoveredSet = new Set(),
@@ -266,10 +275,11 @@ export async function generateSummitTicketDataUrl(
   ctx.font = "600 15.5px Georgia, 'PingFang SC', serif";
   ctx.fillText("行者的星球 · hikerplanets.netlify.app", tx + 44, notchY + 234);
 
-  // 6c. 右侧博物馆级双环雪山星轨圆形邮戳 + 正立高反差扫码二维码
+  // 6c. 右侧博物馆级双环雪山星轨圆形邮戳（一星一专属四字印文）+ 正立高反差扫码二维码
+  const clearedSealWord = PLANET_SEAL_TITLE[planet.id] || "穿越成功";
   drawPostmarkSeal(ctx, tx + tw - 208, notchY + 168, {
     radius: 54,
-    bannerText: allCleared ? "全印记走完" : `已点亮 ${doneCount}/${totalCount}`,
+    bannerText: allCleared ? clearedSealWord : `已点亮 ${doneCount}/${totalCount}`,
     subText: allCleared ? "山海皆星辰" : "星途漫步中",
     color: allCleared ? "rgba(182, 36, 28, 0.9)" : "rgba(148, 96, 32, 0.86)",
     paperBg: "#ecdcb9",

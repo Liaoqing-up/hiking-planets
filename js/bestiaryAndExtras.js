@@ -529,7 +529,7 @@ export function generateGrandPassportDataUrl(planets, saveData = {}, travelerNam
 
   drawPostmarkSeal(ctx, W - 278, 1068, {
     radius: 56,
-    bannerText: "全星系大满贯",
+    bannerText: "全境穿越",
     subText: "山海皆星辰",
     color: "#f2c864",
     paperBg: "#0a1126",
