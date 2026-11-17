@@ -202,11 +202,36 @@ export async function generateSummitTicketDataUrl(
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // 锁印星芒与待解锁文案
-      ctx.fillStyle = "rgba(240, 199, 104, 0.88)";
-      ctx.font = "600 28px Georgia, serif";
+      // 手绘鎏金星轨罗盘徽章（取代生硬的系统挂锁图标）
+      const mx = cx + cardW / 2;
+      const my = cy + 66;
+      ctx.save();
+      ctx.strokeStyle = "rgba(240, 199, 104, 0.72)";
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(mx, my, 22, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(mx, my, 16.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(240, 199, 104, 0.22)";
+      ctx.beginPath();
+      ctx.moveTo(mx - 12, my + 8);
+      ctx.lineTo(mx - 3, my - 5);
+      ctx.lineTo(mx + 2, my + 2);
+      ctx.lineTo(mx + 6, my - 3);
+      ctx.lineTo(mx + 13, my + 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#f5d98e";
+      ctx.font = "600 13px Georgia, serif";
       ctx.textAlign = "center";
-      ctx.fillText("🔒", cx + cardW / 2, cy + 78);
+      ctx.fillText("✦", mx, my - 7);
+      ctx.restore();
+      ctx.textAlign = "center";
 
       ctx.fillStyle = "#f3d792";
       ctx.font = "600 16px 'PingFang SC', sans-serif";

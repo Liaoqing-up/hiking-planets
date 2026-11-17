@@ -842,7 +842,7 @@ function openBestiaryModal() {
     renderCreaturePortrait(c, item.planetId, unlocked);
     const title = document.createElement("div");
     title.className = "bestiary-name";
-    title.textContent = unlocked ? `${item.emoji} ${item.name}` : "🔒 未知山野小生灵";
+    title.textContent = unlocked ? `${item.emoji} ${item.name}` : "✧ 尚未邂逅的山野小生灵";
     const sub = document.createElement("div");
     sub.className = "bestiary-planet";
     sub.textContent = unlocked ? `✦ 已结伴 · ${item.planetName}` : `栖息线索：${item.planetName}`;
@@ -935,7 +935,22 @@ function renderAtlasGridUI() {
         img.alt = wp.name;
         thumb.appendChild(img);
       } else {
-        thumb.textContent = "🔒";
+        thumb.classList.add("is-uncharted");
+        thumb.style.setProperty("--orb-glow", p.palette?.halo || "#f0c768");
+        thumb.innerHTML = `
+          <svg class="uncharted-emblem" viewBox="0 0 120 90" aria-hidden="true">
+            <circle cx="24" cy="20" r="1.1" fill="currentColor" opacity="0.55"/>
+            <circle cx="96" cy="24" r="1.3" fill="currentColor" opacity="0.65"/>
+            <circle cx="88" cy="68" r="1" fill="currentColor" opacity="0.45"/>
+            <circle cx="30" cy="66" r="1.2" fill="currentColor" opacity="0.5"/>
+            <circle class="emblem-orbit" cx="60" cy="43" r="28" fill="none" stroke="currentColor" stroke-width="1.1" stroke-dasharray="3.2 3.2" opacity="0.62"/>
+            <circle cx="60" cy="43" r="22" fill="none" stroke="currentColor" stroke-width="1.25" opacity="0.82"/>
+            <ellipse cx="60" cy="43" rx="33" ry="10.5" transform="rotate(-16 60 43)" fill="none" stroke="currentColor" stroke-width="1" opacity="0.48"/>
+            <path d="M43 53 L54 36 L61 45 L67 38 L77 53 Z" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/>
+            <path d="M60 22 L62.1 27.9 L68 30 L62.1 32.1 L60 38 L57.9 32.1 L52 30 L57.9 27.9 Z" fill="currentColor"/>
+          </svg>
+          <span class="uncharted-tag">✦ 星轨待寻</span>
+        `;
       }
 
       const title = document.createElement("div");
