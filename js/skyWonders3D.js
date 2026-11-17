@@ -1,25 +1,31 @@
 import * as THREE from "three";
+import { getSurfaceRadius, PLANET_RADIUS } from "./planetBuilder3D.js";
 
-function makeLabelSprite(text, accentColor = "#f0c768") {
-  const canvas = document.createElement("canvas");
-  canvas.width = 320;
-  canvas.height = 72;
+function drawPlanetLabelCanvas(canvas, text, progressStr = "", isCleared = false) {
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "rgba(10, 18, 40, 0.72)";
-  ctx.strokeStyle = "rgba(240, 199, 104, 0.45)";
-  ctx.lineWidth = 2;
+  ctx.fillStyle = isCleared ? "rgba(18, 28, 56, 0.86)" : "rgba(10, 18, 40, 0.78)";
+  ctx.strokeStyle = isCleared ? "rgba(255, 216, 112, 0.88)" : "rgba(240, 199, 104, 0.48)";
+  ctx.lineWidth = isCleared ? 2.6 : 2;
   ctx.beginPath();
-  ctx.roundRect(14, 12, 292, 48, 24);
+  ctx.roundRect(10, 12, canvas.width - 20, 50, 25);
   ctx.fill();
   ctx.stroke();
 
-  ctx.font = "600 23px 'PingFang SC', 'Hiragino Sans GB', serif";
+  const fullLabel = progressStr ? `✦ ${text} · ${progressStr}` : `✦ ${text}`;
+  ctx.font = "600 22px 'PingFang SC', 'Hiragino Sans GB', serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = accentColor;
-  ctx.fillText(`✦ ${text}`, 160, 37);
+  ctx.fillStyle = isCleared ? "#ffe48f" : "#f5d98e";
+  ctx.fillText(fullLabel, canvas.width / 2, 38);
+}
+
+function makeLabelSprite(text) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 400;
+  canvas.height = 74;
+  drawPlanetLabelCanvas(canvas, text, "", false);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.needsUpdate = true;
@@ -30,8 +36,195 @@ function makeLabelSprite(text, accentColor = "#f0c768") {
     depthWrite: false,
   });
   const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(7.6, 1.72, 1);
+  sprite.scale.set(8.8, 1.64, 1);
+  sprite.userData = { canvas, tex, baseName: text, lastKey: "" };
   return sprite;
+}
+
+/**
+ * 构建高精度微缩立体地貌星球（真实地形高度雕刻 + 绘本三阶顶点着色 + 湖海层 + 每星专属立体冠冕微雕 + 绕球白云）
+ */
+function buildDetailedMiniPlanet(p) {
+  const root = new THREE.Group();
+  const baseR = 1.68;
+
+  // 1. 雕刻真实球面起伏地貌并烘焙左上柔光绘本顶点色（确保星夜下依然色彩饱满立体）
+  const geo = new THREE.IcosahedronGeometry(baseR, 4);
+  const posAttr = geo.attributes.position;
+  const vCount = posAttr.count;
+  const dir = new THREE.Vector3();
+
+  for (let i = 0; i < vCount; i++) {
+    dir.fromBufferAttribute(posAttr, i).normalize();
+    const hDelta = getSurfaceRadius(p.id, dir) - PLANET_RADIUS;
+    const r = baseR + hDelta * 0.28;
+    posAttr.setXYZ(i, dir.x * r, dir.y * r, dir.z * r);
+  }
+  geo.computeVertexNormals();
+
+  const normAttr = geo.attributes.normal;
+  const colors = new Float32Array(vCount * 3);
+  const cLow = new THREE.Color(p.palette.low || "#4e8a62");
+  const cMid = new THREE.Color(p.palette.mid || "#c99b5b");
+  const cHigh = new THREE.Color(p.palette.high || "#f8f4ec");
+  const tmpCol = new THREE.Color();
+  const nVec = new THREE.Vector3();
+  const sunDir = new THREE.Vector3(-0.55, 0.72, 0.42).normalize();
+
+  for (let i = 0; i < vCount; i++) {
+    dir.fromBufferAttribute(posAttr, i);
+    const r = dir.length();
+    const hNorm = THREE.MathUtils.clamp((r - (baseR - 0.12)) / 0.56, 0, 1);
+    if (hNorm < 0.48) {
+      tmpCol.copy(cLow).lerp(cMid, hNorm / 0.48);
+    } else {
+      tmpCol.copy(cMid).lerp(cHigh, (hNorm - 0.48) / 0.52);
+    }
+    nVec.fromBufferAttribute(normAttr, i).normalize();
+    const shade = 0.62 + 0.46 * Math.max(0, nVec.dot(sunDir));
+    colors[i * 3] = Math.min(1, tmpCol.r * shade);
+    colors[i * 3 + 1] = Math.min(1, tmpCol.g * shade);
+    colors[i * 3 + 2] = Math.min(1, tmpCol.b * shade);
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+  const terrainMesh = new THREE.Mesh(
+    geo,
+    new THREE.MeshBasicMaterial({ vertexColors: true })
+  );
+  root.add(terrainMesh);
+
+  // 2. 晶莹湖海层（自动在凹陷盆地呈现出乌兰湖、牛奶海、麦理浩径海湾、赛里木湖）
+  const waterR = p.id === "maclehose" ? baseR + 0.05 : baseR + 0.015;
+  const waterMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(waterR, 24, 18),
+    new THREE.MeshBasicMaterial({
+      color: p.palette.water || "#3898c8",
+      transparent: true,
+      opacity: p.id === "maclehose" ? 0.84 : 0.74,
+    })
+  );
+  root.add(waterMesh);
+
+  // 3. 每颗星球专属标志性 3D 冠冕微雕（一眼认出每颗星！）
+  const crown = new THREE.Group();
+  if (p.id === "yading") {
+    // 稻城亚丁：三座高耸洁白冰晶神山锥峰 + 牛奶海宝蓝圆镜
+    const snowMat = new THREE.MeshBasicMaterial({ color: "#f6fbff" });
+    const p1 = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.05, 6), snowMat);
+    p1.position.set(0, baseR + 0.52, 0);
+    const p2 = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.82, 6), snowMat);
+    p2.position.set(-0.46, baseR + 0.34, 0.18);
+    p2.rotation.z = 0.24;
+    const p3 = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.78, 6), snowMat);
+    p3.position.set(0.44, baseR + 0.32, -0.15);
+    p3.rotation.z = -0.22;
+    const lake = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.32, 0.08, 14),
+      new THREE.MeshBasicMaterial({ color: "#32c5ff" })
+    );
+    lake.position.set(0.12, baseR + 0.14, 0.56);
+    lake.rotation.x = 0.34;
+    crown.add(p1, p2, p3, lake);
+  } else if (p.id === "siguniang") {
+    // 四姑娘山与长穿毕：日照金山大峰金字塔 + 鲜红红石滩宝石带 + 彩林球树
+    const peak = new THREE.Mesh(
+      new THREE.ConeGeometry(0.48, 1.12, 4),
+      new THREE.MeshBasicMaterial({ color: "#ffd88a" })
+    );
+    peak.position.set(0, baseR + 0.54, 0);
+    peak.rotation.y = 0.4;
+    const redMat = new THREE.MeshBasicMaterial({ color: "#e34c36" });
+    for (let k = 0; k < 5; k++) {
+      const stone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.13, 0), redMat);
+      stone.position.set(-0.42 + k * 0.2, baseR + 0.12, 0.52 - Math.abs(k - 2) * 0.08);
+      crown.add(stone);
+    }
+    crown.add(peak);
+  } else if (p.id === "zhagana") {
+    // 扎尕那：险峻灰白石城岩屏 + 葱郁云杉小尖树林
+    const rockMat = new THREE.MeshBasicMaterial({ color: "#cbd5e1" });
+    for (let k = -1; k <= 1; k++) {
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.76 - Math.abs(k) * 0.14, 0.22), rockMat);
+      slab.position.set(k * 0.3, baseR + 0.34, -0.1);
+      slab.rotation.z = k * -0.12;
+      crown.add(slab);
+    }
+    const treeMat = new THREE.MeshBasicMaterial({ color: "#2d6a4f" });
+    for (let k = 0; k < 5; k++) {
+      const tree = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.42, 5), treeMat);
+      const ang = (k / 5) * Math.PI * 2;
+      tree.position.set(Math.cos(ang) * 0.65, baseR + 0.16, Math.sin(ang) * 0.65);
+      crown.add(tree);
+    }
+  } else if (p.id === "tengger") {
+    // 腾格里沙漠：暖橙篝火营地星芒 + 绿洲草甸 + 乌兰红心湖
+    const heartLake = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.34, 0.34, 0.08, 14),
+      new THREE.MeshBasicMaterial({ color: "#d93848" })
+    );
+    heartLake.position.set(-0.22, baseR + 0.16, 0.48);
+    heartLake.rotation.x = 0.28;
+    const fireGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 10, 10),
+      new THREE.MeshBasicMaterial({ color: "#ffb703" })
+    );
+    fireGlow.position.set(0.28, baseR + 0.3, 0.22);
+    crown.add(heartLake, fireGlow);
+  } else if (p.id === "maclehose") {
+    // 麦理浩径：海岬洁白小灯塔 + 塔顶暖金灯室
+    const tower = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.15, 0.62, 8),
+      new THREE.MeshBasicMaterial({ color: "#fffdf9" })
+    );
+    tower.position.set(0.15, baseR + 0.36, 0.25);
+    const lantern = new THREE.Mesh(
+      new THREE.SphereGeometry(0.14, 10, 10),
+      new THREE.MeshBasicMaterial({ color: "#ffe169" })
+    );
+    lantern.position.set(0.15, baseR + 0.72, 0.25);
+    crown.add(tower, lantern);
+  } else if (p.id === "yili") {
+    // 新疆伊犁：雪岭云杉林 + 侧上方绕转的大海道暖黄圆月卫星
+    const spruceMat = new THREE.MeshBasicMaterial({ color: "#2b7a4b" });
+    for (let k = 0; k < 6; k++) {
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.44, 5), spruceMat);
+      const ang = (k / 6) * Math.PI * 2;
+      sp.position.set(Math.cos(ang) * 0.56, baseR + 0.18, Math.sin(ang) * 0.56);
+      crown.add(sp);
+    }
+    const yellowMoon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.32, 14, 14),
+      new THREE.MeshBasicMaterial({ color: "#ffd54f" })
+    );
+    yellowMoon.position.set(1.95, 1.35, 0.4);
+    crown.add(yellowMoon);
+  }
+  root.add(crown);
+
+  // 4. 环绕星球缓缓飘浮的 2 团立体绘本小白云
+  const cloudOrbit = new THREE.Group();
+  const cloudMat = new THREE.MeshBasicMaterial({
+    color: "#fffcf5",
+    transparent: true,
+    opacity: 0.82,
+  });
+  for (let c = 0; c < 2; c++) {
+    const cg = new THREE.Group();
+    const pA = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), cloudMat);
+    const pB = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), cloudMat);
+    pB.position.set(0.2, -0.04, 0.06);
+    const pC = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), cloudMat);
+    pC.position.set(-0.18, -0.05, -0.04);
+    cg.add(pA, pB, pC);
+    const a = c * Math.PI + 0.6;
+    cg.position.set(Math.cos(a) * 2.25, 0.45 - c * 0.65, Math.sin(a) * 2.25);
+    cg.lookAt(0, 0, 0);
+    cloudOrbit.add(cg);
+  }
+  root.add(cloudOrbit);
+
+  return { root, cloudOrbit };
 }
 
 export function createSkyWonders(activePlanet, allPlanets) {
@@ -39,8 +232,9 @@ export function createSkyWonders(activePlanet, allPlanets) {
   const clickableMeshes = [];
   const distantOrbs = [];
   let telescopeActive = false;
+  let hoveredPlanetId = null;
 
-  // ==================== 1. 远空邻近 5 颗微缩自转星球（星际望远镜直飞） ====================
+  // ==================== 1. 远空邻近 5 颗高精度立体地貌微缩星球 ====================
   const others = allPlanets
     .map((p, idx) => ({ p, idx }))
     .filter((item) => item.p.id !== activePlanet.id);
@@ -58,42 +252,37 @@ export function createSkyWonders(activePlanet, allPlanets) {
     const orbGroup = new THREE.Group();
     orbGroup.position.copy(pos);
 
-    const core = new THREE.Mesh(
-      new THREE.SphereGeometry(1.55, 22, 18),
-      new THREE.MeshStandardMaterial({
-        color: p.palette.ground,
-        emissive: p.palette.accent,
-        emissiveIntensity: 0.34,
-        roughness: 0.72,
-      })
-    );
+    const { root: core, cloudOrbit } = buildDetailedMiniPlanet(p);
+
+    const haloColor = p.palette.halo || p.palette.accent || "#f4c668";
     const halo = new THREE.Mesh(
-      new THREE.SphereGeometry(2.25, 18, 14),
+      new THREE.SphereGeometry(2.55, 20, 16),
       new THREE.MeshBasicMaterial({
-        color: p.palette.accent,
+        color: haloColor,
         transparent: true,
         opacity: 0.16,
         depthWrite: false,
       })
     );
+
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(2.15, 2.55, 32),
+      new THREE.RingGeometry(2.42, 2.76, 40),
       new THREE.MeshBasicMaterial({
-        color: p.palette.accent,
+        color: haloColor,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.36,
+        opacity: 0.42,
       })
     );
-    ring.rotation.x = 1.12;
-    ring.rotation.y = i * 0.5;
+    ring.rotation.x = 1.18;
+    ring.rotation.y = i * 0.45;
 
-    const label = makeLabelSprite(p.name, "#f6d98a");
-    label.position.set(0, -3.05, 0);
+    const label = makeLabelSprite(p.name);
+    label.position.set(0, -3.45, 0);
 
-    // 宽容点击拾取球，手机手指轻点星空即可跨星际直飞
+    // 宽容点击拾取球，电脑悬停发光、手机轻点直飞
     const hitMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(4.2, 10, 8),
+      new THREE.SphereGeometry(4.4, 10, 8),
       new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
     );
     hitMesh.userData = {
@@ -106,8 +295,10 @@ export function createSkyWonders(activePlanet, allPlanets) {
     group.add(orbGroup);
     clickableMeshes.push(hitMesh);
     distantOrbs.push({
+      planet: p,
       orbGroup,
       core,
+      cloudOrbit,
       halo,
       ring,
       label,
@@ -207,70 +398,109 @@ export function createSkyWonders(activePlanet, allPlanets) {
     if (onWonder) onWonder("🌠 奇遇 · 驻足仰望，夜空划过流星雨");
   }
 
+  function refreshOrbLabels(getDiscoveredCount) {
+    if (typeof getDiscoveredCount !== "function") return;
+    for (const orb of distantOrbs) {
+      const done = getDiscoveredCount(orb.planet.id);
+      const total = orb.planet.waypoints.length;
+      const cleared = done >= total;
+      const progStr = cleared ? "★" : `${done}/${total}`;
+      const cacheKey = `${progStr}-${cleared}`;
+      if (orb.label.userData.lastKey !== cacheKey) {
+        orb.label.userData.lastKey = cacheKey;
+        drawPlanetLabelCanvas(
+          orb.label.userData.canvas,
+          orb.label.userData.baseName,
+          progStr,
+          cleared
+        );
+        orb.label.userData.tex.needsUpdate = true;
+      }
+    }
+  }
+
   return {
     group,
     getClickableMeshes: () => clickableMeshes,
+    setHoveredPlanet(planetId) {
+      hoveredPlanetId = planetId || null;
+    },
+    refreshOrbLabels,
     setTelescopeActive(on, frame = null) {
       telescopeActive = Boolean(on);
+      if (!telescopeActive) hoveredPlanetId = null;
       if (telescopeActive && frame) {
         const { hikerPos, upDir, fwdDir, rightDir, isPortrait } = frame;
-        const count = distantOrbs.length; // 其余全部 5 颗山海星球
-        const downOffset = upDir.clone().multiplyScalar(-3.15);
+        const count = distantOrbs.length;
+        const downOffset = upDir.clone().multiplyScalar(-3.55);
+        // 使微缩星球的北极雪峰朝向当前屏幕上方 upDir，观感端正立体
+        const alignQuat = new THREE.Quaternion().setFromUnitVectors(
+          new THREE.Vector3(0, 1, 0),
+          upDir
+        );
+
         distantOrbs.forEach((orb, i) => {
-          // 让名字铭牌始终垂直悬停于当前视角里每颗星球的正下方，不遮挡球体与星环
           orb.label.position.copy(downOffset);
+          orb.core.quaternion.slerp(alignQuat, 0.35);
 
           if (isPortrait) {
-            // 手机竖屏：避开左侧功能栏与右边缘，在中央夜空排成错落有致的五曜星阵
             const portraitSlots = [
-              { x: -5.2, y: 29.5 },
-              { x: 6.2, y: 29.5 },
+              { x: -5.2, y: 29.8 },
+              { x: 6.2, y: 29.8 },
               { x: 0.6, y: 23.0 },
-              { x: -4.8, y: 16.5 },
-              { x: 6.4, y: 16.5 },
+              { x: -4.8, y: 16.2 },
+              { x: 6.4, y: 16.2 },
             ];
             const slot = portraitSlots[i % portraitSlots.length];
             orb.observatoryPos
               .copy(hikerPos)
-              .addScaledVector(fwdDir, 54)
+              .addScaledVector(fwdDir, 55)
               .addScaledVector(rightDir, slot.x)
               .addScaledVector(upDir, slot.y);
           } else {
-            // 电脑横屏：宽幅优雅拱月星弧，5 颗星球一字舒展同框
             const norm = count > 1 ? (i / (count - 1)) * 2 - 1 : 0;
-            const lateral = norm * 25.5;
+            const lateral = norm * 26.0;
             const archLift = (1 - norm * norm * 0.58) * 8.5;
             orb.observatoryPos
               .copy(hikerPos)
-              .addScaledVector(fwdDir, 48)
+              .addScaledVector(fwdDir, 49)
               .addScaledVector(rightDir, lateral)
               .addScaledVector(upDir, 20.5 + archLift);
           }
         });
       } else {
-        distantOrbs.forEach((orb) => orb.label.position.set(0, -3.05, 0));
+        distantOrbs.forEach((orb) => orb.label.position.set(0, -3.45, 0));
       }
     },
     triggerMeteorBurst,
     update(dt, elapsed, state = {}) {
-      // 远空星球自转、观星模式全星系星弧聚拢同框与高亮
-      const wantScale = telescopeActive ? (window.innerWidth < window.innerHeight ? 1.08 : 1.38) : 1.0;
+      const baseScale = telescopeActive
+        ? window.innerWidth < window.innerHeight
+          ? 1.04
+          : 1.34
+        : 0.96;
+
       for (const orb of distantOrbs) {
+        const isHovered = hoveredPlanetId === orb.planet.id;
+        const wantScale = baseScale * (isHovered ? 1.16 : 1.0);
         const goalPos = telescopeActive ? orb.observatoryPos : orb.defaultPos;
         orb.orbGroup.position.lerp(goalPos, Math.min(1, dt * 4.6));
-        orb.core.rotation.y = elapsed * 0.35 + orb.phase;
-        orb.ring.rotation.z = elapsed * 0.2;
+        orb.core.rotateOnAxis(new THREE.Vector3(0, 1, 0), dt * 0.42);
+        orb.cloudOrbit.rotation.y = -elapsed * 0.28 + orb.phase;
+        orb.ring.rotation.z = elapsed * 0.22;
         orb.orbGroup.scale.lerp(
           new THREE.Vector3(wantScale, wantScale, wantScale),
-          Math.min(1, dt * 4.5)
+          Math.min(1, dt * 6)
         );
         orb.label.material.opacity = THREE.MathUtils.lerp(
           orb.label.material.opacity,
-          telescopeActive ? 0.98 : 0.46,
+          telescopeActive ? 1.0 : isHovered ? 0.92 : 0.46,
           Math.min(1, dt * 5)
         );
-        orb.halo.material.opacity = telescopeActive
-          ? 0.3 + Math.sin(elapsed * 3 + orb.phase) * 0.08
+        orb.halo.material.opacity = isHovered
+          ? 0.44
+          : telescopeActive
+          ? 0.28 + Math.sin(elapsed * 3 + orb.phase) * 0.07
           : 0.14;
       }
 

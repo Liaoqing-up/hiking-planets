@@ -23,9 +23,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=3.5.7" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=3.5.7" />
-  <link rel="manifest" href="./manifest.webmanifest?v=3.5.7" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=3.5.8" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=3.5.8" />
+  <link rel="manifest" href="./manifest.webmanifest?v=3.5.8" />
   <style>
     html, body { background: #080f24; }
     #boot-curtain {
@@ -58,7 +58,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=3.5.7" />
+  <link rel="stylesheet" href="./styles.css?v=3.5.8" />
   <script
     defer
     src="https://cloud.umami.is/script.js"
@@ -400,9 +400,11 @@
       </div>
 
       <div class="postcard-content">
-        <div id="journal-chapter"></div>
-        <h3 id="journal-title"></h3>
-        <div id="journal-elevation"></div>
+        <div class="postcard-header-block">
+          <div id="journal-chapter"></div>
+          <h3 id="journal-title"></h3>
+          <div id="journal-elevation"></div>
+        </div>
 
         <!-- 拍立得照片明信片相框 -->
         <div class="polaroid-frame" id="journal-polaroid" title="点击放大查看照片">
@@ -413,26 +415,28 @@
           <div id="journal-caption"></div>
         </div>
 
-        <!-- 双页双图可切换区：第1页绘本诗笺 ↔ 第2页旅途故事 -->
-        <div id="journal-text-card" class="journal-text-card" role="button" tabindex="0" title="查看旅途故事">
-          <div class="journal-page-header">
-            <span id="journal-page-badge">✦ 绘本诗笺 · 1/2</span>
-            <span id="journal-flip-hint">查看旅途故事 ↻</span>
+        <div class="postcard-story-block">
+          <!-- 双页双图可切换区：第1页绘本诗笺 ↔ 第2页旅途故事 -->
+          <div id="journal-text-card" class="journal-text-card" role="button" tabindex="0" title="查看旅途故事">
+            <div class="journal-page-header">
+              <span id="journal-page-badge">✦ 绘本诗笺 · 1/2</span>
+              <span id="journal-flip-hint">查看旅途故事 ↻</span>
+            </div>
+            <p id="journal-poem"></p>
           </div>
-          <p id="journal-poem"></p>
-        </div>
-        <div id="journal-progress"></div>
+          <div id="journal-progress"></div>
 
-        <div class="journal-actions-row">
-          <button id="btn-close-journal" type="button">
-            ✦ 收好明信片 <kbd>Space</kbd>
-          </button>
-          <button id="btn-save-bookmark" type="button">
-            💌 珍藏此页书签
-          </button>
-          <button id="btn-journal-ticket" type="button">
-            🎫 查看收集票根
-          </button>
+          <div class="journal-actions-row">
+            <button id="btn-close-journal" type="button">
+              ✦ 收好明信片 <kbd>Space</kbd>
+            </button>
+            <button id="btn-save-bookmark" type="button">
+              💌 珍藏此页书签
+            </button>
+            <button id="btn-journal-ticket" type="button">
+              🎫 查看收集票根
+            </button>
+          </div>
         </div>
       </div>
     </article>
@@ -515,7 +519,7 @@
     </article>
   </div>
 
-  <script type="module" src="./js/main.js?v=3.5.7"></script>
+  <script type="module" src="./js/main.js?v=3.5.8"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       window.addEventListener("load", () => {

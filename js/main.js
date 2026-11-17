@@ -559,7 +559,11 @@ function enterPlanet(idx) {
   currentWorld.group.add(activeFootprints.group);
 
   activeSkyWonders = createSkyWonders(p, PLANETS);
+  activeSkyWonders.refreshOrbLabels((pid) => getDiscoveredSet(pid).size);
   currentWorld.group.add(activeSkyWonders.group);
+  isTelescopeMode = false;
+  document.getElementById("btn-telescope-mode")?.classList.remove("active");
+  renderer.domElement.style.cursor = "";
 
   activeManiCairn = buildManiCairn3D(p);
   currentWorld.group.add(activeManiCairn.group);
@@ -1518,7 +1522,31 @@ window.addEventListener("pointermove", (e) => {
     pointerMoved = 999;
     return;
   }
-  if (!isPointerDown || mode !== "planet") return;
+  if (!isPointerDown || mode !== "planet") {
+    // 电脑端悬停感知：鼠标移到夜空邻近星球或玛尼堆上时自动变为小手并让星球微光呼吸放大
+    if (e.pointerType === "mouse" && mode === "planet" && !isAnyModalOpen()) {
+      ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
+      ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(ndc, camera);
+      let hoverId = null;
+      let clickable = false;
+      if (activeSkyWonders) {
+        const sh = raycaster.intersectObjects(activeSkyWonders.getClickableMeshes(), false);
+        if (sh.length > 0) {
+          hoverId = sh[0].object.userData.planetId || null;
+          clickable = true;
+        }
+        activeSkyWonders.setHoveredPlanet(hoverId);
+      }
+      if (!clickable && activeManiCairn) {
+        if (raycaster.intersectObject(activeManiCairn.group, true).length > 0) {
+          clickable = true;
+        }
+      }
+      renderer.domElement.style.cursor = clickable ? "pointer" : "";
+    }
+    return;
+  }
   const dx = e.clientX - lastPX;
   const dy = e.clientY - lastPY;
   lastPX = e.clientX;
@@ -1526,7 +1554,9 @@ window.addEventListener("pointermove", (e) => {
   pointerMoved += Math.hypot(dx, dy);
 
   camYaw -= dx * 0.0065;
-  camPitch = THREE.MathUtils.clamp(camPitch + dy * 0.0055, 0.2, 1.25);
+  const minPitch = isTelescopeMode ? -0.14 : 0.2;
+  const maxPitch = isTelescopeMode ? 0.48 : 1.25;
+  camPitch = THREE.MathUtils.clamp(camPitch + dy * 0.0055, minPitch, maxPitch);
 });
 
 window.addEventListener("pointercancel", (e) => {

@@ -2098,4 +2098,71 @@ a[href*="netlify.com?utm_source"] {
   }
 }
 
+/* ==================== DESKTOP LANDSCAPE HORIZONTAL POSTCARD SPREAD ==================== */
+@media (min-width: 900px) and (min-height: 540px) {
+  .journal-postcard {
+    width: min(940px, 92vw);
+    max-height: 88vh;
+    padding: 32px 36px 28px;
+  }
+
+  .journal-postcard .postcard-content {
+    display: grid;
+    grid-template-columns: 1.06fr 1fr;
+    grid-template-rows: auto 1fr;
+    column-gap: 32px;
+    align-items: center;
+    text-align: left;
+  }
+
+  .journal-postcard #journal-polaroid {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 12px 12px 14px;
+    transform: rotate(-1.2deg);
+    text-align: center;
+  }
+
+  .journal-postcard .postcard-header-block {
+    grid-column: 2;
+    grid-row: 1;
+    padding-left: 26px;
+    padding-right: 68px;
+    border-left: 1px dashed rgba(164, 126, 68, 0.42);
+    margin-bottom: 10px;
+  }
+
+  .journal-postcard #journal-title {
+    font-size: 22px;
+    margin: 6px 0 4px;
+  }
+
+  .journal-postcard .postcard-story-block {
+    grid-column: 2;
+    grid-row: 2;
+    padding-left: 26px;
+    border-left: 1px dashed rgba(164, 126, 68, 0.42);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .journal-postcard .journal-text-card {
+    margin: 4px 0 12px;
+    width: 100%;
+  }
+
+  .journal-postcard #journal-progress {
+    margin-bottom: 14px;
+  }
+
+  .journal-postcard .journal-actions-row {
+    justify-content: flex-start;
+  }
+}
+
+
 
