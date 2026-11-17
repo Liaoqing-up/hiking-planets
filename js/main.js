@@ -718,13 +718,19 @@ async function refreshTicketPreviewImage() {
   const traveler = getTravelerName();
   let dataUrl = "";
   let fileName = "行者的星球-纪念印记.png";
+  let modalTitle = "山海纪念票根";
+  let modalSub = "将走过的山海与星辰装进专属典藏卡片";
   if (currentTicketContext.type === "summit" && activePlanet) {
     const discSet = getDiscoveredSet(activePlanet.id);
     dataUrl = await generateSummitTicketDataUrl(activePlanet, discSet, saveData.steps || 0, traveler);
     fileName = `行者的星球-${activePlanet.name}-登顶纪念票根.png`;
+    modalTitle = `${activePlanet.name} · 纪念票根`;
+    modalSub = `已点亮 ${discSet.size} / ${activePlanet.waypoints.length} 处山海印记 · 支持烫金印签`;
   } else if (currentTicketContext.type === "passport") {
     dataUrl = generateGrandPassportDataUrl(PLANETS, saveData, traveler);
     fileName = "行者的星球-全星系大满贯荣誉护照.png";
+    modalTitle = "全星系大满贯荣誉护照";
+    modalSub = "24 / 24 处山海印记全境穿越达成典藏";
   } else if (currentTicketContext.type === "wallpaper" && currentTicketContext.snapCanvas) {
     dataUrl = capturePhotoWallpaper(
       currentTicketContext.snapCanvas,
@@ -733,6 +739,8 @@ async function refreshTicketPreviewImage() {
       traveler
     );
     fileName = `行者的星球-${currentTicketContext.planetName}-留影壁纸.png`;
+    modalTitle = `${currentTicketContext.planetName} · 留影壁纸`;
+    modalSub = "拍立得星海锁屏纪念壁纸 · 可印上旅人署名";
   } else if (currentTicketContext.type === "bookmark" && currentTicketContext.planet && currentTicketContext.wp) {
     dataUrl = await generatePostcardBookmarkDataUrl(
       currentTicketContext.planet,
@@ -740,7 +748,13 @@ async function refreshTicketPreviewImage() {
       traveler
     );
     fileName = `行者的星球-${currentTicketContext.wp.shortName || currentTicketContext.wp.name}-故事书签.png`;
+    modalTitle = `${currentTicketContext.wp.shortName || currentTicketContext.wp.name} · 故事书签`;
+    modalSub = `${currentTicketContext.planet.name} · 双面诗笺与旅途故事典藏`;
   }
+  const titleEl = document.getElementById("ticket-modal-title");
+  const subEl = document.getElementById("ticket-modal-sub");
+  if (titleEl) titleEl.textContent = modalTitle;
+  if (subEl) subEl.textContent = modalSub;
   const img = document.getElementById("ticket-preview-img");
   const dl = document.getElementById("btn-download-ticket");
   if (img && dataUrl) img.src = dataUrl;
@@ -1271,17 +1285,37 @@ function toggleCampfireMode(force) {
   }
 }
 
+function computeCameraViewBasis() {
+  const refNorth = new THREE.Vector3(0, 1, 0);
+  if (Math.abs(playerUp.dot(refNorth)) > 0.94) refNorth.set(0, 0, 1);
+  const localEast = new THREE.Vector3().crossVectors(refNorth, playerUp).normalize();
+  const localNorth = new THREE.Vector3().crossVectors(playerUp, localEast).normalize();
+  const camBackDir = new THREE.Vector3()
+    .addScaledVector(localNorth, -Math.cos(camYaw))
+    .addScaledVector(localEast, Math.sin(camYaw))
+    .normalize();
+  const fwdDir = camBackDir.clone().negate();
+  const rightDir = new THREE.Vector3().crossVectors(fwdDir, playerUp).normalize();
+  return { upDir: playerUp.clone(), fwdDir, rightDir };
+}
+
 function toggleTelescopeMode(force) {
   if (mode !== "planet" || !activePlanet) return;
   isTelescopeMode = typeof force === "boolean" ? force : !isTelescopeMode;
   if (isTelescopeMode && isCampfireMode) toggleCampfireMode(false);
-  activeSkyWonders?.setTelescopeActive(isTelescopeMode);
   document.getElementById("btn-telescope-mode")?.classList.toggle("active", isTelescopeMode);
   if (isTelescopeMode) {
-    camPitch = 0.06; // 仰望远方天际星海
-    showWonderToast("🔭 星际望远镜已开启 · 点击夜空发光的邻近星球即可跨越宇宙直飞！");
+    camPitch = 0.02; // 仰望远方天际星海，将其余全部 5 颗星球拱形排布于正前方夜空
+    const basis = computeCameraViewBasis();
+    activeSkyWonders?.setTelescopeActive(true, {
+      hikerPos: hiker.root.position.clone(),
+      ...basis,
+      isPortrait: window.innerWidth < window.innerHeight,
+    });
+    showWonderToast("🔭 星际望远镜已开启 · 其余 5 颗山海星球已浮现夜空，点击即可直飞！");
     trackEvent("开启星际望远镜", { planet: activePlanet.name });
   } else {
+    activeSkyWonders?.setTelescopeActive(false);
     camPitch = 0.56;
   }
 }
@@ -1632,6 +1666,16 @@ document.getElementById("btn-journal-ticket")?.addEventListener("click", () => {
   openSummitTicketModal();
 });
 document.getElementById("btn-close-ticket")?.addEventListener("click", closeSummitTicketModal);
+document.getElementById("ticket-preview-img")?.addEventListener("click", () => {
+  const src = document.getElementById("ticket-preview-img")?.src;
+  const lb = document.getElementById("photo-lightbox");
+  const lbImg = document.getElementById("lightbox-img");
+  if (src && lb && lbImg) {
+    ensureHistoryGuard();
+    lbImg.src = src;
+    lb.classList.remove("hidden");
+  }
+});
 document.getElementById("btn-apply-signature")?.addEventListener("click", () => {
   sound.init();
   sound.playHover();
@@ -1913,6 +1957,14 @@ function updatePlanetExploration(dt, elapsed) {
     );
   }
   if (activeSkyWonders) {
+    if (isTelescopeMode) {
+      const basis = computeCameraViewBasis();
+      activeSkyWonders.setTelescopeActive(true, {
+        hikerPos: hiker.root.position,
+        ...basis,
+        isPortrait: window.innerWidth < window.innerHeight,
+      });
+    }
     activeSkyWonders.update(dt, elapsed, {
       isNight,
       idleSeconds,
@@ -1976,7 +2028,7 @@ function updatePlanetExploration(dt, elapsed) {
   if (isCampfireMode) {
     camYaw += dt * 0.14;
   }
-  const modeDist = isCampfireMode ? 6.4 : isTelescopeMode ? 13.5 : camDist;
+  const modeDist = isCampfireMode ? 6.4 : isTelescopeMode ? 14.5 : camDist;
   const effectiveDist = THREE.MathUtils.lerp(28, modeDist, 1 - Math.pow(1 - introZoomProgress, 3));
 
   // 构建局部稳定正交切基以支持自由环绕偏航角 camYaw
@@ -1996,7 +2048,7 @@ function updatePlanetExploration(dt, elapsed) {
     .normalize();
 
   const desiredCamPos = hiker.root.position.clone().addScaledVector(camOffsetDir, effectiveDist);
-  const lookLift = isTelescopeMode ? 3.8 : isCampfireMode ? 0.55 : 0.9;
+  const lookLift = isTelescopeMode ? 5.6 : isCampfireMode ? 0.55 : 0.9;
   const desiredTarget = hiker.root.position.clone().addScaledVector(playerUp, lookLift);
 
   const damp = 1 - Math.exp(-6.5 * dt);

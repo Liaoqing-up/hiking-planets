@@ -1242,7 +1242,7 @@ body:has(#campfire-mixer:not(.hidden)) #hud-controls-hint {
   padding: 4px 12px;
 }
 
-/* 登顶纪念票根弹窗 */
+/* 登顶纪念票根 / 故事书签弹窗（手机竖屏紧凑单列 · 电脑横屏宽幅双栏典藏展台） */
 .ticket-modal-box {
   display: flex;
   flex-direction: column;
@@ -1251,11 +1251,28 @@ body:has(#campfire-mixer:not(.hidden)) #hud-controls-hint {
   max-width: 92vw;
   pointer-events: auto;
 }
+.ticket-preview-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 #ticket-preview-img {
   max-height: 66vh;
   max-width: 88vw;
   border-radius: 14px;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.65);
+  cursor: zoom-in;
+  transition: transform 0.22s ease;
+}
+.ticket-controls-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.ticket-desktop-header,
+.ticket-modal-hint .hint-desktop {
+  display: none;
 }
 .ticket-sign-row {
   display: flex;
@@ -1326,6 +1343,87 @@ body:has(#campfire-mixer:not(.hidden)) #hud-controls-hint {
   background: rgba(255, 255, 255, 0.14);
   color: #f8ebd0;
   border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+@media (min-width: 860px) and (min-height: 540px) {
+  .ticket-modal-box {
+    flex-direction: row;
+    align-items: center;
+    gap: 36px;
+    padding: 26px 36px;
+    max-width: min(980px, 92vw);
+    background: linear-gradient(145deg, rgba(13, 22, 48, 0.92), rgba(8, 14, 32, 0.94));
+    border: 1px solid rgba(240, 199, 104, 0.34);
+    border-radius: 22px;
+    box-shadow: 0 28px 76px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 234, 178, 0.14);
+    backdrop-filter: blur(16px);
+  }
+  #ticket-preview-img {
+    max-height: 82vh;
+    max-width: 46vw;
+  }
+  #ticket-preview-img:hover {
+    transform: scale(1.012);
+  }
+  .ticket-controls-col {
+    width: 316px;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .ticket-desktop-header {
+    display: block;
+    border-bottom: 1px solid rgba(240, 199, 104, 0.2);
+    padding-bottom: 14px;
+  }
+  #ticket-modal-title {
+    margin: 6px 0 6px;
+    font-family: "Songti SC", Georgia, serif;
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    color: #f8e6b5;
+  }
+  #ticket-modal-sub {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: rgba(238, 221, 184, 0.72);
+  }
+  .ticket-sign-row {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+  #ticket-traveler-input {
+    padding: 10px 14px;
+    font-size: 13.5px;
+  }
+  #btn-apply-signature {
+    padding: 9px 16px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .ticket-modal-hint {
+    text-align: left;
+    line-height: 1.55;
+    color: rgba(246, 223, 164, 0.85);
+  }
+  .ticket-modal-hint .hint-mobile {
+    display: none;
+  }
+  .ticket-modal-hint .hint-desktop {
+    display: inline;
+  }
+  .ticket-modal-btns {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  #btn-download-ticket,
+  #btn-close-ticket {
+    text-align: center;
+    padding: 11px 18px;
+    font-size: 14px;
+  }
 }
 
 #photo-mode-bar {

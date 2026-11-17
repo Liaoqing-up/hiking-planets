@@ -105,7 +105,16 @@ export function createSkyWonders(activePlanet, allPlanets) {
     orbGroup.add(core, halo, ring, label, hitMesh);
     group.add(orbGroup);
     clickableMeshes.push(hitMesh);
-    distantOrbs.push({ orbGroup, core, halo, ring, label, phase: i * 1.3 });
+    distantOrbs.push({
+      orbGroup,
+      core,
+      halo,
+      ring,
+      label,
+      phase: i * 1.3,
+      defaultPos: pos.clone(),
+      observatoryPos: pos.clone(),
+    });
   });
 
   // ==================== 2. 高山飘雪 → 云开日照金山奇遇 ====================
@@ -201,19 +210,59 @@ export function createSkyWonders(activePlanet, allPlanets) {
   return {
     group,
     getClickableMeshes: () => clickableMeshes,
-    setTelescopeActive(on) {
+    setTelescopeActive(on, frame = null) {
       telescopeActive = Boolean(on);
+      if (telescopeActive && frame) {
+        const { hikerPos, upDir, fwdDir, rightDir, isPortrait } = frame;
+        const count = distantOrbs.length; // 其余全部 5 颗山海星球
+        const downOffset = upDir.clone().multiplyScalar(-3.15);
+        distantOrbs.forEach((orb, i) => {
+          // 让名字铭牌始终垂直悬停于当前视角里每颗星球的正下方，不遮挡球体与星环
+          orb.label.position.copy(downOffset);
+
+          if (isPortrait) {
+            // 手机竖屏：避开左侧功能栏与右边缘，在中央夜空排成错落有致的五曜星阵
+            const portraitSlots = [
+              { x: -5.2, y: 29.5 },
+              { x: 6.2, y: 29.5 },
+              { x: 0.6, y: 23.0 },
+              { x: -4.8, y: 16.5 },
+              { x: 6.4, y: 16.5 },
+            ];
+            const slot = portraitSlots[i % portraitSlots.length];
+            orb.observatoryPos
+              .copy(hikerPos)
+              .addScaledVector(fwdDir, 54)
+              .addScaledVector(rightDir, slot.x)
+              .addScaledVector(upDir, slot.y);
+          } else {
+            // 电脑横屏：宽幅优雅拱月星弧，5 颗星球一字舒展同框
+            const norm = count > 1 ? (i / (count - 1)) * 2 - 1 : 0;
+            const lateral = norm * 25.5;
+            const archLift = (1 - norm * norm * 0.58) * 8.5;
+            orb.observatoryPos
+              .copy(hikerPos)
+              .addScaledVector(fwdDir, 48)
+              .addScaledVector(rightDir, lateral)
+              .addScaledVector(upDir, 20.5 + archLift);
+          }
+        });
+      } else {
+        distantOrbs.forEach((orb) => orb.label.position.set(0, -3.05, 0));
+      }
     },
     triggerMeteorBurst,
     update(dt, elapsed, state = {}) {
-      // 远空星球自转与望远镜高亮
+      // 远空星球自转、观星模式全星系星弧聚拢同框与高亮
+      const wantScale = telescopeActive ? (window.innerWidth < window.innerHeight ? 1.08 : 1.38) : 1.0;
       for (const orb of distantOrbs) {
+        const goalPos = telescopeActive ? orb.observatoryPos : orb.defaultPos;
+        orb.orbGroup.position.lerp(goalPos, Math.min(1, dt * 4.6));
         orb.core.rotation.y = elapsed * 0.35 + orb.phase;
         orb.ring.rotation.z = elapsed * 0.2;
-        const targetScale = telescopeActive ? 1.48 : 1.0;
         orb.orbGroup.scale.lerp(
-          new THREE.Vector3(targetScale, targetScale, targetScale),
-          Math.min(1, dt * 4)
+          new THREE.Vector3(wantScale, wantScale, wantScale),
+          Math.min(1, dt * 4.5)
         );
         orb.label.material.opacity = THREE.MathUtils.lerp(
           orb.label.material.opacity,
@@ -221,7 +270,7 @@ export function createSkyWonders(activePlanet, allPlanets) {
           Math.min(1, dt * 5)
         );
         orb.halo.material.opacity = telescopeActive
-          ? 0.28 + Math.sin(elapsed * 3 + orb.phase) * 0.08
+          ? 0.3 + Math.sin(elapsed * 3 + orb.phase) * 0.08
           : 0.14;
       }
 

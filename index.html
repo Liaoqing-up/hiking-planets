@@ -23,9 +23,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=3.5.6" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=3.5.6" />
-  <link rel="manifest" href="./manifest.webmanifest?v=3.5.6" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=3.5.7" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=3.5.7" />
+  <link rel="manifest" href="./manifest.webmanifest?v=3.5.7" />
   <style>
     html, body { background: #080f24; }
     #boot-curtain {
@@ -58,7 +58,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=3.5.6" />
+  <link rel="stylesheet" href="./styles.css?v=3.5.7" />
   <script
     defer
     src="https://cloud.umami.is/script.js"
@@ -458,20 +458,32 @@
   <!-- 全局跨界面弹窗（星图与星球内均可打开）：票根/壁纸预览 · 山野小生灵图集 · 24/24 全星系终章手札 -->
   <div id="modal-ticket" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="纪念票根与壁纸预览">
     <div class="ticket-modal-box">
-      <img id="ticket-preview-img" alt="登顶纪念票根" />
-      <div class="ticket-sign-row">
-        <input
-          id="ticket-traveler-input"
-          type="text"
-          maxlength="12"
-          placeholder="印上你的专属署名（如：老韩 / 过路旅人）"
-        />
-        <button id="btn-apply-signature" type="button">✦ 烫金印名</button>
+      <div class="ticket-preview-stage">
+        <img id="ticket-preview-img" alt="登顶纪念票根" title="点击全屏放大查看高清细节" />
       </div>
-      <div class="ticket-modal-hint">📱 手机长按上方图片即可保存 · 分享你的山海印记</div>
-      <div class="ticket-modal-btns">
-        <a id="btn-download-ticket" download="行者的星球-纪念票根.png">⬇ 下载高清原图</a>
-        <button id="btn-close-ticket" type="button">收好图片 ✕</button>
+      <div class="ticket-controls-col">
+        <div class="ticket-desktop-header">
+          <div class="mani-eyebrow">✦ STARLIGHT COLLECTIBLE</div>
+          <h3 id="ticket-modal-title">山海纪念票根</h3>
+          <p id="ticket-modal-sub">将走过的山海与星辰装进专属典藏卡片</p>
+        </div>
+        <div class="ticket-sign-row">
+          <input
+            id="ticket-traveler-input"
+            type="text"
+            maxlength="12"
+            placeholder="印上你的专属署名（如：老韩 / 过路旅人）"
+          />
+          <button id="btn-apply-signature" type="button">✦ 烫金印名</button>
+        </div>
+        <div class="ticket-modal-hint">
+          <span class="hint-mobile">📱 手机长按上方图片即可保存 · 分享你的山海印记</span>
+          <span class="hint-desktop">💻 点击下方下载高清原图 · 点击左侧卡片可放大细看</span>
+        </div>
+        <div class="ticket-modal-btns">
+          <a id="btn-download-ticket" download="行者的星球-纪念票根.png">⬇ 下载高清原图</a>
+          <button id="btn-close-ticket" type="button">收好卡片 ✕</button>
+        </div>
       </div>
     </div>
   </div>
@@ -503,7 +515,7 @@
     </article>
   </div>
 
-  <script type="module" src="./js/main.js?v=3.5.6"></script>
+  <script type="module" src="./js/main.js?v=3.5.7"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       window.addEventListener("load", () => {
