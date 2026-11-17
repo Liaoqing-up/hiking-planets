@@ -111,16 +111,16 @@ export async function generateSummitTicketDataUrl(
   // 3. 顶部标题与水彩微缩星球勋章
   const ticketNo = String(100 + (Math.floor(Date.now() / 1000) % 899)).padStart(3, "0");
   ctx.fillStyle = "#8a6229";
-  ctx.font = "600 17px Georgia, 'Songti SC', serif";
+  ctx.font = "600 17px Georgia, 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
   ctx.textAlign = "center";
   ctx.fillText(`✦  TRAILS AMONG THE STARS · PASS NO.${ticketNo}  ✦`, W / 2, ty + 52);
 
   ctx.fillStyle = "#2b1e12";
-  ctx.font = "700 38px 'Songti SC', 'STSong', serif";
+  ctx.font = "700 38px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', 'STSong', serif";
   ctx.fillText(planet.name, W / 2, ty + 104);
 
   ctx.fillStyle = "#6d5233";
-  ctx.font = "500 18px 'PingFang SC', sans-serif";
+  ctx.font = "500 18px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   ctx.fillText(planet.subtitle, W / 2, ty + 138);
 
   const planetThumb = document.createElement("canvas");
@@ -175,16 +175,16 @@ export async function generateSummitTicketDataUrl(
       ctx.roundRect(cx + 18, cy + 18, 78, 24, 12);
       ctx.fill();
       ctx.fillStyle = "#f7d479";
-      ctx.font = "600 12.5px 'PingFang SC', sans-serif";
+      ctx.font = "600 12.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("✦ 已点亮", cx + 57, cy + 34);
 
       // 拍立得底栏标题与海拔
       ctx.fillStyle = "#2f2113";
-      ctx.font = "600 16px 'Songti SC', 'PingFang SC', serif";
+      ctx.font = "600 16px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', 'LXGW WenKai Screen', 'PingFang SC', serif";
       ctx.fillText(label, cx + cardW / 2, cy + mediaH + 31);
       ctx.fillStyle = "#7d6240";
-      ctx.font = "500 12.5px 'PingFang SC', sans-serif";
+      ctx.font = "500 12.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
       const shortElev = String(wp.elevation || "").split("·")[0].trim();
       ctx.fillText(shortElev, cx + cardW / 2, cy + mediaH + 50);
     } else {
@@ -234,19 +234,19 @@ export async function generateSummitTicketDataUrl(
       ctx.textAlign = "center";
 
       ctx.fillStyle = "#f3d792";
-      ctx.font = "600 16px 'PingFang SC', sans-serif";
+      ctx.font = "600 16px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
       ctx.fillText("待探访解锁", cx + cardW / 2, cy + 116);
 
       ctx.fillStyle = "rgba(232, 218, 186, 0.65)";
-      ctx.font = "400 12.5px 'PingFang SC', sans-serif";
+      ctx.font = "400 12.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
       ctx.fillText("漫步至发光路标点亮", cx + cardW / 2, cy + 142);
 
       // 底栏线索地名
       ctx.fillStyle = "#d9c6a0";
-      ctx.font = "500 15px 'Songti SC', 'PingFang SC', serif";
+      ctx.font = "500 15px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', 'LXGW WenKai Screen', 'PingFang SC', serif";
       ctx.fillText(`◇ ${label}`, cx + cardW / 2, cy + mediaH + 34);
       ctx.fillStyle = "rgba(217, 198, 160, 0.65)";
-      ctx.font = "400 12px 'PingFang SC', sans-serif";
+      ctx.font = "400 12px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
       ctx.fillText("尚未抵达此处", cx + cardW / 2, cy + mediaH + 52);
     }
   });
@@ -254,7 +254,7 @@ export async function generateSummitTicketDataUrl(
   // 5. 星球语录
   ctx.textAlign = "center";
   ctx.fillStyle = "#46331f";
-  ctx.font = "italic 18.5px 'Songti SC', Georgia, serif";
+  ctx.font = "italic 18.5px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', Georgia, serif";
   const quote = `“${planet.quote}”`;
   const maxLine = 25;
   const lines = [];
@@ -281,7 +281,7 @@ export async function generateSummitTicketDataUrl(
   // 6b. 左侧收集进度与路线详情
   ctx.textAlign = "left";
   ctx.fillStyle = "#5c4326";
-  ctx.font = "600 17.5px 'PingFang SC', sans-serif";
+  ctx.font = "600 17.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   ctx.fillText(
     allCleared
       ? `明信片图鉴：已全部集齐 (${doneCount}/${totalCount})`
@@ -291,13 +291,13 @@ export async function generateSummitTicketDataUrl(
   );
 
   ctx.fillStyle = "#6e5332";
-  ctx.font = "500 16px 'PingFang SC', sans-serif";
+  ctx.font = "500 16px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   ctx.fillText(`最高海拔：${planet.stats.altitude} · ${planet.stats.days}`, tx + 44, notchY + 138);
   ctx.fillText(`徒步路线：${planet.stats.distance}`, tx + 44, notchY + 168);
   ctx.fillText(`漫游：${totalSteps} 步  |  签发：${dateStr}`, tx + 44, notchY + 198);
 
   ctx.fillStyle = "#8a6229";
-  ctx.font = "600 15.5px Georgia, 'PingFang SC', serif";
+  ctx.font = "600 15.5px Georgia, 'LXGW WenKai Screen', 'PingFang SC', serif";
   ctx.fillText("行者的星球 · hikerplanets.netlify.app", tx + 44, notchY + 234);
 
   // 6c. 右侧博物馆级双环雪山星轨圆形邮戳（一星一专属四字印文）+ 正立高反差扫码二维码

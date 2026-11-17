@@ -8,7 +8,9 @@
   --paper-bot: #e8dac0;
   --ink-navy: #1b2746;
   --ink-muted: #525d75;
-  --font-serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "PMingLiU", Georgia, serif;
+  --font-display: "ZCOOL XiaoWei", "LXGW WenKai Screen", "Kaiti SC", "STKaiti", "Songti SC", "Cormorant Garamond", Georgia, serif;
+  --font-serif: "LXGW WenKai Screen", "Kaiti SC", "STKaiti", "Songti SC", "STSong", "Noto Serif SC", "Cormorant Garamond", Georgia, serif;
+  --font-en: "Cormorant Garamond", Georgia, serif;
 }
 
 * {
@@ -147,12 +149,13 @@ kbd {
 }
 
 .title-heading {
-  font-size: clamp(38px, 4.4vw, 60px);
-  font-weight: 500;
+  font-family: var(--font-display);
+  font-size: clamp(40px, 4.6vw, 62px);
+  font-weight: 400;
   letter-spacing: 0.14em;
-  color: #fbf6eb;
-  text-shadow: 0 4px 28px rgba(8, 13, 30, 0.85), 0 0 24px rgba(240, 199, 104, 0.18);
-  line-height: 1.22;
+  color: #fdf6e6;
+  text-shadow: 0 4px 28px rgba(8, 13, 30, 0.85), 0 0 26px rgba(240, 199, 104, 0.24);
+  line-height: 1.24;
 }
 
 .title-ornament {
@@ -1378,8 +1381,9 @@ body:has(#campfire-mixer:not(.hidden)) #hud-controls-hint {
   }
   #ticket-modal-title {
     margin: 6px 0 6px;
-    font-family: "Songti SC", Georgia, serif;
-    font-size: 24px;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 25px;
     letter-spacing: 0.08em;
     color: #f8e6b5;
   }
@@ -2328,7 +2332,7 @@ a[href*="netlify.com?utm_source"] {
 }
 .reel-counter {
   color: #f0c768;
-  font-family: Georgia, serif;
+  font-family: var(--font-en);
   letter-spacing: 0.08em;
 }
 .reel-planet-badge {
@@ -2362,9 +2366,10 @@ a[href*="netlify.com?utm_source"] {
 }
 #reel-title {
   margin: 0 0 4px;
-  font-size: 17px;
+  font-size: 18px;
+  font-weight: 400;
   color: #fce8b2;
-  font-family: "Songti SC", Georgia, serif;
+  font-family: var(--font-display);
 }
 #reel-quote {
   margin: 0;
@@ -2393,6 +2398,26 @@ a[href*="netlify.com?utm_source"] {
 .reel-ctrl-btn:hover {
   background: rgba(240, 199, 104, 0.24);
 }
+
+/* ==================== v3.7.1 STORYBOOK TYPOGRAPHY REFINEMENT ==================== */
+#map-title,
+#hud-planet-title,
+#journal-title,
+.scroll-header-title,
+.modal-card h2,
+.modal-card h3,
+.planet-node-label {
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
+.title-eyebrow,
+#map-chapter,
+#hud-planet-code,
+.journal-meta {
+  font-family: var(--font-en), var(--font-serif);
+}
+
 
 
 

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { latLonToUnitVec, getSurfaceRadius } from "./planetBuilder3D.js?v=3.7.0";
+import { latLonToUnitVec, getSurfaceRadius } from "./planetBuilder3D.js?v=3.7.1";
 
 const UP = new THREE.Vector3(0, 1, 0);
 

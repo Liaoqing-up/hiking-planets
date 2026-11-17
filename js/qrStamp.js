@@ -68,7 +68,7 @@ export function drawSiteQrStamp(ctx, x, y, boxSize = 96, theme = "parchment") {
 
   ctx.textAlign = "center";
   ctx.fillStyle = theme === "dark" ? "#d9c28e" : "#7c5c32";
-  ctx.font = "500 11.5px 'PingFang SC', sans-serif";
+  ctx.font = "500 11.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   ctx.fillText("长按扫码登球", x + boxSize / 2, y + boxSize + 15);
   ctx.restore();
 }
@@ -168,7 +168,7 @@ export function drawPostmarkSeal(
   drawArcChars(ctx, "✦ STARLIGHT TRAIL ✦", radius - 11.8, -Math.PI * 0.68, Math.PI * 0.68, false);
 
   // 下圆弧副铭文
-  ctx.font = `600 ${Math.round(radius * 0.155)}px 'Songti SC', serif`;
+  ctx.font = `600 ${Math.round(radius * 0.155)}px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif`;
   drawArcChars(ctx, subText, radius - 11.8, Math.PI * 0.34, -Math.PI * 0.34, true);
 
   // 内圈上半部：双雪峰剪影 + 峰顶北极星
@@ -209,7 +209,7 @@ export function drawPostmarkSeal(
 
   // 横幅主章大字
   ctx.fillStyle = color;
-  ctx.font = `700 ${Math.round(radius * 0.31)}px 'Songti SC', 'PingFang SC', serif`;
+  ctx.font = `700 ${Math.round(radius * 0.31)}px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', 'LXGW WenKai Screen', 'PingFang SC', serif`;
   ctx.fillText(bannerText, 0, 5);
 
   ctx.restore();
@@ -261,7 +261,7 @@ export function drawTravelerNameplate(
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#ebd094";
-    ctx.font = "600 13.5px 'PingFang SC', sans-serif";
+    ctx.font = "600 13.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
     ctx.fillText("✦ 持票旅人", x + 16, y + h / 2 + 1);
 
     // 分隔金竖线
@@ -281,7 +281,7 @@ export function drawTravelerNameplate(
     ctx.fillStyle = "#ffe28a";
     ctx.shadowColor = "rgba(255, 204, 84, 0.38)";
     ctx.shadowBlur = 8;
-    ctx.font = "700 24px 'Songti SC', 'STSong', Georgia, serif";
+    ctx.font = "700 24px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', 'STSong', Georgia, serif";
     ctx.fillText(spacedName, x + 102 + (width - 114) / 2, y + h / 2 + 1);
     ctx.shadowBlur = 0;
   } else {
@@ -298,7 +298,7 @@ export function drawTravelerNameplate(
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillStyle = theme === "dark" ? "rgba(240, 214, 156, 0.72)" : "#7d5e34";
-    ctx.font = "500 14px 'PingFang SC', sans-serif";
+    ctx.font = "500 14px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
     ctx.fillText("✦ 持票旅人：可在下方输入名字烫金印签", x + 14, y + (h - 6) / 2 + 1);
   }
 

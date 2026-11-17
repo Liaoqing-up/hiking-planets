@@ -389,7 +389,7 @@ export function capturePhotoWallpaper(
 
   // 顶部与底部烫金铭文落款
   ctx.fillStyle = "#e8c36b";
-  ctx.font = "600 22px Georgia, 'Songti SC', serif";
+  ctx.font = "600 22px Georgia, 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
   ctx.textAlign = "center";
   ctx.fillText("✦  TRAILS AMONG THE STARS · 山海皆星辰  ✦", W / 2, 68);
 
@@ -399,12 +399,12 @@ export function capturePhotoWallpaper(
   ).padStart(2, "0")}`;
 
   ctx.fillStyle = "#f9eed2";
-  ctx.font = "700 38px 'Songti SC', serif";
+  ctx.font = "700 38px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
   ctx.fillText(planetName, W / 2 - 48, fy + fh + 66);
 
   const cleanTraveler = String(travelerName || "").trim().slice(0, 12);
   ctx.fillStyle = "#cbb382";
-  ctx.font = "500 21px 'PingFang SC', sans-serif";
+  ctx.font = "500 21px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   ctx.fillText(`${altitudeText}  ·  ${dateStr}`, W / 2 - 48, fy + fh + 104);
 
   if (cleanTraveler) {
@@ -458,11 +458,11 @@ export function generateGrandPassportDataUrl(planets, saveData = {}, travelerNam
   ctx.fillText("✦  GRAND STARFARER PASSPORT · 全星系荣誉护照  ✦", W / 2, 102);
 
   ctx.fillStyle = "#fff6de";
-  ctx.font = "700 42px 'Songti SC', serif";
+  ctx.font = "700 42px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
   ctx.fillText("山海皆星辰 · 全境行者", W / 2, 162);
 
   ctx.fillStyle = "#c9b384";
-  ctx.font = "400 20px 'Songti SC', serif";
+  ctx.font = "400 20px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
   ctx.fillText("致耐心走完每一座垭口、每一片沙海与海岸的同路人", W / 2, 202);
 
   // 2×3 六颗星球水彩勋章阵列
@@ -485,11 +485,11 @@ export function generateGrandPassportDataUrl(planets, saveData = {}, travelerNam
     ctx.drawImage(thumb, cx - 72, cy, 144, 144);
 
     ctx.fillStyle = "#f9ecd0";
-    ctx.font = "600 19px 'Songti SC', serif";
+    ctx.font = "600 19px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
     ctx.fillText(p.name, cx, cy + 172);
 
     ctx.fillStyle = "#f0c768";
-    ctx.font = "500 14.5px 'PingFang SC', sans-serif";
+    ctx.font = "500 14.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
     const cnt = (saveData.discovered?.[p.id] || []).length;
     ctx.fillText(`✦ 印记 ${cnt}/${p.waypoints.length}`, cx, cy + 198);
   });
@@ -512,7 +512,7 @@ export function generateGrandPassportDataUrl(planets, saveData = {}, travelerNam
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#f7e7c2";
-  ctx.font = "500 19.5px 'PingFang SC', sans-serif";
+  ctx.font = "500 19.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   ctx.fillText(`🪐 点亮山海星球：${planets.length} / ${planets.length}   ·   旅途明信片：${doneWp} / ${totalWp}`, 108, boxY + 104);
   ctx.fillText(`🐾 结伴山野小生灵：${creatureCnt} / ${planets.length}`, 108, boxY + 148);
   ctx.fillText(`👣 星际累计漫游步数：${saveData.steps || 0} 步`, 108, boxY + 192);
@@ -520,7 +520,7 @@ export function generateGrandPassportDataUrl(planets, saveData = {}, travelerNam
   // 终章寄语与双环圆形烫金大满贯邮戳
   ctx.textAlign = "left";
   ctx.fillStyle = "#d9c498";
-  ctx.font = "italic 18.5px 'Songti SC', serif";
+  ctx.font = "italic 18.5px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
   ctx.fillText("“谢谢你来我的宇宙吹风散步。", 78, 1018);
   ctx.fillText("  愿我们在下一座没有天花板的山海重逢。”", 78, 1052);
 
@@ -629,15 +629,15 @@ export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName =
 
   ctx.textAlign = "center";
   ctx.fillStyle = "#8a6228";
-  ctx.font = "600 16px Georgia, 'Songti SC', serif";
+  ctx.font = "600 16px Georgia, 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
   ctx.fillText(`✦  ${planet.name} · 双面故事明信片书签  ✦`, W / 2, by + 76);
 
   ctx.fillStyle = "#2b1d10";
-  ctx.font = "700 30px 'Songti SC', serif";
+  ctx.font = "700 30px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
   ctx.fillText(wp.name, W / 2, by + 118);
 
   ctx.fillStyle = "#755835";
-  ctx.font = "500 16.5px 'PingFang SC', sans-serif";
+  ctx.font = "500 16.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   ctx.fillText(wp.elevation || "", W / 2, by + 148);
 
   // 正反双图拍立得并列框（第1页大景 + 第2页人物/故事照）
@@ -661,7 +661,7 @@ export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName =
     ctx.shadowBlur = 0;
     if (im) drawCoverBox(ctx, im, px + 8, pY + 8, pW - 16, pH - 8);
     ctx.fillStyle = "#6e5332";
-    ctx.font = "500 12.5px 'PingFang SC', sans-serif";
+    ctx.font = "500 12.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(i === 0 ? "✦ 壹 · 山海帧" : "✎ 贰 · 故事帧", px + pW / 2, pY + pH + 22);
   });
@@ -670,12 +670,12 @@ export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName =
   let curY = pY + pH + 74;
   ctx.textAlign = "left";
   ctx.fillStyle = "#8a6124";
-  ctx.font = "600 16px 'PingFang SC', sans-serif";
+  ctx.font = "600 16px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   ctx.fillText("✦ 绘本诗笺", padX, curY);
   curY += 30;
 
   ctx.fillStyle = "#2f2214";
-  ctx.font = "500 18px 'Songti SC', serif";
+  ctx.font = "500 18px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
   const poemLines = wrapParagraph(ctx, wp.poem, bw - 76);
   poemLines.slice(0, 5).forEach((ln) => {
     ctx.fillText(ln, padX, curY);
@@ -695,12 +695,12 @@ export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName =
 
   // 第 2 页：背后的真实旅途故事
   ctx.fillStyle = "#8a6124";
-  ctx.font = "600 16px 'PingFang SC', sans-serif";
+  ctx.font = "600 16px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   ctx.fillText("✎ 旅途故事", padX, curY);
   curY += 30;
 
   ctx.fillStyle = "#3a2b1b";
-  ctx.font = "400 17px 'PingFang SC', sans-serif";
+  ctx.font = "400 17px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   const memLines = wrapParagraph(ctx, wp.memory || wp.poem, bw - 76);
   memLines.slice(0, 8).forEach((ln) => {
     ctx.fillText(ln, padX, curY);
@@ -717,7 +717,7 @@ export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName =
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#7a5b34";
-  ctx.font = "500 14.5px 'PingFang SC', sans-serif";
+  ctx.font = "500 14.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
   ctx.fillText(`珍藏日期：${dateStr}  ·  hikerplanets.netlify.app`, padX, by + bh - 42);
 
   drawPostmarkSeal(ctx, bx + bw - 208, by + bh - 82, {

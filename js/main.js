@@ -1,26 +1,26 @@
 import * as THREE from "three";
-import { PLANETS } from "./data.js?v=3.7.0";
-import { sound } from "./audio.js?v=3.7.0";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=3.7.0";
+import { PLANETS } from "./data.js?v=3.7.1";
+import { sound } from "./audio.js?v=3.7.1";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=3.7.1";
 import {
   PLANET_RADIUS,
   latLonToUnitVec,
   getSurfaceRadius,
   buildPlanetWorld,
   buildHikerCharacter,
-} from "./planetBuilder3D.js?v=3.7.0";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=3.7.0";
-import { createSkyWonders } from "./skyWonders3D.js?v=3.7.0";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=3.7.0";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=3.7.0";
-import { buildCampfireRig } from "./campfireRadio.js?v=3.7.0";
-import { createFootprintTrail } from "./footprints3D.js?v=3.7.0";
+} from "./planetBuilder3D.js?v=3.7.1";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=3.7.1";
+import { createSkyWonders } from "./skyWonders3D.js?v=3.7.1";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=3.7.1";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=3.7.1";
+import { buildCampfireRig } from "./campfireRadio.js?v=3.7.1";
+import { createFootprintTrail } from "./footprints3D.js?v=3.7.1";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=3.7.0";
+} from "./bestiaryAndExtras.js?v=3.7.1";
 
 const SAVE_KEY = "hiking_planets_save_v1";
 
