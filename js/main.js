@@ -1,26 +1,26 @@
 import * as THREE from "three";
-import { PLANETS } from "./data.js?v=3.6.1";
-import { sound } from "./audio.js?v=3.6.1";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=3.6.1";
+import { PLANETS } from "./data.js?v=3.7.0";
+import { sound } from "./audio.js?v=3.7.0";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=3.7.0";
 import {
   PLANET_RADIUS,
   latLonToUnitVec,
   getSurfaceRadius,
   buildPlanetWorld,
   buildHikerCharacter,
-} from "./planetBuilder3D.js?v=3.6.1";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=3.6.1";
-import { createSkyWonders } from "./skyWonders3D.js?v=3.6.1";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=3.6.1";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=3.6.1";
-import { buildCampfireRig } from "./campfireRadio.js?v=3.6.1";
-import { createFootprintTrail } from "./footprints3D.js?v=3.6.1";
+} from "./planetBuilder3D.js?v=3.7.0";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=3.7.0";
+import { createSkyWonders } from "./skyWonders3D.js?v=3.7.0";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=3.7.0";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=3.7.0";
+import { buildCampfireRig } from "./campfireRadio.js?v=3.7.0";
+import { createFootprintTrail } from "./footprints3D.js?v=3.7.0";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=3.6.1";
+} from "./bestiaryAndExtras.js?v=3.7.0";
 
 const SAVE_KEY = "hiking_planets_save_v1";
 
@@ -261,6 +261,13 @@ function triggerHaptic(ms = 14) {
   }
 }
 
+let isAutoStroll = false;
+let autoStrollWpIdx = 0;
+let reelModalOpen = false;
+let reelFrames = [];
+let reelIndex = 0;
+let reelTimer = null;
+
 function isAnyModalOpen() {
   return (
     journalOpen ||
@@ -268,13 +275,16 @@ function isAnyModalOpen() {
     ticketModalOpen ||
     bestiaryModalOpen ||
     finaleModalOpen ||
-    atlasModalOpen
+    atlasModalOpen ||
+    reelModalOpen
   );
 }
 
 function disposeCurrentWorld() {
   clearGuideArc();
   clickRing.visible = false;
+  isAutoStroll = false;
+  document.getElementById("btn-auto-stroll")?.classList.remove("active");
   campfireRig.hide();
   isCampfireMode = false;
   isTelescopeMode = false;
@@ -623,6 +633,7 @@ function enterPlanet(idx) {
 function renderHudWaypoints() {
   if (!activePlanet || !currentWorld) return;
   const disc = getDiscoveredSet(activePlanet.id);
+  currentWorld.refreshTrailLoop?.(disc);
   elHudWaypoints.innerHTML = "";
   currentWorld.waypointObjs.forEach((wpObj) => {
     const isDone = disc.has(wpObj.data.id);
@@ -640,17 +651,50 @@ function renderHudWaypoints() {
   });
 }
 
-// ==================== LIGHTING (晨曦 → 暮霞 → 星夜 三态流转) & SHORTCUTS ====================
+function toggleAutoStroll(force) {
+  if (mode !== "planet" || !activePlanet || !currentWorld?.waypointObjs?.length) return;
+  isAutoStroll = typeof force === "boolean" ? force : !isAutoStroll;
+  if (isAutoStroll && isCampfireMode) toggleCampfireMode(false);
+  document.getElementById("btn-auto-stroll")?.classList.toggle("active", isAutoStroll);
+  if (isAutoStroll) {
+    // 选取前方最近的下一个路标作为环山漫巡起点
+    let bestIdx = 0;
+    let bestAng = 999;
+    currentWorld.waypointObjs.forEach((w, idx) => {
+      const a = playerUp.angleTo(w.unitDir);
+      if (a > 0.12 && a < bestAng) {
+        bestAng = a;
+        bestIdx = idx;
+      }
+    });
+    autoStrollWpIdx = bestIdx;
+    showWonderToast("🥾 已开启「环山自动漫巡」· 轻推摇杆或按键即可随时接管", 3000);
+    sound.init();
+    sound.playHover();
+  } else {
+    walkTargetDir = null;
+    clickRing.visible = false;
+  }
+}
+
+// ==================== LIGHTING (晨曦 → 暮色 → 星夜 三态流转) & SHORTCUTS ====================
 function cycleSkyPhase() {
   skyPhase = skyPhase === "day" ? "dusk" : skyPhase === "dusk" ? "night" : "day";
   isNight = skyPhase === "night";
   applyLightingTheme(false);
+  const pid = activePlanet?.id;
+  const alpenglow =
+    skyPhase === "dusk" && (pid === "yading" || pid === "siguniang" || pid === "zhagana" || pid === "yili")
+      ? " · 雪巅泛起日照金山"
+      : "";
+  const blueTears =
+    skyPhase === "night" && pid === "maclehose" ? " · 海湾泛起蓝眼泪荧光浪" : "";
   const labelMap = {
-    day: "☀ 已切换至「清朗晨曦」光影",
-    dusk: "🌇 已切换至「紫金暮霞 · 蓝调时刻」光影",
-    night: "☾ 已切换至「极光星夜」光影 · 头灯已点亮",
+    day: "☀ 当前天光：清朗晨曦",
+    dusk: `🌇 当前天光：紫金暮色${alpenglow}`,
+    night: `☾ 当前天光：极光星夜 · 头灯已点亮${blueTears}`,
   };
-  showWonderToast(labelMap[skyPhase], 2600);
+  showWonderToast(labelMap[skyPhase], 2800);
 }
 
 function applyLightingTheme(immediate = false) {
@@ -683,15 +727,16 @@ function applyLightingTheme(immediate = false) {
     sunLight.color.set("#8fb8ff");
   }
   hiker.setHeadlamp(skyPhase === "night" && mode === "planet");
+  currentWorld?.setMicroclimate?.(skyPhase);
 
   const nightBtn = document.getElementById("btn-toggle-night");
   if (nightBtn) {
     const btnText =
       skyPhase === "day"
-        ? `🌇 暮霞 <kbd>L</kbd>`
+        ? `☀ 晨曦 <kbd>L</kbd>`
         : skyPhase === "dusk"
-          ? `☾ 星夜 <kbd>L</kbd>`
-          : `☀ 晨曦 <kbd>L</kbd>`;
+          ? `🌇 暮色 <kbd>L</kbd>`
+          : `☾ 星夜 <kbd>L</kbd>`;
     nightBtn.innerHTML = btnText;
   }
 }
@@ -1008,6 +1053,106 @@ function openAtlasModal() {
 function closeAtlasModal() {
   atlasModalOpen = false;
   document.getElementById("modal-atlas")?.classList.add("hidden");
+}
+
+function renderReelFrame() {
+  if (!reelFrames.length) return;
+  const item = reelFrames[reelIndex];
+  const pad = (n) => String(n).padStart(2, "0");
+  document.getElementById("reel-counter").textContent = `✦ ${pad(reelIndex + 1)} / ${pad(reelFrames.length)}`;
+  document.getElementById("reel-planet-badge").textContent = `${item.planetName} · ${item.elevation}`;
+  document.getElementById("reel-photo").src = item.photo;
+  document.getElementById("reel-title").textContent = item.title;
+  document.getElementById("reel-quote").textContent = item.text;
+}
+
+function restartReelTimer() {
+  if (reelTimer) clearInterval(reelTimer);
+  reelTimer = setInterval(() => {
+    reelIndex = (reelIndex + 1) % reelFrames.length;
+    renderReelFrame();
+  }, 5200);
+  const btn = document.getElementById("btn-reel-toggle");
+  if (btn) {
+    btn.classList.add("active");
+    btn.textContent = "⏸ 暂停自动播映";
+  }
+}
+
+function openMemoryReel() {
+  reelFrames = [];
+  const targetPlanets =
+    atlasFilterPlanetId === "all"
+      ? PLANETS
+      : PLANETS.filter((p) => p.id === atlasFilterPlanetId);
+  targetPlanets.forEach((p) => {
+    const disc = getDiscoveredSet(p.id);
+    p.waypoints.forEach((wp) => {
+      if (!disc.has(wp.id)) return;
+      if (wp.photo) {
+        reelFrames.push({
+          planetName: p.name,
+          elevation: wp.elevation,
+          photo: wp.photo,
+          title: `${wp.name} · 绘本诗笺`,
+          text: wp.poem,
+        });
+      }
+      if (wp.photo2 && wp.memory) {
+        reelFrames.push({
+          planetName: p.name,
+          elevation: wp.elevation,
+          photo: wp.photo2,
+          title: `${wp.name} · 旅途故事`,
+          text: wp.memory,
+        });
+      }
+    });
+  });
+  if (!reelFrames.length) {
+    showWonderToast("✦ 先在星球上点亮至少 1 处明信片印记，即可开启旅途胶片放映！");
+    return;
+  }
+  closeAtlasModal();
+  reelIndex = 0;
+  reelModalOpen = true;
+  ensureHistoryGuard();
+  renderReelFrame();
+  document.getElementById("modal-reel")?.classList.remove("hidden");
+  restartReelTimer();
+  sound.init();
+  sound.playHover();
+  trackEvent("开启旅途胶片放映", { frames: reelFrames.length });
+}
+
+function closeMemoryReel() {
+  reelModalOpen = false;
+  if (reelTimer) {
+    clearInterval(reelTimer);
+    reelTimer = null;
+  }
+  document.getElementById("modal-reel")?.classList.add("hidden");
+}
+
+function stepMemoryReel(delta) {
+  if (!reelFrames.length) return;
+  reelIndex = (reelIndex + delta + reelFrames.length) % reelFrames.length;
+  renderReelFrame();
+  if (reelTimer) restartReelTimer();
+}
+
+function toggleMemoryReelPlay() {
+  const btn = document.getElementById("btn-reel-toggle");
+  if (reelTimer) {
+    clearInterval(reelTimer);
+    reelTimer = null;
+    if (btn) {
+      btn.classList.remove("active");
+      btn.textContent = "▶ 继续自动播映";
+    }
+  } else {
+    restartReelTimer();
+  }
 }
 
 function getUnlockedPlanetWaypoints(planet) {
@@ -1327,9 +1472,10 @@ function closeManiModal() {
 
 function syncCampfireAudio() {
   const fire = Number(document.getElementById("mix-fire")?.value ?? 75) / 100;
-  const wind = Number(document.getElementById("mix-wind")?.value ?? 55) / 100;
+  const wind = Number(document.getElementById("mix-wind")?.value ?? 50) / 100;
+  const nature = Number(document.getElementById("mix-nature")?.value ?? 45) / 100;
   const music = Number(document.getElementById("mix-music")?.value ?? 70) / 100;
-  sound.setCampfireMix({ active: isCampfireMode, fire, wind, music });
+  sound.setCampfireMix({ active: isCampfireMode, fire, wind, nature, music });
 }
 
 function toggleCampfireMode(force) {
@@ -1415,6 +1561,16 @@ window.addEventListener("keydown", (e) => {
   }
 
   // 全局跨界面模态框优先响应键盘关闭（星图与星球内统一生效）
+  if (reelModalOpen) {
+    if (e.code === "Escape") closeMemoryReel();
+    else if (e.code === "ArrowRight") stepMemoryReel(1);
+    else if (e.code === "ArrowLeft") stepMemoryReel(-1);
+    else if (e.code === "Space") {
+      e.preventDefault();
+      toggleMemoryReelPlay();
+    }
+    return;
+  }
   if (atlasModalOpen) {
     if (e.code === "Escape" || e.code === "KeyG") closeAtlasModal();
     return;
@@ -1474,6 +1630,8 @@ window.addEventListener("keydown", (e) => {
       openAtlasModal();
     } else if (e.code === "KeyB") {
       openBestiaryModal();
+    } else if (e.code === "KeyR") {
+      toggleAutoStroll();
     } else if (e.code === "KeyC") {
       toggleCampfireMode();
     } else if (e.code === "KeyT") {
@@ -1657,6 +1815,38 @@ window.addEventListener("pointerup", (e) => {
       }
     }
 
+    // 1.5 检测是否点中了划过天际的流星（《小王子》星辰许愿彩蛋）
+    if (activeSkyWonders?.pickActiveMeteor?.(raycaster)) {
+      const WISH_QUOTES = [
+        "🌠 你接住了一颗流星：“夜晚仰望星空时，每一颗星星都会向你微笑。”",
+        "🌠 流星划过山脊：“真正重要的东西，用眼睛是看不见的，要用心去寻觅。”",
+        "🌠 星尘落在肩头：“愿你走过的每一道垭口，都化作照亮归途的星辰。”",
+      ];
+      sound.init();
+      sound.playWishStar();
+      triggerHaptic(18);
+      showWonderToast(WISH_QUOTES[Math.floor(Math.random() * WISH_QUOTES.length)], 4000);
+      return;
+    }
+
+    // 1.8 检测是否轻触了身边的山野小生灵（摸头欢跳 + 飘起星芒 + 行者挥手回应）
+    if (activeCreature?.group) {
+      const petHits = raycaster.intersectObject(activeCreature.group, true);
+      if (petHits.length > 0) {
+        const line = activeCreature.pet();
+        hiker.triggerWave();
+        sound.init();
+        sound.playPetChime();
+        triggerHaptic(14);
+        showWonderToast(line, 3400);
+        if (!saveData.creatures?.includes(activePlanet.id)) {
+          saveData.creatures = [...(saveData.creatures || []), activePlanet.id];
+          persistSave();
+        }
+        return;
+      }
+    }
+
     // 2. 检测是否点击了垭口星光玛尼堆
     if (activeManiCairn) {
       const maniHits = raycaster.intersectObject(activeManiCairn.group, true);
@@ -1669,6 +1859,7 @@ window.addEventListener("pointerup", (e) => {
     if (isCampfireMode) return;
     const hits = raycaster.intersectObject(currentWorld.terrainMesh, false);
     if (hits.length > 0) {
+      if (isAutoStroll) toggleAutoStroll(false);
       walkTargetDir = hits[0].point.clone().normalize();
       const r = getSurfaceRadius(activePlanet.id, walkTargetDir);
       clickRing.position.copy(walkTargetDir).multiplyScalar(r + 0.05);
@@ -1738,6 +1929,7 @@ document.getElementById("btn-back-map").addEventListener("click", () => {
   openStarMap();
 });
 
+document.getElementById("btn-auto-stroll")?.addEventListener("click", () => toggleAutoStroll());
 document.getElementById("btn-toggle-night").addEventListener("click", () => {
   cycleSkyPhase();
 });
@@ -1760,9 +1952,32 @@ elPromptInteract.addEventListener("click", () => {
 
 document.getElementById("btn-campfire-mode")?.addEventListener("click", () => toggleCampfireMode());
 document.getElementById("btn-exit-campfire")?.addEventListener("click", () => toggleCampfireMode(false));
-["mix-fire", "mix-wind", "mix-music"].forEach((id) => {
+["mix-fire", "mix-wind", "mix-nature", "mix-music"].forEach((id) => {
   document.getElementById(id)?.addEventListener("input", syncCampfireAudio);
 });
+const CAMP_PRESETS = {
+  sleep: { fire: 85, wind: 25, nature: 30, music: 20, label: "🌙 已调至「助眠微火」混音" },
+  stream: { fire: 45, wind: 40, nature: 92, music: 55, label: "🌊 已调至「枕浪听溪」混音" },
+  solo: { fire: 35, wind: 20, nature: 25, music: 95, label: "✨ 已调至「星夜琴音」混音" },
+};
+document.querySelectorAll(".camp-preset-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const p = CAMP_PRESETS[btn.dataset.preset];
+    if (!p) return;
+    document.getElementById("mix-fire").value = p.fire;
+    document.getElementById("mix-wind").value = p.wind;
+    document.getElementById("mix-nature").value = p.nature;
+    document.getElementById("mix-music").value = p.music;
+    syncCampfireAudio();
+    showWonderToast(p.label, 2200);
+  });
+});
+
+document.getElementById("btn-open-reel")?.addEventListener("click", openMemoryReel);
+document.getElementById("btn-close-reel")?.addEventListener("click", closeMemoryReel);
+document.getElementById("btn-reel-prev")?.addEventListener("click", () => stepMemoryReel(-1));
+document.getElementById("btn-reel-next")?.addEventListener("click", () => stepMemoryReel(1));
+document.getElementById("btn-reel-toggle")?.addEventListener("click", toggleMemoryReelPlay);
 
 document.getElementById("btn-telescope-mode")?.addEventListener("click", () => toggleTelescopeMode());
 document.getElementById("btn-summit-ticket")?.addEventListener("click", openSummitTicketModal);
@@ -1921,9 +2136,21 @@ function updatePlanetExploration(dt, elapsed) {
 
   const moveDir = new THREE.Vector3();
   if (inputX !== 0 || inputY !== 0) {
+    if (isAutoStroll) toggleAutoStroll(false);
     walkTargetDir = null;
     clickRing.visible = false;
     moveDir.addScaledVector(viewFwd, inputY).addScaledVector(viewRight, inputX).normalize();
+  } else if (isAutoStroll && !isAnyModalOpen() && !isCampfireMode && currentWorld?.waypointObjs?.length) {
+    const targetWp = currentWorld.waypointObjs[autoStrollWpIdx % currentWorld.waypointObjs.length];
+    if (playerUp.angleTo(targetWp.unitDir) < 0.08) {
+      autoStrollWpIdx = (autoStrollWpIdx + 1) % currentWorld.waypointObjs.length;
+    }
+    const nextDir = currentWorld.waypointObjs[autoStrollWpIdx % currentWorld.waypointObjs.length].unitDir;
+    moveDir
+      .copy(nextDir)
+      .sub(playerUp.clone().multiplyScalar(nextDir.dot(playerUp)))
+      .normalize();
+    camYaw += dt * 0.075;
   } else if (walkTargetDir && !journalOpen) {
     const angle = playerUp.angleTo(walkTargetDir);
     if (angle < 0.04) {
@@ -2266,6 +2493,7 @@ window.__game = {
 [
   ["modal-journal", closeJournal],
   ["modal-atlas", closeAtlasModal],
+  ["modal-reel", closeMemoryReel],
   ["modal-bestiary", closeBestiaryModal],
   ["modal-ticket", closeSummitTicketModal],
   ["modal-mani", closeManiModal],
@@ -2295,6 +2523,11 @@ window.addEventListener("popstate", () => {
   if (journalOpen) {
     closeJournal();
     if (isAnyModalOpen() || mode !== "title") ensureHistoryGuard();
+    return;
+  }
+  if (reelModalOpen) {
+    closeMemoryReel();
+    if (mode !== "title") ensureHistoryGuard();
     return;
   }
   if (atlasModalOpen) {

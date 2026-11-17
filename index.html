@@ -23,9 +23,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=3.6.1" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=3.6.1" />
-  <link rel="manifest" href="./manifest.webmanifest?v=3.6.1" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=3.7.0" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=3.7.0" />
+  <link rel="manifest" href="./manifest.webmanifest?v=3.7.0" />
   <style>
     html, body { background: #080f24; }
     #boot-curtain {
@@ -58,7 +58,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=3.6.1" />
+  <link rel="stylesheet" href="./styles.css?v=3.7.0" />
   <script
     defer
     src="https://cloud.umami.is/script.js"
@@ -289,7 +289,8 @@
     <div class="hud-top-right">
       <div id="hud-waypoints" aria-label="星球路标收集进度"></div>
       <div class="hud-tools">
-        <button id="btn-toggle-night" type="button">☾ 星夜 <kbd>L</kbd></button>
+        <button id="btn-auto-stroll" type="button" title="自动沿星球环线漫步巡游 [R]">🥾 漫巡 <kbd>R</kbd></button>
+        <button id="btn-toggle-night" type="button" title="点击切换晨曦 / 暮色 / 星夜 [L]">☀ 晨曦 <kbd>L</kbd></button>
         <button id="btn-photo-mode" type="button">📷 留影 <kbd>P</kbd></button>
       </div>
     </div>
@@ -322,9 +323,15 @@
         <span>🔥 营地围炉电台 · 卸下背包听会儿风</span>
         <button id="btn-exit-campfire" type="button">起身前行 ✕</button>
       </div>
+      <div class="campfire-presets">
+        <button type="button" class="camp-preset-btn" data-preset="sleep">🌙 助眠微火</button>
+        <button type="button" class="camp-preset-btn" data-preset="stream">🌊 枕浪听溪</button>
+        <button type="button" class="camp-preset-btn" data-preset="solo">✨ 星夜琴音</button>
+      </div>
       <div class="campfire-sliders">
         <label><span>🔥 篝火</span><input id="mix-fire" type="range" min="0" max="100" value="75" /></label>
-        <label><span>🌬️ 山风</span><input id="mix-wind" type="range" min="0" max="100" value="55" /></label>
+        <label><span>🌬️ 山风</span><input id="mix-wind" type="range" min="0" max="100" value="50" /></label>
+        <label><span>🌊 风物</span><input id="mix-nature" type="range" min="0" max="100" value="45" /></label>
         <label><span>♪ 星音</span><input id="mix-music" type="range" min="0" max="100" value="70" /></label>
       </div>
     </div>
@@ -457,7 +464,10 @@
     <article class="bestiary-book atlas-book">
       <div class="mani-eyebrow">✦ STARLIGHT POSTCARD ATLAS · 全星系印记图集</div>
       <h3 id="atlas-title">山海二十四帧印记</h3>
-      <p id="atlas-subtitle" class="mani-sub">已点亮的印记可随时点击重温正反双页故事，未解锁印记可一键飞往寻访</p>
+      <div class="atlas-header-row">
+        <p id="atlas-subtitle" class="mani-sub">已点亮的印记可随时点击重温正反双页故事，未解锁印记可一键飞往寻访</p>
+        <button id="btn-open-reel" type="button" class="reel-launch-btn">🎞️ 放映旅途胶片</button>
+      </div>
       <div id="atlas-tabs" class="atlas-tabs" role="tablist"></div>
       <div id="atlas-grid" class="atlas-grid"></div>
       <button id="btn-close-atlas" type="button" class="mani-close-btn bestiary-close">合上印记册 ✕</button>
@@ -524,7 +534,30 @@
     </article>
   </div>
 
-  <script type="module" src="./js/main.js?v=3.6.1"></script>
+  <!-- 星际徒步旅途胶片放映厅弹窗 -->
+  <div id="modal-reel" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="星际旅途胶片回放">
+    <div class="reel-stage">
+      <div class="reel-top-bar">
+        <span id="reel-counter" class="reel-counter">✦ 01 / 01</span>
+        <span id="reel-planet-badge" class="reel-planet-badge"></span>
+        <button id="btn-close-reel" type="button" class="reel-ctrl-btn">退出放映 ✕</button>
+      </div>
+      <div class="reel-frame">
+        <img id="reel-photo" alt="旅途胶片画面" />
+      </div>
+      <div class="reel-caption-box">
+        <h4 id="reel-title"></h4>
+        <p id="reel-quote"></p>
+      </div>
+      <div class="reel-controls">
+        <button id="btn-reel-prev" type="button" class="reel-ctrl-btn">‹ 上一帧</button>
+        <button id="btn-reel-toggle" type="button" class="reel-ctrl-btn active">⏸ 暂停自动播映</button>
+        <button id="btn-reel-next" type="button" class="reel-ctrl-btn">下一帧 ›</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/main.js?v=3.7.0"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       window.addEventListener("load", () => {

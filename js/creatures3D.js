@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { latLonToUnitVec, getSurfaceRadius } from "./planetBuilder3D.js";
+import { latLonToUnitVec, getSurfaceRadius } from "./planetBuilder3D.js?v=3.7.0";
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -538,20 +538,61 @@ export function buildPlanetCreature(planetConfig, initiallyBonded = false) {
     return vec.normalize();
   }
 
+  // 轻触互动：宽松透明点选碰撞球 + 头顶欢欣金色星芒粒子
+  const hitSphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.68, 8, 8),
+    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+  );
+  hitSphere.position.set(0, 0.35, 0);
+  group.add(hitSphere);
+
+  const joyGroup = new THREE.Group();
+  joyGroup.visible = false;
+  const joyStars = [];
+  const joyMat = new THREE.MeshBasicMaterial({ color: "#ffe27a", transparent: true, opacity: 0.95 });
+  for (let i = 0; i < 3; i++) {
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.065, 0), joyMat.clone());
+    joyGroup.add(star);
+    joyStars.push(star);
+  }
+  group.add(joyGroup);
+  let petTimer = 0;
+  const PET_LINES = {
+    tengger: "🐪 小骆驼开心地晃了晃驼铃，蹭了蹭你的掌心！",
+    yading: "🦦 雪山旱獭捧着爪子原地蹦了一下，朝你咧嘴笑！",
+    zhagana: "🦬 小黑牦牛欢快地摇起绒尾巴，轻轻顶了顶你的衣角！",
+    siguniang: "🦊 星辰小狐狸眯起眼睛转了个圈：“被驯养的感觉真好呀。”",
+    maclehose: "🦈 海湾抱抱鲨扑棱着软乎乎的胸鳍，开心地蹦起浪花！",
+    yili: "🐑 草原小羊羔像云朵一样蹦跳起来，发出软糯轻鸣！",
+  };
+
   function syncTransform() {
-    const r = getSurfaceRadius(pid, upDir);
+    const hop = petTimer > 0 ? Math.abs(Math.sin(petTimer * Math.PI * 2.5)) * 0.34 : 0;
+    const r = getSurfaceRadius(pid, upDir) + hop;
     group.position.copy(upDir).multiplyScalar(r);
     projectTangent(forwardDir, upDir);
     tmpRight.crossVectors(upDir, forwardDir).normalize();
     forwardDir.crossVectors(tmpRight, upDir).normalize();
     tmpMat.makeBasis(tmpRight, upDir, forwardDir);
     group.quaternion.setFromRotationMatrix(tmpMat);
+    if (petTimer > 0) {
+      const spin = (1 - petTimer / 1.35) * Math.PI * 2;
+      group.rotateY(spin);
+    }
   }
   syncTransform();
 
   return {
     group,
+    hitSphere,
     info: meta,
+    pet() {
+      bonded = true;
+      bondFlash = 1.0;
+      petTimer = 1.35;
+      joyGroup.visible = true;
+      return PET_LINES[pid] || `${meta.emoji} ${meta.name}开心地围着你跳了一圈！`;
+    },
     get isBonded() {
       return bonded;
     },
@@ -704,8 +745,20 @@ export function buildPlanetCreature(planetConfig, initiallyBonded = false) {
       reactBlend = THREE.MathUtils.lerp(reactBlend, targetReact, Math.min(1, dt * 5.0));
       napBlend = THREE.MathUtils.lerp(napBlend, targetNap, Math.min(1, dt * 4.0));
 
+      if (petTimer > 0) {
+        petTimer = Math.max(0, petTimer - dt);
+        const prog = 1 - petTimer / 1.35;
+        joyStars.forEach((s, idx) => {
+          const a = prog * 5.2 + idx * ((Math.PI * 2) / 3);
+          s.position.set(Math.cos(a) * 0.28, 0.62 + prog * 0.55 + idx * 0.08, Math.sin(a) * 0.28);
+          s.rotation.y += dt * 5;
+          s.material.opacity = Math.max(0, 1 - prog * 0.85);
+        });
+        if (petTimer <= 0) joyGroup.visible = false;
+      }
+
       syncTransform();
-      rig.animate(dt, elapsed, isWalking, reactBlend, napBlend);
+      rig.animate(dt, elapsed, isWalking || petTimer > 0, Math.max(reactBlend, petTimer > 0 ? 1 : 0), napBlend);
     },
   };
 }

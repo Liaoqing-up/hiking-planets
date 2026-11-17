@@ -1503,10 +1503,77 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
   );
   group.add(particles);
 
+  // 8. 球面等高线徒步环线轨迹（串联全部路标的暖金虚线山径，已点亮区间化作明亮星轨）
+  const trailGroup = new THREE.Group();
+  const trailSegments = [];
+  if (waypointObjs.length >= 2) {
+    for (let i = 0; i < waypointObjs.length; i++) {
+      const a = waypointObjs[i];
+      const b = waypointObjs[(i + 1) % waypointObjs.length];
+      const pts = [];
+      const steps = 34;
+      for (let s = 0; s <= steps; s++) {
+        const dir = a.unitDir.clone().lerp(b.unitDir, s / steps).normalize();
+        const r = getSurfaceRadius(id, dir) + 0.055;
+        pts.push(dir.multiplyScalar(r));
+      }
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+      const lineMat = new THREE.LineDashedMaterial({
+        color: "#f3cf7a",
+        dashSize: 0.24,
+        gapSize: 0.2,
+        transparent: true,
+        opacity: 0.34,
+      });
+      const segLine = new THREE.Line(lineGeo, lineMat);
+      segLine.computeLineDistances();
+      trailGroup.add(segLine);
+      trailSegments.push({ line: segLine, mat: lineMat, fromId: a.data.id, toId: b.data.id });
+    }
+    group.add(trailGroup);
+  }
+
+  // 9. 山野微气候奇遇（高山暮色「日照金山」辉光 & 麦理浩径星夜「蓝眼泪荧光海」）
+  const hasSnowPeaks = id === "yading" || id === "siguniang" || id === "zhagana" || id === "yili";
+  const alpenglowLight = new THREE.PointLight("#ff6a2b", 0, 26, 1.4);
+  alpenglowLight.position.set(6, PLANET_RADIUS + 6.5, 6);
+  group.add(alpenglowLight);
+  let climateMode = "day";
+
   return {
     group,
     terrainMesh,
     waypointObjs,
+    refreshTrailLoop(discoveredSet) {
+      for (const seg of trailSegments) {
+        const lit = discoveredSet.has(seg.fromId) && discoveredSet.has(seg.toId);
+        seg.mat.color.set(lit ? "#ffe596" : "#e5c16c");
+        seg.mat.opacity = lit ? 0.82 : 0.34;
+        seg.mat.gapSize = lit ? 0.08 : 0.22;
+        seg.mat.needsUpdate = true;
+      }
+    },
+    setMicroclimate(skyPhase) {
+      climateMode = skyPhase;
+      if (hasSnowPeaks && skyPhase === "dusk") {
+        alpenglowLight.intensity = 4.6;
+        particles.material.color.set("#fff0df");
+        particles.material.size = 0.31;
+      } else {
+        alpenglowLight.intensity = 0;
+        particles.material.color.set(pal.particle || "#fff2c2");
+        particles.material.size = 0.26;
+      }
+      if (waterMesh && id === "maclehose") {
+        if (skyPhase === "night") {
+          waterMesh.material.emissive.set("#00aaff");
+          waterMesh.material.emissiveIntensity = 0.55;
+        } else {
+          waterMesh.material.emissive.set("#000000");
+          waterMesh.material.emissiveIntensity = 0;
+        }
+      }
+    },
     update(dt, elapsed) {
       cloudsGroup.rotation.y += dt * 0.035;
       particles.rotation.y += dt * 0.07;
@@ -1515,6 +1582,9 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
       if (waterMesh) {
         const s = 1 + Math.sin(elapsed * 1.8) * 0.0025;
         waterMesh.scale.setScalar(s);
+        if (id === "maclehose" && climateMode === "night") {
+          waterMesh.material.emissiveIntensity = 0.42 + Math.sin(elapsed * 2.6) * 0.22;
+        }
       }
 
       for (const camp of animatedProps) {
@@ -1846,10 +1916,15 @@ export function buildHikerCharacter() {
     }
   }
 
+  let waveTimer = 0;
+
   return {
     root,
     get outfit() { return currentOutfitId; },
     setOutfit: applyOutfitAndSync,
+    triggerWave() {
+      waveTimer = 1.6;
+    },
     setSitting(on) {
       isSitting = Boolean(on);
       sitLog.visible = isSitting;
@@ -1910,7 +1985,14 @@ export function buildHikerCharacter() {
       leftLeg.rotation.x = swing;
       rightLeg.rotation.x = -swing;
       leftArm.rotation.x = -swing * 0.85;
-      rightArm.rotation.x = swing * 0.85;
+      if (waveTimer > 0) {
+        waveTimer = Math.max(0, waveTimer - dt);
+        rightArm.rotation.x = -2.45;
+        rightArm.rotation.z = -0.35 + Math.sin(elapsed * 14) * 0.32;
+      } else {
+        rightArm.rotation.x = swing * 0.85;
+        rightArm.rotation.z = 0;
+      }
 
       bodyPivot.position.y = Math.abs(Math.sin(walkPhase)) * 0.045 * Math.min(1, s);
       bodyPivot.rotation.x = s * 0.08;

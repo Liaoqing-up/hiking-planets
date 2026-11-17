@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./planetBuilder3D.js?v=3.6.1";
+import { getSurfaceRadius, PLANET_RADIUS } from "./planetBuilder3D.js?v=3.7.0";
 
 const POOL_SIZE = 34;
 const RIPPLE_POOL_SIZE = 14;

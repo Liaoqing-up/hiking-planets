@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./planetBuilder3D.js?v=3.6.1";
+import { getSurfaceRadius, PLANET_RADIUS } from "./planetBuilder3D.js?v=3.7.0";
 
 function drawPlanetLabelCanvas(canvas, text, progressStr = "", isCleared = false) {
   const ctx = canvas.getContext("2d");
@@ -355,10 +355,16 @@ export function createSkyWonders(activePlanet, allPlanets) {
     const tail = new THREE.Mesh(new THREE.ConeGeometry(0.18, 6.8, 8), tailMat);
     tail.rotation.x = Math.PI * 0.5;
     tail.position.z = -3.4;
-    mGroup.add(head, tail);
+    const hit = new THREE.Mesh(
+      new THREE.SphereGeometry(2.8, 6, 6),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+    );
+    hit.position.z = -1.6;
+    mGroup.add(head, tail, hit);
     group.add(mGroup);
     meteors.push({
       group: mGroup,
+      hit,
       tailMat,
       active: false,
       delay: 0,
@@ -473,6 +479,12 @@ export function createSkyWonders(activePlanet, allPlanets) {
       }
     },
     triggerMeteorBurst,
+    pickActiveMeteor(raycaster) {
+      const hits = meteors.filter((m) => m.active && m.group.visible).map((m) => m.hit);
+      if (!hits.length) return false;
+      const res = raycaster.intersectObjects(hits, false);
+      return res.length > 0;
+    },
     update(dt, elapsed, state = {}) {
       const baseScale = telescopeActive
         ? window.innerWidth < window.innerHeight

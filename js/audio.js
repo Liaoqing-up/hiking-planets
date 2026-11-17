@@ -486,10 +486,24 @@ class SoundEngine {
     }
   }
 
-  setCampfireMix({ active = false, fire = 0.7, wind = 0.5, music = 0.7 } = {}) {
+  playPetChime() {
+    if (!this.initialized || this.muted) return;
+    [659.25, 880, 1174.66].forEach((f, i) => {
+      this.playTone(f, { duration: 0.36, volume: 0.042, delay: i * 0.065, attack: 0.008 });
+    });
+  }
+
+  playWishStar() {
+    if (!this.initialized || this.muted) return;
+    [587.33, 783.99, 1046.5, 1318.51, 1567.98].forEach((f, i) => {
+      this.playTone(f, { duration: 0.75, volume: 0.036, delay: i * 0.07, attack: 0.01 });
+    });
+  }
+
+  setCampfireMix({ active = false, fire = 0.7, wind = 0.5, nature = 0.45, music = 0.7 } = {}) {
     if (!this.initialized || !this.ctx) return;
     const now = this.ctx.currentTime;
-    this._campMix = { active, fire, wind, music };
+    this._campMix = { active, fire, wind, nature, music };
 
     // 篝火噼啪暖噪声通道路由
     if (active && !this.campfireGain) {
@@ -519,9 +533,39 @@ class SoundEngine {
       this.campfireSrc = src;
     }
 
+    // 山海溪浪 · 夜雨潮汐立体声自然风物通道
+    if (active && !this.natureGain) {
+      const len = this.ctx.sampleRate * 4;
+      const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      let b0 = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
+        b0 = 0.96 * b0 + 0.04 * w;
+        const swell = 0.62 + 0.38 * Math.sin((i / len) * Math.PI * 2);
+        d[i] = (b0 * 2.1 + w * 0.12) * swell;
+      }
+      const nSrc = this.ctx.createBufferSource();
+      nSrc.buffer = buf;
+      nSrc.loop = true;
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 980;
+      this.natureGain = this.ctx.createGain();
+      this.natureGain.gain.value = 0.0001;
+      nSrc.connect(lp);
+      lp.connect(this.natureGain);
+      this.natureGain.connect(this.masterGain);
+      nSrc.start();
+    }
+
     if (this.campfireGain) {
       const targetFire = active ? Math.max(0.0001, fire * 0.16) : 0.0001;
       this.campfireGain.gain.setTargetAtTime(targetFire, now, 0.25);
+    }
+    if (this.natureGain) {
+      const targetNature = active ? Math.max(0.0001, nature * 0.14) : 0.0001;
+      this.natureGain.gain.setTargetAtTime(targetNature, now, 0.3);
     }
     if (this.windGain) {
       const baseWind = (THEMES[this.currentThemeKey]?.windVol ?? 0.035);
