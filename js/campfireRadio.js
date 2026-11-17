@@ -48,6 +48,36 @@ export function buildCampfireRig() {
     sparks.push({ mesh: s, phase: i * 0.125 });
   }
 
+  // 火堆石块旁摆放户外露营钛金属马克杯 + 袅袅热茶白气
+  const mugGroup = new THREE.Group();
+  mugGroup.position.set(-0.28, 0.055, -0.14);
+  const tiMat = new THREE.MeshStandardMaterial({ color: "#94a3b8", metalness: 0.65, roughness: 0.35 });
+  const mugCup = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.095, 12), tiMat);
+  const mugHandle = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.006, 6, 12, Math.PI), tiMat);
+  mugHandle.rotation.z = -Math.PI / 2;
+  mugHandle.position.set(-0.042, 0, 0);
+  const teaTop = new THREE.Mesh(
+    new THREE.CircleGeometry(0.036, 12),
+    new THREE.MeshBasicMaterial({ color: "#d97706" })
+  );
+  teaTop.rotation.x = -Math.PI / 2;
+  teaTop.position.y = 0.044;
+  mugGroup.add(mugCup, mugHandle, teaTop);
+
+  const steamPuffs = [];
+  const steamMat = new THREE.MeshBasicMaterial({
+    color: "#f8fafc",
+    transparent: true,
+    opacity: 0.48,
+    depthWrite: false,
+  });
+  for (let i = 0; i < 3; i++) {
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(0.018, 7, 7), steamMat);
+    mugGroup.add(puff);
+    steamPuffs.push({ mesh: puff, phase: i * 0.33 });
+  }
+  group.add(mugGroup);
+
   return {
     group,
     placeInFrontOfHiker(upDir, forwardDir, surfacePos) {
@@ -80,6 +110,16 @@ export function buildCampfireRig() {
           Math.cos(elapsed * 2.6 + sp.phase * 10) * 0.12
         );
         sp.mesh.scale.setScalar(Math.max(0.01, (1 - p) * 1.1));
+      }
+
+      for (const st of steamPuffs) {
+        const p = (elapsed * 0.45 + st.phase) % 1;
+        st.mesh.position.set(
+          Math.sin(elapsed * 2.2 + st.phase * 8) * 0.02,
+          0.07 + p * 0.22,
+          Math.cos(elapsed * 2.0 + st.phase * 8) * 0.02
+        );
+        st.mesh.scale.setScalar((0.6 + p * 0.9) * (1 - p * 0.65));
       }
     },
   };

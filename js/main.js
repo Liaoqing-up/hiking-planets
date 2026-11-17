@@ -696,10 +696,34 @@ function applyLightingTheme(immediate = false) {
   }
 }
 
+const PHOTO_PRESETS = [
+  { label: "🎞️ 机位 · 近景旅拍", pitch: 0.44, dist: 7.6 },
+  { label: "🎞️ 机位 · 星球全景", pitch: 0.64, dist: 17.2 },
+  { label: "🎞️ 机位 · 仰望星海", pitch: 0.14, dist: 11.4 },
+];
+let photoPresetIdx = 0;
+
+function cyclePhotoPreset() {
+  photoPresetIdx = (photoPresetIdx + 1) % PHOTO_PRESETS.length;
+  const preset = PHOTO_PRESETS[photoPresetIdx];
+  camPitch = preset.pitch;
+  camDist = preset.dist;
+  const btn = document.getElementById("btn-photo-preset");
+  if (btn) btn.textContent = preset.label;
+  sound.init();
+  sound.playHover();
+}
+
 function togglePhotoMode(force) {
   isPhotoMode = typeof force === "boolean" ? force : !isPhotoMode;
   document.body.classList.toggle("photo-mode", isPhotoMode);
   document.getElementById("photo-mode-bar")?.classList.toggle("hidden", !isPhotoMode);
+  if (isPhotoMode) {
+    clickRing.visible = false;
+    if (guideArcLine) guideArcLine.visible = false;
+  } else if (guideArcLine) {
+    guideArcLine.visible = true;
+  }
 }
 
 // 记录当前票根预览窗的渲染源，以便填写专属署名后即时重新烫金绘制
@@ -971,6 +995,29 @@ function closeAtlasModal() {
   document.getElementById("modal-atlas")?.classList.add("hidden");
 }
 
+function getUnlockedPlanetWaypoints(planet) {
+  if (!planet) return [];
+  const disc = getDiscoveredSet(planet.id);
+  return planet.waypoints.filter((w) => disc.has(w.id));
+}
+
+function syncJournalSiblingNav() {
+  const unlocked = getUnlockedPlanetWaypoints(currentJournalPlanet);
+  const showNav = unlocked.length >= 2;
+  document.getElementById("btn-prev-postcard")?.classList.toggle("hidden", !showNav);
+  document.getElementById("btn-next-postcard")?.classList.toggle("hidden", !showNav);
+}
+
+function stepSiblingPostcard(delta) {
+  if (!currentJournalPlanet || !currentJournalWp) return false;
+  const unlocked = getUnlockedPlanetWaypoints(currentJournalPlanet);
+  if (unlocked.length < 2) return false;
+  const curIdx = unlocked.findIndex((w) => w.id === currentJournalWp.id);
+  const nextIdx = ((curIdx >= 0 ? curIdx : 0) + delta + unlocked.length) % unlocked.length;
+  openReadOnlyJournal(currentJournalPlanet, unlocked[nextIdx]);
+  return true;
+}
+
 function openReadOnlyJournal(planet, wpData) {
   journalOpen = true;
   ensureHistoryGuard();
@@ -983,6 +1030,7 @@ function openReadOnlyJournal(planet, wpData) {
   document.getElementById("journal-elevation").textContent = `${wpData.elevation}`;
   renderJournalTextPage();
   document.getElementById("journal-progress").textContent = `所属星球收集进度：${list.length} / ${planet.waypoints.length}`;
+  syncJournalSiblingNav();
   document.getElementById("btn-journal-ticket")?.classList.toggle("hidden", mode !== "planet");
   if (wpData.photo2) preloadUrl(wpData.photo2);
   document.getElementById("modal-journal").classList.remove("hidden");
@@ -1158,6 +1206,7 @@ function openWaypointJournal(wpObj) {
   document.getElementById("journal-elevation").textContent = `${wpObj.data.elevation}`;
   renderJournalTextPage();
   document.getElementById("journal-progress").textContent = `当前星球印记收集：${list.length} / ${activePlanet.waypoints.length}`;
+  syncJournalSiblingNav();
 
   // 预加载第 2 页照片，让点击「查看旅途故事」时零延迟秒切
   if (wpObj.data.photo2) {
@@ -1368,9 +1417,15 @@ window.addEventListener("keydown", (e) => {
     return;
   }
   if (journalOpen) {
-    if (e.code === "ArrowRight" || e.code === "ArrowLeft" || e.code === "Tab") {
+    if (e.code === "Tab") {
       e.preventDefault();
       flipJournalPage();
+    } else if (e.code === "ArrowRight") {
+      e.preventDefault();
+      if (!stepSiblingPostcard(1)) flipJournalPage();
+    } else if (e.code === "ArrowLeft") {
+      e.preventDefault();
+      if (!stepSiblingPostcard(-1)) flipJournalPage();
     } else if (e.code === "KeyE" || e.code === "Space" || e.code === "Enter" || e.code === "Escape") {
       e.preventDefault();
       closeJournal();
@@ -1673,6 +1728,9 @@ document.getElementById("btn-toggle-night").addEventListener("click", () => {
 document.getElementById("btn-photo-mode").addEventListener("click", () => {
   togglePhotoMode();
 });
+document.getElementById("btn-photo-preset")?.addEventListener("click", cyclePhotoPreset);
+document.getElementById("btn-prev-postcard")?.addEventListener("click", () => stepSiblingPostcard(-1));
+document.getElementById("btn-next-postcard")?.addEventListener("click", () => stepSiblingPostcard(1));
 
 document.getElementById("photo-exit-hint").addEventListener("click", () => {
   togglePhotoMode(false);
@@ -2046,8 +2104,9 @@ function updatePlanetExploration(dt, elapsed) {
     elPromptInteract.classList.add("hidden");
   }
 
-  // 引路光弧淡出计时
+  // 引路光弧淡出计时（留影模式下隐去地面辅助虚线，保证壁纸纯净）
   if (guideArcLine) {
+    guideArcLine.visible = !isPhotoMode;
     guideArcTimer -= dt;
     guideArcLine.material.opacity = Math.max(0, Math.min(0.95, guideArcTimer * 0.4));
     if (guideArcTimer <= 0) clearGuideArc();

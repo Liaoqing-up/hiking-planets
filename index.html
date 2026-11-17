@@ -23,9 +23,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=3.5.8" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=3.5.8" />
-  <link rel="manifest" href="./manifest.webmanifest?v=3.5.8" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=3.5.9" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=3.5.9" />
+  <link rel="manifest" href="./manifest.webmanifest?v=3.5.9" />
   <style>
     html, body { background: #080f24; }
     #boot-curtain {
@@ -58,7 +58,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=3.5.8" />
+  <link rel="stylesheet" href="./styles.css?v=3.5.9" />
   <script
     defer
     src="https://cloud.umami.is/script.js"
@@ -372,8 +372,9 @@
       </article>
     </div>
 
-    <!-- Photo Mode Floating Controls: Snap Wallpaper + Exit -->
+    <!-- Photo Mode Floating Controls: Preset + Snap Wallpaper + Exit -->
     <div id="photo-mode-bar" class="hidden">
+      <button id="btn-photo-preset" type="button">🎞️ 机位 · 近景旅拍</button>
       <button id="btn-snap-wallpaper" type="button">📸 咔嚓 · 洗印锁屏壁纸</button>
       <button id="photo-exit-hint" type="button">退出留影 [P]</button>
     </div>
@@ -424,7 +425,11 @@
             </div>
             <p id="journal-poem"></p>
           </div>
-          <div id="journal-progress"></div>
+          <div class="journal-progress-row">
+            <button id="btn-prev-postcard" type="button" class="sibling-nav-btn hidden" title="上一处已点亮印记 [←]">‹ 上一处</button>
+            <div id="journal-progress"></div>
+            <button id="btn-next-postcard" type="button" class="sibling-nav-btn hidden" title="下一处已点亮印记 [→]">下一处 ›</button>
+          </div>
 
           <div class="journal-actions-row">
             <button id="btn-close-journal" type="button">
@@ -519,7 +524,7 @@
     </article>
   </div>
 
-  <script type="module" src="./js/main.js?v=3.5.8"></script>
+  <script type="module" src="./js/main.js?v=3.5.9"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       window.addEventListener("load", () => {

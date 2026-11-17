@@ -1,8 +1,10 @@
 import * as THREE from "three";
-import { getSurfaceRadius } from "./planetBuilder3D.js";
+import { getSurfaceRadius, PLANET_RADIUS } from "./planetBuilder3D.js";
 
 const POOL_SIZE = 34;
-const FOOTPRINT_LIFE = 6.2; // 秒，随后被风雪/流沙轻轻抚平
+const RIPPLE_POOL_SIZE = 14;
+const FOOTPRINT_LIFE = 6.2;
+const RIPPLE_LIFE = 1.45;
 
 const COLOR_BY_PARTICLE = {
   sand: "#9e6324",
@@ -14,16 +16,21 @@ const COLOR_BY_PARTICLE = {
 export function createFootprintTrail(planetConfig) {
   const group = new THREE.Group();
   const pid = planetConfig.id;
-  const tint = COLOR_BY_PARTICLE[planetConfig.palette?.particleType] || "#524638";
+  const baseTint = new THREE.Color(
+    COLOR_BY_PARTICLE[planetConfig.palette?.particleType] || "#524638"
+  );
+  const snowTint = new THREE.Color("#d9ecff");
+  const isSnowCapable = ["yading", "siguniang", "zhagana", "yili"].includes(pid);
+  const waterLevel = pid === "maclehose" ? PLANET_RADIUS + 0.22 : PLANET_RADIUS + 0.16;
+  const rippleColor = planetConfig.palette?.water || "#67e8f9";
 
-  // 椭圆小靴印几何体（共享几何体，独立透明度材质以支持逐枚渐隐）
   const bootGeo = new THREE.CircleGeometry(0.058, 10);
   bootGeo.scale(0.78, 1.38, 1);
 
   const pool = [];
   for (let i = 0; i < POOL_SIZE; i++) {
     const mat = new THREE.MeshBasicMaterial({
-      color: tint,
+      color: baseTint,
       transparent: true,
       opacity: 0,
       depthWrite: false,
@@ -33,10 +40,28 @@ export function createFootprintTrail(planetConfig) {
     const mesh = new THREE.Mesh(bootGeo, mat);
     mesh.visible = false;
     group.add(mesh);
-    pool.push({ mesh, mat, age: 999, active: false });
+    pool.push({ mesh, mat, age: 999, active: false, baseOpacity: 0.44 });
+  }
+
+  // 涉水浅滩清透扩散水波涟漪池
+  const rippleGeo = new THREE.RingGeometry(0.065, 0.095, 22);
+  const ripples = [];
+  for (let i = 0; i < RIPPLE_POOL_SIZE; i++) {
+    const mat = new THREE.MeshBasicMaterial({
+      color: rippleColor,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(rippleGeo, mat);
+    mesh.visible = false;
+    group.add(mesh);
+    ripples.push({ mesh, mat, age: 999, active: false });
   }
 
   let cursor = 0;
+  let rippleCursor = 0;
   let leftRight = 1;
   let distAccum = 0;
   const lastUp = new THREE.Vector3();
@@ -44,9 +69,6 @@ export function createFootprintTrail(planetConfig) {
   const tmpBasis = new THREE.Matrix4();
 
   function spawnStep(upDir, forwardDir) {
-    const slot = pool[cursor];
-    cursor = (cursor + 1) % POOL_SIZE;
-
     tmpRight.crossVectors(forwardDir, upDir).normalize();
     const footDir = upDir
       .clone()
@@ -55,22 +77,41 @@ export function createFootprintTrail(planetConfig) {
       .normalize();
     leftRight *= -1;
 
-    const r = getSurfaceRadius(pid, footDir) + 0.016;
-    slot.mesh.position.copy(footDir).multiplyScalar(r);
-
-    // 让靴印平面贴合地表法线 (+Z 朝向法线 footDir, +Y 朝向行进方向 forwardDir)
+    const rawR = getSurfaceRadius(pid, footDir);
     const tangFwd = forwardDir
       .clone()
       .sub(footDir.clone().multiplyScalar(forwardDir.dot(footDir)))
       .normalize();
     const tangRight = new THREE.Vector3().crossVectors(tangFwd, footDir).normalize();
     tmpBasis.makeBasis(tangRight, tangFwd, footDir);
+
+    // 1. 湖岸/海滩浅水区：泛起扩散水波涟漪光环
+    if (rawR <= waterLevel) {
+      const rp = ripples[rippleCursor];
+      rippleCursor = (rippleCursor + 1) % RIPPLE_POOL_SIZE;
+      rp.mesh.position.copy(footDir).multiplyScalar(Math.max(rawR, waterLevel - 0.04) + 0.02);
+      rp.mesh.quaternion.setFromRotationMatrix(tmpBasis);
+      rp.mesh.scale.setScalar(0.65);
+      rp.age = 0;
+      rp.active = true;
+      rp.mesh.visible = true;
+      rp.mat.opacity = 0.72;
+      return;
+    }
+
+    // 2. 陆地 / 高海拔雪坡靴印区分着色
+    const slot = pool[cursor];
+    cursor = (cursor + 1) % POOL_SIZE;
+    slot.mesh.position.copy(footDir).multiplyScalar(rawR + 0.016);
     slot.mesh.quaternion.setFromRotationMatrix(tmpBasis);
 
+    const onSnow = isSnowCapable && rawR >= PLANET_RADIUS + 0.78;
+    slot.mat.color.copy(onSnow ? snowTint : baseTint);
+    slot.baseOpacity = onSnow ? 0.62 : 0.44;
     slot.age = 0;
     slot.active = true;
     slot.mesh.visible = true;
-    slot.mat.opacity = 0.46;
+    slot.mat.opacity = slot.baseOpacity;
   }
 
   return {
@@ -99,7 +140,21 @@ export function createFootprintTrail(planetConfig) {
           s.mat.opacity = 0;
         } else {
           const fade = 1 - s.age / FOOTPRINT_LIFE;
-          s.mat.opacity = 0.44 * Math.pow(fade, 1.35);
+          s.mat.opacity = s.baseOpacity * Math.pow(fade, 1.35);
+        }
+      }
+
+      for (const rp of ripples) {
+        if (!rp.active) continue;
+        rp.age += dt;
+        if (rp.age >= RIPPLE_LIFE) {
+          rp.active = false;
+          rp.mesh.visible = false;
+          rp.mat.opacity = 0;
+        } else {
+          const t = rp.age / RIPPLE_LIFE;
+          rp.mesh.scale.setScalar(0.65 + t * 2.85);
+          rp.mat.opacity = 0.72 * Math.pow(1 - t, 1.5);
         }
       }
     },

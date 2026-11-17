@@ -1608,7 +1608,8 @@ export function buildHikerCharacter() {
   chestBuckle.position.set(0, 0.51, 0.152);
   bodyPivot.add(chest, hemSkirt, hoodCollar, frontZip, strapL, strapR, chestBuckle);
 
-  // 60L 重装大包 + 侧面银灰折叠蛋巢防潮垫 + 毛球挂件 + 平安进山小红牌
+  // 60L 重装大包 + 侧面银灰折叠蛋巢防潮垫 + 毛球挂件 + 平安进山小红牌（收纳于 packGroup，围炉时可整体卸放身旁！）
+  const packGroup = new THREE.Group();
   const pack = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.34, 0.17), packMat);
   pack.position.set(0, 0.47, -0.145);
   const eggPad = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.32, 0.13), padMat);
@@ -1630,7 +1631,29 @@ export function buildHikerCharacter() {
   duckCharm.add(duckBody, duckBeak);
   duckCharm.position.set(0.12, 0.54, -0.22);
   duckCharm.visible = false;
-  bodyPivot.add(pack, eggPad, pomPom, redCharm, duckCharm);
+  packGroup.add(pack, eggPad, pomPom, redCharm, duckCharm);
+  root.add(packGroup);
+
+  // 围炉歇脚时的营地圆木坐桩 + 卸下斜靠在背包旁的交叉双登山杖
+  const sitLog = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.11, 0.115, 0.44, 10),
+    new THREE.MeshStandardMaterial({ color: "#6b442a", roughness: 0.88 })
+  );
+  sitLog.rotation.z = Math.PI / 2;
+  sitLog.position.set(0, 0.095, -0.04);
+  sitLog.visible = false;
+  root.add(sitLog);
+
+  const restingPoles = new THREE.Group();
+  const restPoleMat = new THREE.MeshStandardMaterial({ color: "#e5ecf5", metalness: 0.55 });
+  const rp1 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.01, 0.58, 6), restPoleMat);
+  rp1.rotation.set(0.32, 0, -0.22);
+  const rp2 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.01, 0.58, 6), restPoleMat);
+  rp2.rotation.set(0.28, 0, 0.18);
+  restingPoles.add(rp1, rp2);
+  restingPoles.position.set(-0.46, 0.24, -0.02);
+  restingPoles.visible = false;
+  root.add(restingPoles);
 
   // 头部 + 饱满深色发顶（彻底杜绝任何角度露头皮）+ 防晒护脸面罩 + 镀膜护目镜
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 14), skinMat);
@@ -1741,10 +1764,10 @@ export function buildHikerCharacter() {
     pole.rotation.x = 0.18;
     pivot.add(arm, glove, pole);
     bodyPivot.add(pivot);
-    return pivot;
+    return { pivot, pole };
   }
-  const leftArm = makeArmPole(-1);
-  const rightArm = makeArmPole(1);
+  const { pivot: leftArm, pole: leftPole } = makeArmPole(-1);
+  const { pivot: rightArm, pole: rightPole } = makeArmPole(1);
 
   const OUTFITS = {
     tengger: {
@@ -1812,14 +1835,51 @@ export function buildHikerCharacter() {
   }
 
   let isSitting = false;
+  let outfitHasMask = true;
+
+  const origSetOutfit = setOutfit;
+  function applyOutfitAndSync(planetId = "tengger") {
+    origSetOutfit(planetId);
+    outfitHasMask = Boolean((OUTFITS[currentOutfitId] || OUTFITS.tengger).mask);
+    if (isSitting) {
+      faceMask.visible = false;
+    }
+  }
 
   return {
     root,
     get outfit() { return currentOutfitId; },
-    setOutfit,
+    setOutfit: applyOutfitAndSync,
     setSitting(on) {
       isSitting = Boolean(on);
-      if (!isSitting) {
+      sitLog.visible = isSitting;
+      restingPoles.visible = isSitting;
+      leftPole.visible = !isSitting;
+      rightPole.visible = !isSitting;
+      strapL.visible = !isSitting;
+      strapR.visible = !isSitting;
+      chestBuckle.visible = !isSitting;
+
+      if (isSitting) {
+        // 卸下重装大包斜靠在身旁左侧营地草皮上
+        packGroup.position.set(-0.36, -0.22, -0.02);
+        packGroup.rotation.set(0.24, 0.55, 0.14);
+        // 拉下防晒面罩，将镀膜大风镜轻松推上额头帽檐
+        faceMask.visible = false;
+        gogglesFrame.position.set(0, 0.805, 0.115);
+        gogglesFrame.rotation.x = -0.28;
+        goggles.position.set(0, 0.805, 0.12);
+        goggles.rotation.x = -0.28;
+      } else {
+        packGroup.position.set(0, 0, 0);
+        packGroup.rotation.set(0, 0, 0);
+        faceMask.visible = outfitHasMask;
+        gogglesFrame.position.set(0, 0.755, 0.11);
+        gogglesFrame.rotation.x = 0;
+        goggles.position.set(0, 0.755, 0.115);
+        goggles.rotation.x = 0;
+        leftArm.rotation.z = 0;
+        rightArm.rotation.z = 0;
         bodyPivot.position.y = 0;
         bodyPivot.rotation.x = 0;
       }
@@ -1830,13 +1890,15 @@ export function buildHikerCharacter() {
     },
     update(dt, elapsed, speedRatio = 0) {
       if (isSitting) {
-        // 营地篝火边盘坐轻晃双脚与辫子
-        bodyPivot.position.y = -0.11;
-        bodyPivot.rotation.x = -0.08;
-        leftLeg.rotation.x = -1.28 + Math.sin(elapsed * 2.2) * 0.08;
-        rightLeg.rotation.x = -1.28 - Math.sin(elapsed * 2.2) * 0.08;
-        leftArm.rotation.x = -0.45;
-        rightArm.rotation.x = -0.45;
+        // 坐在营地圆木桩上，卸包伸手向篝火取暖、轻晃双脚与辫子
+        bodyPivot.position.y = -0.09;
+        bodyPivot.rotation.x = 0.05;
+        leftLeg.rotation.x = -1.24 + Math.sin(elapsed * 2.2) * 0.07;
+        rightLeg.rotation.x = -1.24 - Math.sin(elapsed * 2.2) * 0.07;
+        leftArm.rotation.x = -0.76 + Math.sin(elapsed * 2.8) * 0.05;
+        rightArm.rotation.x = -0.76 - Math.sin(elapsed * 2.8) * 0.05;
+        leftArm.rotation.z = 0.18;
+        rightArm.rotation.z = -0.18;
         leftBraid.rotation.z = -0.2 + Math.sin(elapsed * 2.4) * 0.06;
         rightBraid.rotation.z = 0.2 + Math.cos(elapsed * 2.4) * 0.06;
         return;
@@ -1852,6 +1914,8 @@ export function buildHikerCharacter() {
 
       bodyPivot.position.y = Math.abs(Math.sin(walkPhase)) * 0.045 * Math.min(1, s);
       bodyPivot.rotation.x = s * 0.08;
+      packGroup.position.y = bodyPivot.position.y;
+      packGroup.rotation.x = bodyPivot.rotation.x;
 
       // 双小辫随微风与步伐俏皮轻晃
       const braidBounce = Math.sin(walkPhase * 2) * (0.06 + s * 0.18);
