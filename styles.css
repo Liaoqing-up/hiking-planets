@@ -1351,7 +1351,7 @@ body:has(#campfire-mixer:not(.hidden)) #hud-controls-hint {
     align-items: center;
     gap: 36px;
     padding: 26px 36px;
-    max-width: min(980px, 92vw);
+    max-width: min(1100px, 94vw);
     background: linear-gradient(145deg, rgba(13, 22, 48, 0.92), rgba(8, 14, 32, 0.94));
     border: 1px solid rgba(240, 199, 104, 0.34);
     border-radius: 22px;
@@ -1360,7 +1360,8 @@ body:has(#campfire-mixer:not(.hidden)) #hud-controls-hint {
   }
   #ticket-preview-img {
     max-height: 82vh;
-    max-width: 46vw;
+    max-width: 52vw;
+    object-fit: contain;
   }
   #ticket-preview-img:hover {
     transform: scale(1.012);

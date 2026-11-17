@@ -346,8 +346,9 @@ export function capturePhotoWallpaper(
   altitudeText = "",
   travelerName = ""
 ) {
-  const W = 1080;
-  const H = 1440;
+  const isLandscape = webglCanvas.width >= webglCanvas.height * 1.05;
+  const W = isLandscape ? 1600 : 1080;
+  const H = isLandscape ? 1220 : 1440;
   const out = document.createElement("canvas");
   out.width = W;
   out.height = H;
@@ -359,11 +360,11 @@ export function capturePhotoWallpaper(
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  // 拍立得/电影留白画框区
+  // 拍立得/电影留白画框区（横屏采用宽画幅完整装下整颗微缩星球与星海，竖屏采用手机锁屏比例）
   const fx = 56,
-    fy = 108,
+    fy = 104,
     fw = W - 112,
-    fh = H - 310;
+    fh = H - 306;
   ctx.strokeStyle = "rgba(240, 199, 104, 0.45)";
   ctx.lineWidth = 2;
   ctx.strokeRect(fx - 8, fy - 8, fw + 16, fh + 16);

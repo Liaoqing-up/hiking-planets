@@ -6,7 +6,7 @@
   "scripts": {
     "start": "python3 -m http.server 8765 --bind 0.0.0.0",
     "tunnel": "cloudflared tunnel --url http://127.0.0.1:8765",
-    "dist": "DIST=\"$HOME/Desktop/行者的星球-网页发布包\" && rm -rf \"$DIST\" \"${DIST}.zip\" && mkdir -p \"$DIST/assets\" && cp index.html styles.css sw.js manifest.webmanifest \"$DIST/\" && cp -R js \"$DIST/js\" && cp -R vendor \"$DIST/vendor\" && cp -R assets/postcards \"$DIST/assets/postcards\" && cp assets/*.jpg assets/*.png \"$DIST/assets/\" && (cd \"$HOME/Desktop\" && zip -rq \"行者的星球-网页发布包.zip\" \"行者的星球-网页发布包\") && echo \"Published clean bundle to $DIST\""
+    "dist": "DIST=\"$HOME/Desktop/行者的星球-网页发布包\" && rm -rf \"$DIST\" \"${DIST}.zip\" && mkdir -p \"$DIST/assets\" && cp index.html styles.css sw.js manifest.webmanifest \"$DIST/\" && cp -R js \"$DIST/js\" && cp -R vendor \"$DIST/vendor\" && cp -R assets/postcards \"$DIST/assets/postcards\" && cp assets/*.jpg assets/*.png \"$DIST/assets/\" && (cd \"$DIST\" && zip -rq \"${DIST}.zip\" .) && echo \"Published clean bundle to $DIST\""
   },
   "keywords": [],
   "author": "",

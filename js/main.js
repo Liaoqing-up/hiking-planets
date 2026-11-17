@@ -1,26 +1,26 @@
 import * as THREE from "three";
-import { PLANETS } from "./data.js";
-import { sound } from "./audio.js";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js";
+import { PLANETS } from "./data.js?v=3.6.1";
+import { sound } from "./audio.js?v=3.6.1";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=3.6.1";
 import {
   PLANET_RADIUS,
   latLonToUnitVec,
   getSurfaceRadius,
   buildPlanetWorld,
   buildHikerCharacter,
-} from "./planetBuilder3D.js";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js";
-import { createSkyWonders } from "./skyWonders3D.js";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js";
-import { buildCampfireRig } from "./campfireRadio.js";
-import { createFootprintTrail } from "./footprints3D.js";
+} from "./planetBuilder3D.js?v=3.6.1";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=3.6.1";
+import { createSkyWonders } from "./skyWonders3D.js?v=3.6.1";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=3.6.1";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=3.6.1";
+import { buildCampfireRig } from "./campfireRadio.js?v=3.6.1";
+import { createFootprintTrail } from "./footprints3D.js?v=3.6.1";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js";
+} from "./bestiaryAndExtras.js?v=3.6.1";
 
 const SAVE_KEY = "hiking_planets_save_v1";
 
@@ -698,7 +698,7 @@ function applyLightingTheme(immediate = false) {
 
 const PHOTO_PRESETS = [
   { label: "🎞️ 机位 · 近景旅拍", pitch: 0.44, dist: 7.6 },
-  { label: "🎞️ 机位 · 星球全景", pitch: 0.64, dist: 17.2 },
+  { label: "🎞️ 机位 · 星球全景", pitch: 0.32, dist: 48.0 },
   { label: "🎞️ 机位 · 仰望星海", pitch: 0.14, dist: 11.4 },
 ];
 let photoPresetIdx = 0;
@@ -1586,7 +1586,8 @@ window.addEventListener("pointermove", (e) => {
     const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
     if (pinchLastDist > 0) {
       const delta = pinchLastDist - d;
-      camDist = THREE.MathUtils.clamp(camDist + delta * 0.038, 6.2, 24);
+      const maxZoom = isPhotoMode ? 58 : 48;
+      camDist = THREE.MathUtils.clamp(camDist + delta * 0.038, 6.2, maxZoom);
     }
     pinchLastDist = d;
     pointerMoved = 999;
@@ -1681,7 +1682,8 @@ renderer.domElement.addEventListener(
   "wheel",
   (e) => {
     if (mode !== "planet") return;
-    camDist = THREE.MathUtils.clamp(camDist + e.deltaY * 0.01, 6.2, 24);
+    const maxZoom = isPhotoMode ? 58 : 48;
+    camDist = THREE.MathUtils.clamp(camDist + e.deltaY * 0.016, 6.2, maxZoom);
   },
   { passive: true }
 );
@@ -2151,9 +2153,15 @@ function updatePlanetExploration(dt, elapsed) {
     .addScaledVector(playerUp, Math.sin(camPitch))
     .normalize();
 
-  const desiredCamPos = hiker.root.position.clone().addScaledVector(camOffsetDir, effectiveDist);
   const lookLift = isTelescopeMode ? 5.6 : isCampfireMode ? 0.55 : 0.9;
-  const desiredTarget = hiker.root.position.clone().addScaledVector(playerUp, lookLift);
+  const hikerFocus = hiker.root.position.clone().addScaledVector(playerUp, lookLift);
+  // 镜头拉远时平滑将对焦中心从行者过渡到星球球心 (0,0,0)，让整颗微缩星球在画面正中完整入镜
+  const globeBlend =
+    isTelescopeMode || isCampfireMode
+      ? 0
+      : THREE.MathUtils.clamp((effectiveDist - 16.0) / 14.0, 0, 1);
+  const desiredTarget = hikerFocus.clone().multiplyScalar(1 - globeBlend);
+  const desiredCamPos = desiredTarget.clone().addScaledVector(camOffsetDir, effectiveDist);
 
   const damp = 1 - Math.exp(-6.5 * dt);
   smoothCamPos.lerp(desiredCamPos, damp);
