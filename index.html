@@ -16,11 +16,16 @@
   <meta name="twitter:title" content="行者的星球 · 山海皆星辰" />
   <meta name="twitter:description" content="把走过的山海搓成了星球，欢迎登陆我的宇宙吹风散步🪐" />
   <meta name="twitter:image" content="https://hikerplanets.netlify.app/assets/og-cover.jpg" />
+  <meta itemprop="name" content="行者的星球 · 山海皆星辰" />
+  <meta itemprop="description" content="把走过的沙漠、雪山、垭口、海岸与旷野搓成了星球，欢迎登陆我的宇宙吹风散步🪐" />
+  <meta itemprop="image" content="https://hikerplanets.netlify.app/assets/wechat-share.jpg" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link
-    rel="icon"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230a1126'/%3E%3Cpath d='M32 8 L36.5 27.5 L56 32 L36.5 36.5 L32 56 L27.5 36.5 L8 32 L27.5 27.5 Z' fill='%23f0c768'/%3E%3Ccircle cx='32' cy='32' r='3.5' fill='%23fff8e7'/%3E%3C/svg%3E"
-  />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=3.5.5" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=3.5.5" />
+  <link rel="manifest" href="./manifest.webmanifest?v=3.5.5" />
   <style>
     html, body { background: #080f24; }
     #boot-curtain {
@@ -53,7 +58,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=3.5.4" />
+  <link rel="stylesheet" href="./styles.css?v=3.5.5" />
   <script
     defer
     src="https://cloud.umami.is/script.js"
@@ -68,6 +73,16 @@
   </script>
 </head>
 <body>
+  <!-- 微信内置浏览器右上角「··· 转发给朋友」专属方形星球徽章首图兜底（400x400 30KB 瞬抓） -->
+  <img
+    src="./assets/wechat-share.jpg"
+    width="400"
+    height="400"
+    alt=""
+    aria-hidden="true"
+    style="position:fixed;top:-9999px;left:0;width:400px;height:400px;opacity:0;pointer-events:none;z-index:-1;"
+  />
+
   <!-- 立体绘本星光开幕帷幕（首帧 WebGL 渲染就绪后 0.65s 柔和淡出） -->
   <div id="boot-curtain" aria-hidden="true">
     <span class="curtain-star">✦</span>
@@ -488,7 +503,7 @@
     </article>
   </div>
 
-  <script type="module" src="./js/main.js?v=3.5.4"></script>
+  <script type="module" src="./js/main.js?v=3.5.5"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       window.addEventListener("load", () => {

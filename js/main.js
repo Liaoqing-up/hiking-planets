@@ -1982,6 +1982,7 @@ function updatePlanetExploration(dt, elapsed) {
 
 function animate() {
   requestAnimationFrame(animate);
+  if (document.hidden) return;
   const dt = Math.min(clock.getDelta(), 0.05);
   const elapsed = clock.elapsedTime;
 
@@ -2023,6 +2024,20 @@ const unlockAudioOnce = () => {
 };
 window.addEventListener("touchstart", unlockAudioOnce, { capture: true, passive: true });
 window.addEventListener("pointerdown", unlockAudioOnce, { capture: true, passive: true });
+
+// 切回微信聊天 / 手机锁屏时自动挂起音频并暂停 3D 渲染零耗电，切回前台无缝恢复
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    if (sound.ctx && sound.ctx.state === "running") {
+      sound.ctx.suspend().catch(() => {});
+    }
+  } else {
+    clock.getDelta();
+    if (sound.enabled && sound.ctx && sound.ctx.state === "suspended") {
+      sound.ctx.resume().catch(() => {});
+    }
+  }
+});
 
 // Expose state for inspection/verification
 window.__game = {

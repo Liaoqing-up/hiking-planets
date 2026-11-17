@@ -1,0 +1,23 @@
+{
+  "name": "行者的星球 · 山海皆星辰",
+  "short_name": "行者的星球",
+  "description": "把走过的沙漠、雪山、垭口、海岸与旷野搓成了星球，欢迎登陆我的宇宙吹风散步。",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080f24",
+  "theme_color": "#080f24",
+  "icons": [
+    {
+      "src": "./assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
