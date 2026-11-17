@@ -330,12 +330,24 @@ const elScreenTitle = document.getElementById("screen-title");
 const elScreenMap = document.getElementById("screen-map");
 const elScreenHud = document.getElementById("screen-hud");
 
+let hasHistoryGuard = false;
+function ensureHistoryGuard() {
+  if (hasHistoryGuard) return;
+  try {
+    history.pushState({ hpGuard: true }, "");
+    hasHistoryGuard = true;
+  } catch {
+    /* ignore */
+  }
+}
+
 function setScreen(nextMode) {
   mode = nextMode;
   elScreenTitle.classList.toggle("active", mode === "title");
   elScreenMap.classList.toggle("active", mode === "map");
   elScreenHud.classList.toggle("active", mode === "planet");
   if (mode !== "planet" && isPhotoMode) togglePhotoMode(false);
+  if (mode !== "title") ensureHistoryGuard();
 }
 
 function updateTitleLayout() {
@@ -928,6 +940,7 @@ function renderAtlasGridUI() {
 
 function openAtlasModal() {
   atlasModalOpen = true;
+  ensureHistoryGuard();
   renderAtlasGridUI();
   document.getElementById("modal-atlas")?.classList.remove("hidden");
   sound.init();
@@ -942,6 +955,7 @@ function closeAtlasModal() {
 
 function openReadOnlyJournal(planet, wpData) {
   journalOpen = true;
+  ensureHistoryGuard();
   journalPage = 1;
   currentJournalPlanet = planet;
   currentJournalWp = wpData;
@@ -990,6 +1004,7 @@ function startStarWarpToPlanet(targetIdx, targetName) {
 
 function openFinaleModal() {
   finaleModalOpen = true;
+  ensureHistoryGuard();
   document.getElementById("modal-finale")?.classList.remove("hidden");
   sound.init();
   sound.playDiscoverWaypoint(true);
@@ -1098,6 +1113,7 @@ function flipJournalPage() {
 function openWaypointJournal(wpObj) {
   if (!activePlanet || !wpObj) return;
   journalOpen = true;
+  ensureHistoryGuard();
   journalPage = 1;
   currentJournalPlanet = activePlanet;
   currentJournalWp = wpObj.data;
@@ -1212,6 +1228,7 @@ function renderManiNotesUI() {
 function openManiModal() {
   if (!activePlanet) return;
   maniModalOpen = true;
+  ensureHistoryGuard();
   walkTargetDir = null;
   clickRing.visible = false;
   document.getElementById("mani-title").textContent = `${activePlanet.name} · 垭口留痕`;
@@ -1271,6 +1288,7 @@ function toggleTelescopeMode(force) {
 
 function closeJournal() {
   journalOpen = false;
+  document.getElementById("photo-lightbox")?.classList.add("hidden");
   document.getElementById("modal-journal").classList.add("hidden");
 }
 
@@ -1282,6 +1300,16 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "KeyM") {
     const on = sound.toggle();
     document.getElementById("btn-global-sound").textContent = on ? "♪ 星音" : "♪ 静音";
+  }
+
+  // 原图放大灯箱最优先拦截 Esc / Space，避免把底下的明信片一起关掉
+  const lbEl = document.getElementById("photo-lightbox");
+  if (lbEl && !lbEl.classList.contains("hidden")) {
+    if (e.code === "Escape" || e.code === "Space") {
+      e.preventDefault();
+      lbEl.classList.add("hidden");
+    }
+    return;
   }
 
   // 全局跨界面模态框优先响应键盘关闭（星图与星球内统一生效）
@@ -1688,9 +1716,10 @@ if (elJournalPostcard) {
 const elPolaroid = document.getElementById("journal-polaroid");
 const elLightbox = document.getElementById("photo-lightbox");
 const elLightboxImg = document.getElementById("lightbox-img");
-if (elPolaroid && elLightbox && elLightboxImg) {
+  if (elPolaroid && elLightbox && elLightboxImg) {
   elPolaroid.addEventListener("click", () => {
     if (swipeJustHandled) return;
+    ensureHistoryGuard();
     const photoEl = document.getElementById("journal-photo");
     const artCanvas = document.getElementById("journal-art-canvas");
     if (!photoEl.classList.contains("hidden") && photoEl.src) {
@@ -2069,8 +2098,101 @@ window.__game = {
   PLANETS,
 };
 
+// 点击 6 大弹窗外侧深色半透明星空空白背景即可优雅收起弹窗
+[
+  ["modal-journal", closeJournal],
+  ["modal-atlas", closeAtlasModal],
+  ["modal-bestiary", closeBestiaryModal],
+  ["modal-ticket", closeSummitTicketModal],
+  ["modal-mani", closeManiModal],
+  ["modal-finale", closeFinaleModal],
+].forEach(([modalId, closeFn]) => {
+  const backdrop = document.getElementById(modalId);
+  if (!backdrop) return;
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) closeFn();
+  });
+});
+
+// 接管微信 / 手机浏览器「左边缘右滑返回手势」防误退：逐级关闭大图→弹窗→退回星图→退回扉页
+window.addEventListener("popstate", () => {
+  hasHistoryGuard = false;
+  const lb = document.getElementById("photo-lightbox");
+  if (lb && !lb.classList.contains("hidden")) {
+    lb.classList.add("hidden");
+    ensureHistoryGuard();
+    return;
+  }
+  if (ticketModalOpen) {
+    closeSummitTicketModal();
+    if (isAnyModalOpen() || mode !== "title") ensureHistoryGuard();
+    return;
+  }
+  if (journalOpen) {
+    closeJournal();
+    if (isAnyModalOpen() || mode !== "title") ensureHistoryGuard();
+    return;
+  }
+  if (atlasModalOpen) {
+    closeAtlasModal();
+    if (mode !== "title") ensureHistoryGuard();
+    return;
+  }
+  if (bestiaryModalOpen) {
+    closeBestiaryModal();
+    if (mode !== "title") ensureHistoryGuard();
+    return;
+  }
+  if (maniModalOpen) {
+    closeManiModal();
+    if (mode !== "title") ensureHistoryGuard();
+    return;
+  }
+  if (finaleModalOpen) {
+    closeFinaleModal();
+    if (mode !== "title") ensureHistoryGuard();
+    return;
+  }
+  if (isPhotoMode) {
+    togglePhotoMode(false);
+    ensureHistoryGuard();
+    return;
+  }
+  if (isCampfireMode) {
+    toggleCampfireMode(false);
+    ensureHistoryGuard();
+    return;
+  }
+  if (isTelescopeMode) {
+    toggleTelescopeMode(false);
+    ensureHistoryGuard();
+    return;
+  }
+  if (mode === "planet") {
+    openStarMap();
+    return;
+  }
+  if (mode === "map") {
+    setupTitleScene();
+  }
+});
+
+// 支持同行队友专属星球直达链接（如 https://hikerplanets.netlify.app/#siguniang 或 ?planet=maclehose）
+function resolveDeepLinkPlanetIndex() {
+  const qPlanet = new URLSearchParams(window.location.search).get("planet");
+  const hashPlanet = window.location.hash.replace(/^#\/?/, "").trim().toLowerCase();
+  const targetKey = (qPlanet || hashPlanet || "").toLowerCase();
+  if (!targetKey) return -1;
+  return PLANETS.findIndex((p) => p.id === targetKey);
+}
+
 initScrollMapUI();
-setupTitleScene();
+const deepIdx = resolveDeepLinkPlanetIndex();
+if (deepIdx >= 0) {
+  enterPlanet(deepIdx);
+} else {
+  setupTitleScene();
+}
 animate();
 
 // 首帧 WebGL 星空就绪后柔和揭开绘本帷幕
