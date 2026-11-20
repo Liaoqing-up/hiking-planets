@@ -43,14 +43,37 @@ export const PLANET_SEAL_TITLE = {
   siguniang: "登顶穿越",
   maclehose: "逐浪山海",
   yili: "旷野寻遍",
+  "kitty-xiaowutai": "五台连穿",
+  "kitty-changbai": "天池揽胜",
+  "kitty-sunset": "追光揽星",
+  "kitty-zhagana": "甘南同频",
+  "kitty-daqing": "云端扎营",
+  "kitty-wusun": "天山穿越",
+  "kitty-yading": "亚丁奇遇",
+  "miemie-tonggudang": "地心探奇",
+  "miemie-longji": "龙脊凌云",
+  "miemie-shexiang": "星穹寻幽",
+  "miemie-buyi": "古寨拾光",
+  "miemie-yading": "重装无畏",
 };
 
 export async function generateSummitTicketDataUrl(
   planet,
   discoveredSet = new Set(),
   totalSteps = 0,
-  travelerName = ""
+  travelerName = "",
+  options = {}
 ) {
+  const pOwner = planet?.owner;
+  const effectiveHost =
+    pOwner === "kitty" || pOwner === "miemie"
+      ? pOwner
+      : pOwner
+        ? "mine"
+        : options.hostRole === "kitty" || options.hostRole === "miemie"
+          ? options.hostRole
+          : "mine";
+  const companionName = options.companionName || "";
   const W = 760;
   const H = 1280;
   const canvas = document.createElement("canvas");
@@ -298,21 +321,30 @@ export async function generateSummitTicketDataUrl(
 
   ctx.fillStyle = "#8a6229";
   ctx.font = "600 15.5px Georgia, 'LXGW WenKai Screen', 'PingFang SC', serif";
-  ctx.fillText("行者的星球 · hikerplanets.netlify.app", tx + 44, notchY + 234);
+  const hostSiteTitle =
+    effectiveHost === "kitty" ? "Kitty 的星球" : effectiveHost === "miemie" ? "咩咩的星球" : "行者的星球";
+  const brandLine = companionName
+    ? `✦ 并肩同行：与 ${companionName} 共攀  ·  ${hostSiteTitle}`
+    : effectiveHost === "kitty"
+      ? "🐾 Kitty 的星球 · 猫耳星云  |  hikerplanets.netlify.app"
+      : effectiveHost === "miemie"
+        ? "🐑 咩咩的星球 · 绵羊星云  |  hikerplanets.netlify.app"
+        : "行者的星球 · hikerplanets.netlify.app";
+  ctx.fillText(brandLine, tx + 44, notchY + 234);
 
   // 6c. 右侧博物馆级双环雪山星轨圆形邮戳（一星一专属四字印文）+ 正立高反差扫码二维码
   const clearedSealWord = PLANET_SEAL_TITLE[planet.id] || "穿越成功";
   drawPostmarkSeal(ctx, tx + tw - 208, notchY + 168, {
     radius: 54,
     bannerText: allCleared ? clearedSealWord : `已点亮 ${doneCount}/${totalCount}`,
-    subText: allCleared ? "山海皆星辰" : "星途漫步中",
+    subText: companionName ? `与${companionName}同行` : allCleared ? "山海皆星辰" : "星途漫步中",
     color: allCleared ? "rgba(182, 36, 28, 0.9)" : "rgba(148, 96, 32, 0.86)",
     paperBg: "#ecdcb9",
     wavyTail: false,
     angle: -0.2,
   });
 
-  drawSiteQrStamp(ctx, tx + tw - 122, notchY + 114, 86, "parchment");
+  drawSiteQrStamp(ctx, tx + tw - 122, notchY + 114, 86, "parchment", effectiveHost);
 
   return canvas.toDataURL("image/png");
 }

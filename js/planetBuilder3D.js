@@ -37,9 +37,75 @@ function fbm3(x, y, z) {
   return n1 + n2 + n3;
 }
 
+const GUEST_TERRAIN_MAP = {};
+export function registerGuestTerrain(planetId, templateId) {
+  GUEST_TERRAIN_MAP[planetId] = templateId;
+}
+
 export function getSurfaceRadius(planetId, dir) {
+  const mappedId = GUEST_TERRAIN_MAP[planetId] || planetId;
+  if (mappedId === "kitty-zhagana" || mappedId === "miemie-longji") planetId = "zhagana";
+  else if (mappedId === "kitty-wusun") planetId = "yili";
+  else if (mappedId === "kitty-yading" || mappedId === "miemie-yading") planetId = "yading";
+  else if (mappedId === "miemie-tonggudang") planetId = "kitty-xiaowutai";
+  else if (mappedId === "miemie-shexiang") planetId = "maclehose";
+  else if (mappedId === "miemie-buyi") planetId = "kitty-daqing";
+  else planetId = mappedId;
+
   const x = dir.x, y = dir.y, z = dir.z;
   const base = fbm3(x, y, z);
+
+  if (planetId === "kitty-xiaowutai") {
+    // 京郊华北屋脊小五台：东台(2882m)、北台(2837m)、南台(2743m)、西台(2671m) 四座高山草甸主峰与连穿山梁
+    const ridgeWave = (Math.sin(x * 4.2 - z * 3.1) + 1) * 0.22;
+    let h = PLANET_RADIUS + 0.24 + ridgeWave + Math.abs(base) * 0.22;
+    const taiPeaks = [
+      [latLonToUnitVec(58, 16), 1.55, 0.42],   // 东台叶斗峰 (最高)
+      [latLonToUnitVec(22, 108), 1.38, 0.38],  // 北台险脊
+      [latLonToUnitVec(-24, -95), 1.15, 0.38], // 南台草甸
+      [latLonToUnitVec(-38, 28), 1.02, 0.36],  // 西台乱石坡
+    ];
+    for (const [pk, amp, rad] of taiPeaks) {
+      const d = dir.distanceTo(pk);
+      if (d < rad) {
+        const k = Math.cos((d / rad) * Math.PI * 0.5);
+        h += Math.pow(k, 1.35) * amp;
+      }
+    }
+    return h;
+  }
+
+  if (planetId === "kitty-changbai") {
+    // 长白山高耸环形火山口 + 天池蔚蓝火山湖盆 + 连绵高山草甸
+    let h = PLANET_RADIUS + 0.24 + Math.abs(base) * 0.3;
+    const craterCenter = latLonToUnitVec(62, 10);
+    const cd = dir.distanceTo(craterCenter);
+    if (cd < 0.56) {
+      if (cd < 0.24) {
+        // 火山口中央深邃天池盆地
+        const inner = Math.cos((cd / 0.24) * Math.PI * 0.5);
+        h = PLANET_RADIUS + 0.95 - inner * 0.65;
+      } else {
+        // 环绕天池的十六峰火山口山脊环
+        const ringT = Math.sin(((cd - 0.22) / 0.34) * Math.PI);
+        const jagged = 0.88 + 0.22 * Math.sin(Math.atan2(z, x) * 7.0);
+        h += ringT * 1.65 * jagged;
+      }
+    }
+    return h;
+  }
+
+  if (planetId === "kitty-sunset" || planetId === "kitty-daqing") {
+    // 旷野风车山脊 / 大青山云端波浪大草甸
+    const waves = (Math.sin(x * 3.8 + z * 3.4) * Math.cos(y * 3.6 - x * 2.2) + 1) * 0.32;
+    let h = PLANET_RADIUS + 0.22 + waves + Math.abs(base) * 0.14;
+    const lakeDist = dir.distanceTo(latLonToUnitVec(-18, 95));
+    if (planetId === "kitty-daqing" && lakeDist < 0.34) {
+      const k = Math.cos((lakeDist / 0.34) * Math.PI * 0.5);
+      h = PLANET_RADIUS + 0.16 - k * 0.48;
+    }
+    return h;
+  }
 
   if (planetId === "tengger") {
     // 连绵新月沙丘波浪（陆地始终高于水面，仅乌兰湖与天鹅湖下凹成湖）
@@ -461,8 +527,16 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
   }
 
   // 2. 水体球壳（海洋 / 高山湖泊 / 赤红盐湖）
+  const baseTerrainId = planetConfig.terrainType || GUEST_TERRAIN_MAP[id] || id;
   let waterMesh = null;
-  if (id !== "zhagana" && id !== "siguniang" && id !== "title") {
+  if (
+    baseTerrainId !== "zhagana" &&
+    baseTerrainId !== "siguniang" &&
+    baseTerrainId !== "kitty-xiaowutai" &&
+    baseTerrainId !== "kitty-changbai" &&
+    baseTerrainId !== "kitty-sunset" &&
+    id !== "title"
+  ) {
     const waterRadius =
       id === "maclehose"
         ? PLANET_RADIUS - 0.02
@@ -881,6 +955,98 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
       placeOnSphere(horse, latLonToUnitVec(40, -104 + offsetLon), 0, id);
       group.add(horse);
     });
+  } else if (baseTerrainId === "kitty-xiaowutai") {
+    // 小五台高山草甸特色：金莲花丛 + 四台山顶石头玛尼标志木牌
+    const flowerMat = new THREE.MeshToonMaterial({ color: "#facc15", gradientMap: STORYBOOK_GRAD });
+    const stemMat = new THREE.MeshToonMaterial({ color: "#4d7c0f", gradientMap: STORYBOOK_GRAD });
+    for (let f = 0; f < 18; f++) {
+      const fl = new THREE.Group();
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.02, 0.16, 5), stemMat);
+      st.position.y = 0.08;
+      const bl = new THREE.Mesh(new THREE.DodecahedronGeometry(0.075, 0), flowerMat);
+      bl.position.y = 0.18;
+      fl.add(st, bl);
+      placeOnSphere(fl, latLonToUnitVec(-45 + f * 5.2, (f * 67) % 360 - 180), 0, id);
+      group.add(fl);
+    }
+    // 东台2882m 木质山顶标桩
+    const post = new THREE.Group();
+    const wood = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.85, 0.14),
+      new THREE.MeshToonMaterial({ color: "#92400e", gradientMap: STORYBOOK_GRAD })
+    );
+    wood.position.y = 0.42;
+    const plaque = new THREE.Mesh(
+      new THREE.BoxGeometry(0.46, 0.22, 0.08),
+      new THREE.MeshToonMaterial({ color: "#fef3c7", gradientMap: STORYBOOK_GRAD })
+    );
+    plaque.position.y = 0.72;
+    post.add(wood, plaque);
+    placeOnSphere(post, latLonToUnitVec(59, 22), 0, id);
+    group.add(post);
+  } else if (baseTerrainId === "kitty-changbai") {
+    // 长白山火山口高海拔晶莹蓝宝石天池湖面
+    const tianchi = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.75, 2.55, 0.24, 36),
+      new THREE.MeshStandardMaterial({
+        color: "#1b7ce6",
+        emissive: "#0d3f8a",
+        emissiveIntensity: 0.22,
+        roughness: 0.14,
+        metalness: 0.25,
+        transparent: true,
+        opacity: 0.92,
+      })
+    );
+    placeOnSphere(tianchi, latLonToUnitVec(62, 10), 0.36, id);
+    group.add(tianchi);
+  } else if (baseTerrainId === "kitty-sunset") {
+    // 日落八分钟与旷野旋转白色大风车群（3座风力发电机）
+    const towerMat = new THREE.MeshToonMaterial({ color: "#f8fafc", gradientMap: STORYBOOK_GRAD });
+    const hubMat = new THREE.MeshToonMaterial({ color: "#fcd34d", gradientMap: STORYBOOK_GRAD });
+    [
+      [16, 114, 1.15],
+      [26, 134, 0.92],
+      [4, 98, 0.85],
+    ].forEach(([lat, lon, sc]) => {
+      const wm = new THREE.Group();
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.11, 2.35, 10), towerMat);
+      mast.position.y = 1.15;
+      const nacelle = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.34), towerMat);
+      nacelle.position.set(0, 2.34, 0.04);
+      const rotor = new THREE.Group();
+      rotor.position.set(0, 2.34, 0.23);
+      const hub = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), hubMat);
+      rotor.add(hub);
+      for (let b = 0; b < 3; b++) {
+        const bladePivot = new THREE.Group();
+        bladePivot.rotation.z = (b * Math.PI * 2) / 3;
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.085, 1.08, 0.022), towerMat);
+        blade.position.y = 0.56;
+        bladePivot.add(blade);
+        rotor.add(bladePivot);
+      }
+      wm.add(mast, nacelle, rotor);
+      wm.scale.setScalar(sc);
+      wm.userData.windmillRotor = rotor;
+      placeOnSphere(wm, latLonToUnitVec(lat, lon), -0.05, id);
+      group.add(wm);
+      animatedProps.push(wm);
+    });
+  } else if (id === "kitty-zhagana") {
+    // 措美峰东线半冰封蓝白高山海子
+    const iceLake = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.75, 1.6, 0.14, 28),
+      new THREE.MeshStandardMaterial({ color: "#8ee0f7", roughness: 0.12, metalness: 0.3 })
+    );
+    placeOnSphere(iceLake, latLonToUnitVec(44, 22), 0.04, id);
+    group.add(iceLake);
+  } else if (baseTerrainId === "kitty-daqing") {
+    // 大青山云端双顶露营帐篷与观云平台
+    const extraCamp = createCampSite("#65c466");
+    placeOnSphere(extraCamp, latLonToUnitVec(12, 104), 0, id);
+    group.add(extraCamp);
+    animatedProps.push(extraCamp);
   }
 
   if (id === "title") {
@@ -1002,6 +1168,17 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
         } else if (i < 38) {
           prop = createTree("spruce", "#1f5938");
           prop.scale.setScalar(1.15);
+        }
+      } else if (id.startsWith("kitty-") || id.startsWith("guest-")) {
+        if (i < 30 && r < PLANET_RADIUS + 1.0) {
+          const leafColor =
+            baseTerrainId === "kitty-sunset"
+              ? i % 2 === 0 ? "#d97757" : "#6d597a"
+              : baseTerrainId === "kitty-daqing"
+              ? "#45a15a"
+              : "#2f7852";
+          prop = createTree("spruce", leafColor);
+          prop.scale.setScalar(0.85 + rand() * 0.4);
         }
       }
 
@@ -1533,11 +1710,99 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
     group.add(trailGroup);
   }
 
-  // 9. 山野微气候奇遇（高山暮色「日照金山」辉光 & 麦理浩径星夜「蓝眼泪荧光海」）
-  const hasSnowPeaks = id === "yading" || id === "siguniang" || id === "zhagana" || id === "yili";
+  // 9. 山野微气候奇遇（日照金山 · 蓝眼泪荧光海 · 麝香洞地心宇宙 & 牛倒岩地下暗瀑幽蓝萤光）
+  const hasSnowPeaks =
+    id === "yading" || id === "siguniang" || id === "zhagana" || id === "yili" ||
+    id === "kitty-yading" || id === "kitty-wusun" || id === "kitty-zhagana" || id === "miemie-yading";
   const alpenglowLight = new THREE.PointLight("#ff6a2b", 0, 26, 1.4);
   alpenglowLight.position.set(6, PLANET_RADIUS + 6.5, 6);
   group.add(alpenglowLight);
+
+  let cavernSporePts = null;
+  let cavernGlowLight = null;
+  if (id === "miemie-shexiang" || id === "miemie-tonggudang") {
+    const isFullCave = id === "miemie-shexiang";
+    const caveWp = waypointObjs.find((w) => w.data.id === "mm-tgd-3");
+    const centerDir = caveWp ? caveWp.unitDir.clone() : new THREE.Vector3(0, 1, 0);
+    const crystalMat = new THREE.MeshStandardMaterial({
+      color: "#38bdf8",
+      emissive: "#0284c7",
+      emissiveIntensity: 0.95,
+      roughness: 0.25,
+      transparent: true,
+      opacity: 0.88,
+    });
+    const caveCount = isFullCave ? 22 : 7;
+    for (let i = 0; i < caveCount; i++) {
+      const randDir = isFullCave
+        ? new THREE.Vector3(Math.sin(i * 2.39), Math.cos(i * 1.71), Math.sin(i * 3.13)).normalize()
+        : centerDir
+            .clone()
+            .add(new THREE.Vector3(Math.sin(i * 1.9) * 0.16, Math.cos(i * 2.3) * 0.16, Math.sin(i * 2.9) * 0.16))
+            .normalize();
+      if (!isFullCave && waypointObjs.some((w) => w.unitDir.angleTo(randDir) < 0.09)) continue;
+      const sr = getSurfaceRadius(id, randDir);
+      const spire = new THREE.Mesh(new THREE.ConeGeometry(0.11 + (i % 3) * 0.04, 0.52 + (i % 4) * 0.18, 6), crystalMat);
+      spire.position.copy(randDir).multiplyScalar(sr + 0.18);
+      spire.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), randDir);
+      group.add(spire);
+    }
+    if (!isFullCave && caveWp) {
+      // 牛倒岩溶洞拱门与发光幽蓝地心瀑布水幕
+      const cDir = caveWp.unitDir.clone().add(new THREE.Vector3(0.09, 0.04, -0.08)).normalize();
+      const cr = getSurfaceRadius(id, cDir);
+      const archGrp = new THREE.Group();
+      archGrp.position.copy(cDir).multiplyScalar(cr - 0.04);
+      archGrp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), cDir);
+      const archRock = new THREE.Mesh(
+        new THREE.TorusGeometry(0.46, 0.14, 7, 14, Math.PI),
+        new THREE.MeshStandardMaterial({ color: "#1e293b", roughness: 0.92 })
+      );
+      const fallMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.46, 0.72),
+        new THREE.MeshBasicMaterial({ color: "#38bdf8", transparent: true, opacity: 0.72, side: THREE.DoubleSide })
+      );
+      fallMesh.position.set(0, 0.28, -0.04);
+      const cavePt = new THREE.PointLight("#38bdf8", 2.2, 5.5, 1.5);
+      cavePt.position.set(0, 0.42, 0.15);
+      archGrp.add(archRock, fallMesh, cavePt);
+      group.add(archGrp);
+    }
+    const spCount = isFullCave ? 240 : 75;
+    const spArr = new Float32Array(spCount * 3);
+    for (let i = 0; i < spCount; i++) {
+      const d = isFullCave
+        ? new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1).normalize()
+        : centerDir
+            .clone()
+            .add(new THREE.Vector3((Math.random() - 0.5) * 0.42, (Math.random() - 0.5) * 0.42, (Math.random() - 0.5) * 0.42))
+            .normalize();
+      const pr = PLANET_RADIUS + 0.35 + Math.random() * (isFullCave ? 2.8 : 1.6);
+      spArr[i * 3] = d.x * pr;
+      spArr[i * 3 + 1] = d.y * pr;
+      spArr[i * 3 + 2] = d.z * pr;
+    }
+    const spGeo = new THREE.BufferGeometry();
+    spGeo.setAttribute("position", new THREE.BufferAttribute(spArr, 3));
+    cavernSporePts = new THREE.Points(
+      spGeo,
+      new THREE.PointsMaterial({
+        color: "#67e8f9",
+        map: softDotTex,
+        size: 0.24,
+        transparent: true,
+        opacity: 0.92,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+    group.add(cavernSporePts);
+    if (isFullCave) {
+      cavernGlowLight = new THREE.PointLight("#0ea5e9", 3.4, 30, 1.2);
+      cavernGlowLight.position.set(-4, PLANET_RADIUS + 5.5, 5);
+      group.add(cavernGlowLight);
+    }
+  }
   let climateMode = "day";
 
   return {
@@ -1564,9 +1829,9 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
         particles.material.color.set(pal.particle || "#fff2c2");
         particles.material.size = 0.26;
       }
-      if (waterMesh && id === "maclehose") {
-        if (skyPhase === "night") {
-          waterMesh.material.emissive.set("#00aaff");
+      if (waterMesh && (id === "maclehose" || id === "miemie-shexiang")) {
+        if (skyPhase === "night" || id === "miemie-shexiang") {
+          waterMesh.material.emissive.set(id === "miemie-shexiang" ? "#0284c7" : "#00aaff");
           waterMesh.material.emissiveIntensity = 0.55;
         } else {
           waterMesh.material.emissive.set("#000000");
@@ -1578,6 +1843,13 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
       cloudsGroup.rotation.y += dt * 0.035;
       particles.rotation.y += dt * 0.07;
       particles.rotation.x = Math.sin(elapsed * 0.25) * 0.08;
+      if (cavernSporePts) {
+        cavernSporePts.rotation.y -= dt * 0.095;
+        cavernSporePts.material.opacity = 0.72 + Math.sin(elapsed * 2.4) * 0.22;
+      }
+      if (cavernGlowLight) {
+        cavernGlowLight.intensity = 3.0 + Math.sin(elapsed * 1.9) * 0.75;
+      }
 
       if (waterMesh) {
         const s = 1 + Math.sin(elapsed * 1.8) * 0.0025;
@@ -1596,6 +1868,8 @@ export function buildPlanetWorld(planetConfig, discoveredSet = new Set()) {
             camp.userData.basePos.clone().normalize(),
             Math.sin(elapsed * 3.2) * 0.14
           );
+        } else if (camp.userData.windmillRotor) {
+          camp.userData.windmillRotor.rotation.z += dt * 1.15;
         }
       }
 
@@ -1757,19 +2031,106 @@ export function buildHikerCharacter() {
   hatCrown.position.y = 0.885;
   bodyPivot.add(hatBrim, hatCrown);
 
-  const beanieMat = toon("#f5b829");
+  // 🐶 清爽绘本风针织冷帽 + 元气修勾软垂耳 / 猫耳 / 绵羊耳
+  const beanieMat = toon("#fffbeb");
+  const beanieCuffMat = toon("#fde68a");
+  const puppyEarMat = toon("#c26a27");
+  const puppyInnerMat = toon("#fed7aa");
+  const bonePinMat = toon("#ffffff");
+
   const beanieGroup = new THREE.Group();
   const beanieDome = new THREE.Mesh(
-    new THREE.SphereGeometry(0.152, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.58),
+    new THREE.SphereGeometry(0.154, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.58),
     beanieMat
   );
   beanieDome.position.y = 0.79;
-  const beanieCuff = new THREE.Mesh(new THREE.TorusGeometry(0.142, 0.028, 8, 18), beanieMat);
+
+  const beanieCuff = new THREE.Mesh(new THREE.TorusGeometry(0.144, 0.03, 10, 22), beanieCuffMat);
   beanieCuff.rotation.x = Math.PI / 2;
-  beanieCuff.position.y = 0.805;
-  const beanieBall = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 8), beanieMat);
-  beanieBall.position.y = 0.955;
-  beanieGroup.add(beanieDome, beanieCuff, beanieBall);
+  beanieCuff.position.y = 0.806;
+
+  // 🐶 清哥专属：软萌微折小狗垂耳 (Floppy Puppy Ears) + 柴犬豆豆眉 + 迷你小骨头胸针
+  const puppyEarsGroup = new THREE.Group();
+  function makePuppyEar(side) {
+    const pivot = new THREE.Group();
+    pivot.position.set(side * 0.126, 0.895, 0.012);
+    pivot.rotation.set(0.14, side * 0.22, -side * 0.34);
+
+    // 耳根柔和折角隆起
+    const earRoot = new THREE.Mesh(new THREE.SphereGeometry(0.034, 10, 8), puppyEarMat);
+    earRoot.scale.set(1.05, 0.72, 0.85);
+    earRoot.position.set(side * 0.012, 0.006, 0);
+
+    // 圆润水滴状软垂狗耳瓣（前后双面可见，跑图背影也能一眼看到两只软乎乎垂耳！）
+    const earFlap = new THREE.Mesh(new THREE.SphereGeometry(0.052, 12, 10), puppyEarMat);
+    earFlap.scale.set(0.84, 1.58, 0.38);
+    earFlap.position.set(side * 0.036, -0.068, 0.008);
+    earFlap.rotation.z = side * 0.18;
+
+    const earInner = new THREE.Mesh(new THREE.SphereGeometry(0.033, 10, 8), puppyInnerMat);
+    earInner.scale.set(0.75, 1.28, 0.28);
+    earInner.position.set(side * 0.034, -0.07, 0.021);
+    earInner.rotation.z = side * 0.18;
+
+    pivot.add(earRoot, earFlap, earInner);
+    puppyEarsGroup.add(pivot);
+    return pivot;
+  }
+  const leftPuppyEar = makePuppyEar(-1);
+  const rightPuppyEar = makePuppyEar(1);
+
+  // 呆萌柴犬豆豆眉（帽身正上方两颗圆糯奶豆点）
+  const puppyBrowMat = toon("#fffbeb");
+  [-1, 1].forEach((s) => {
+    const browBean = new THREE.Mesh(new THREE.SphereGeometry(0.017, 8, 7), puppyBrowMat);
+    browBean.scale.set(1.25, 0.88, 0.65);
+    browBean.position.set(s * 0.046, 0.868, 0.138);
+    browBean.rotation.set(-0.25, s * 0.22, -s * 0.2);
+    puppyEarsGroup.add(browBean);
+  });
+
+  // 帽檐右侧迷你立体 🦴 小骨头别针
+  const boneBadge = new THREE.Group();
+  boneBadge.position.set(0.072, 0.808, 0.158);
+  boneBadge.rotation.set(0, 0.42, -0.18);
+  const boneShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.034, 6), bonePinMat);
+  boneShaft.rotation.z = Math.PI / 2;
+  boneBadge.add(boneShaft);
+  [[-0.018, 0.006], [-0.018, -0.006], [0.018, 0.006], [0.018, -0.006]].forEach(([bx, by]) => {
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.0085, 6, 6), bonePinMat);
+    knob.position.set(bx, by, 0);
+    boneBadge.add(knob);
+  });
+  puppyEarsGroup.add(boneBadge);
+  // Kitty 专属超萌立体小猫耳针织帽装饰
+  const catEarsGroup = new THREE.Group();
+  const innerEarMat = toon("#f9a8d4");
+  [-1, 1].forEach((s) => {
+    const earOuter = new THREE.Mesh(new THREE.ConeGeometry(0.056, 0.1, 4), beanieMat);
+    earOuter.position.set(s * 0.1, 0.925, 0.01);
+    earOuter.rotation.set(0.08, s * 0.35, -s * 0.36);
+    const earInner = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.062, 4), innerEarMat);
+    earInner.position.set(s * 0.098, 0.922, 0.032);
+    earInner.rotation.set(0.08, s * 0.35, -s * 0.36);
+    catEarsGroup.add(earOuter, earInner);
+  });
+  catEarsGroup.visible = false;
+  // 咩咩专属超萌立体小绵羊弯角+奶白蓬松垂耳针织帽装饰
+  const sheepEarsGroup = new THREE.Group();
+  const hornMat = toon("#fde68a");
+  const sheepFluffMat = toon("#fffbeb");
+  [-1, 1].forEach((s) => {
+    const horn = new THREE.Mesh(new THREE.TorusGeometry(0.044, 0.016, 7, 14, Math.PI * 1.35), hornMat);
+    horn.position.set(s * 0.118, 0.895, 0.015);
+    horn.rotation.set(0.25, s * 0.55, s * 0.6);
+    const earFluff = new THREE.Mesh(new THREE.SphereGeometry(0.034, 8, 7), sheepFluffMat);
+    earFluff.scale.set(1.3, 0.68, 0.85);
+    earFluff.position.set(s * 0.145, 0.84, 0.01);
+    earFluff.rotation.z = -s * 0.35;
+    sheepEarsGroup.add(horn, earFluff);
+  });
+  sheepEarsGroup.visible = false;
+  beanieGroup.add(beanieDome, beanieCuff, puppyEarsGroup, catEarsGroup, sheepEarsGroup);
   beanieGroup.visible = false;
   bodyPivot.add(beanieGroup);
 
@@ -1840,21 +2201,29 @@ export function buildHikerCharacter() {
   const { pivot: rightArm, pole: rightPole } = makeArmPole(1);
 
   const OUTFITS = {
+    "mine-host": {
+      jacket: "#be293e", zip: "#fde68a", pants: "#2c3240", pack: "#275248", visor: "#ff551a",
+      hatType: "beanie", hatColor: "#f5b829", cuffColor: "#e6a81c", earColor: "#a85518", browColor: "#fffbeb",
+      mask: false, heavyGear: true, gaiter: null, duck: false,
+    },
     tengger: {
       jacket: "#be293e", zip: "#27272a", pants: "#2c3240", pack: "#717885", visor: "#ff551a",
       hatType: "wide", hatColor: "#30343f", mask: true, heavyGear: true, gaiter: null, duck: false,
     },
     yading: {
       jacket: "#0fa8a0", zip: "#e2f1ef", pants: "#e5dfd5", pack: "#275248", visor: "#d946ef",
-      hatType: "beanie", hatColor: "#f5b829", mask: false, heavyGear: true, gaiter: null, duck: false,
+      hatType: "beanie", hatColor: "#f5b829", cuffColor: "#e6a81c", earColor: "#a85518", browColor: "#fffbeb",
+      mask: false, heavyGear: true, gaiter: null, duck: false,
     },
     zhagana: {
       jacket: "#70386b", zip: "#f0abfc", pants: "#283044", pack: "#1cb5e8", visor: "#38bdf8",
-      hatType: "beanie", hatColor: "#465a8c", mask: true, heavyGear: true, gaiter: "#84cc16", duck: false,
+      hatType: "beanie", hatColor: "#465a8c", cuffColor: "#3a4c78", earColor: "#273554", browColor: "#f1f5f9",
+      mask: true, heavyGear: true, gaiter: "#84cc16", duck: false,
     },
     siguniang: {
-      jacket: "#e3f2ed", zip: "#1e5f5b", pants: "#323846", pack: "#f97316", visor: "#f59e0b",
-      hatType: "beanie", hatColor: "#f5efe6", mask: true, heavyGear: true, gaiter: "#2563eb", duck: false,
+      jacket: "#7ddbb0", zip: "#134e4a", pants: "#323846", pack: "#f97316", visor: "#f59e0b",
+      hatType: "beanie", hatColor: "#f5efe6", cuffColor: "#eae0d2", earColor: "#9a6338", browColor: "#b47b4e",
+      mask: true, heavyGear: true, gaiter: "#2563eb", duck: false,
     },
     maclehose: {
       jacket: "#e12d6c", zip: "#ffe4e6", pants: "#8b78b5", pack: "#d4d9e2", visor: "#ff7a1a",
@@ -1862,7 +2231,64 @@ export function buildHikerCharacter() {
     },
     yili: {
       jacket: "#5b346e", zip: "#e9d5ff", pants: "#f6f0e4", pack: "#2e323d", visor: "#60a5fa",
-      hatType: "beanie", hatColor: "#f7f2e8", mask: false, heavyGear: false, gaiter: null, duck: true,
+      hatType: "beanie", hatColor: "#f7f2e8", cuffColor: "#ede5d6", earColor: "#c27832", browColor: "#d9914b",
+      mask: false, heavyGear: false, gaiter: null, duck: true,
+    },
+    "kitty-host": {
+      jacket: "#f472b6", zip: "#fdf2f8", pants: "#f8fafc", pack: "#7dd3fc", visor: "#38bdf8",
+      hatType: "beanie", hatColor: "#fff5f7", mask: false, heavyGear: false, gaiter: null, duck: false, catEars: true,
+    },
+    "kitty-xiaowutai": {
+      jacket: "#34d399", zip: "#ecfdf5", pants: "#334155", pack: "#f472b6", visor: "#facc15",
+      hatType: "beanie", hatColor: "#fff1f2", mask: false, heavyGear: false, gaiter: null, duck: false, catEars: true,
+    },
+    "kitty-changbai": {
+      jacket: "#38bdf8", zip: "#f0f9ff", pants: "#334155", pack: "#f472b6", visor: "#fb7185",
+      hatType: "beanie", hatColor: "#fff1f2", mask: false, heavyGear: false, gaiter: null, duck: false, catEars: true,
+    },
+    "kitty-sunset": {
+      jacket: "#fb923c", zip: "#fff7ed", pants: "#1e293b", pack: "#a78bfa", visor: "#f472b6",
+      hatType: "bucket", hatColor: "#fef3c7", mask: false, heavyGear: false, gaiter: null, duck: false,
+    },
+    "kitty-zhagana": {
+      jacket: "#2dd4bf", zip: "#f0fdfa", pants: "#27272a", pack: "#f59e0b", visor: "#38bdf8",
+      hatType: "beanie", hatColor: "#fef08a", mask: false, heavyGear: true, gaiter: "#38bdf8", duck: false, catEars: true,
+    },
+    "kitty-daqing": {
+      jacket: "#a3e635", zip: "#f7fee7", pants: "#f5f5f4", pack: "#fb923c", visor: "#fbbf24",
+      hatType: "bucket", hatColor: "#fafaf9", mask: false, heavyGear: false, gaiter: null, duck: true,
+    },
+    "kitty-wusun": {
+      jacket: "#818cf8", zip: "#eef2ff", pants: "#1f2937", pack: "#f43f5e", visor: "#fb923c",
+      hatType: "beanie", hatColor: "#fdf4ff", mask: true, heavyGear: true, gaiter: "#6366f1", duck: false, catEars: true,
+    },
+    "kitty-yading": {
+      jacket: "#f472b6", zip: "#fdf2f8", pants: "#f1f5f9", pack: "#2dd4bf", visor: "#facc15",
+      hatType: "beanie", hatColor: "#ffffff", mask: false, heavyGear: true, gaiter: null, duck: false, catEars: true,
+    },
+    "miemie-host": {
+      jacket: "#34d399", zip: "#ecfdf5", pants: "#f8fafc", pack: "#fbbf24", visor: "#fde047",
+      hatType: "beanie", hatColor: "#fffbeb", mask: false, heavyGear: true, gaiter: "#10b981", duck: true, sheepEars: true,
+    },
+    "miemie-tonggudang": {
+      jacket: "#34d399", zip: "#ecfdf5", pants: "#334155", pack: "#fbbf24", visor: "#38bdf8",
+      hatType: "beanie", hatColor: "#fffbeb", mask: false, heavyGear: false, gaiter: null, duck: true, sheepEars: true,
+    },
+    "miemie-longji": {
+      jacket: "#84cc16", zip: "#f7fee7", pants: "#1e293b", pack: "#f59e0b", visor: "#2dd4bf",
+      hatType: "beanie", hatColor: "#fefce8", mask: false, heavyGear: false, gaiter: null, duck: false, sheepEars: true,
+    },
+    "miemie-shexiang": {
+      jacket: "#38bdf8", zip: "#e0f2fe", pants: "#0f172a", pack: "#facc15", visor: "#7dd3fc",
+      hatType: "beanie", hatColor: "#f8fafc", mask: false, heavyGear: true, gaiter: "#0284c7", duck: false, sheepEars: true,
+    },
+    "miemie-buyi": {
+      jacket: "#f59e0b", zip: "#fffbeb", pants: "#f5f5f4", pack: "#14b8a6", visor: "#fbbf24",
+      hatType: "bucket", hatColor: "#fef3c7", mask: false, heavyGear: false, gaiter: null, duck: true,
+    },
+    "miemie-yading": {
+      jacket: "#2dd4bf", zip: "#f0fdfa", pants: "#1e293b", pack: "#f43f5e", visor: "#fde047",
+      hatType: "beanie", hatColor: "#fffbeb", mask: false, heavyGear: true, gaiter: "#38bdf8", duck: false, sheepEars: true,
     },
   };
 
@@ -1884,8 +2310,21 @@ export function buildHikerCharacter() {
     const brimScale = cfg.hatType === "bucket" ? 0.76 : 1.0;
     hatBrim.scale.set(brimScale, 1, brimScale);
     beanieGroup.visible = cfg.hatType === "beanie";
+    const isPuppyStyle = !cfg.catEars && !cfg.sheepEars;
+    puppyEarsGroup.visible = isPuppyStyle;
+    catEarsGroup.visible = Boolean(cfg.catEars);
+    sheepEarsGroup.visible = Boolean(cfg.sheepEars);
     if (isBrimmed) hatMat.color.set(cfg.hatColor);
-    if (cfg.hatType === "beanie") beanieMat.color.set(cfg.hatColor);
+    if (cfg.hatType === "beanie") {
+      beanieMat.color.set(cfg.hatColor);
+      beanieCuffMat.color.set(cfg.cuffColor || cfg.hatColor);
+      if (isPuppyStyle) {
+        puppyEarMat.color.set(cfg.earColor || "#a85518");
+        puppyBrowMat.color.set(cfg.browColor || "#fffbeb");
+        const isLightHat = planetId === "siguniang" || planetId === "yili";
+        bonePinMat.color.set(isLightHat ? "#fbbf24" : "#ffffff");
+      }
+    }
 
     faceMask.visible = cfg.mask;
     goggles.visible = true;
@@ -1917,13 +2356,30 @@ export function buildHikerCharacter() {
   }
 
   let waveTimer = 0;
+  let emoteType = null;
+  let emoteTimer = 0;
 
   return {
     root,
     get outfit() { return currentOutfitId; },
     setOutfit: applyOutfitAndSync,
     triggerWave() {
-      waveTimer = 1.6;
+      waveTimer = 1.8;
+    },
+    triggerEmote(type = "cheer", duration = 2.6) {
+      if (isSitting && type !== "sit") this.setSitting(false);
+      emoteType = type;
+      emoteTimer = duration;
+      if (type === "wave") waveTimer = duration;
+    },
+    poseWaveSnapshot() {
+      if (isSitting) this.setSitting(false);
+      bodyPivot.position.y = 0.04;
+      bodyPivot.rotation.set(0, 0, 0);
+      leftLeg.rotation.x = 0.08;
+      rightLeg.rotation.x = -0.08;
+      leftArm.rotation.set(-0.45, 0, 0.22);
+      rightArm.rotation.set(-2.55, 0, -0.42);
     },
     setSitting(on) {
       isSitting = Boolean(on);
@@ -1979,6 +2435,41 @@ export function buildHikerCharacter() {
         return;
       }
       const s = THREE.MathUtils.clamp(speedRatio, 0, 1.8);
+      if (emoteTimer > 0) {
+        emoteTimer = Math.max(0, emoteTimer - dt);
+        if (emoteType === "cheer") {
+          const hop = Math.abs(Math.sin(elapsed * 9.5));
+          bodyPivot.position.y = hop * 0.24;
+          bodyPivot.rotation.y = 0;
+          leftArm.rotation.x = -2.65 + Math.sin(elapsed * 12) * 0.2;
+          rightArm.rotation.x = -2.65 - Math.sin(elapsed * 12) * 0.2;
+          leftArm.rotation.z = 0.36;
+          rightArm.rotation.z = -0.36;
+          leftLeg.rotation.x = hop * 0.35;
+          rightLeg.rotation.x = -hop * 0.25;
+          if (puppyEarsGroup.visible) {
+            leftPuppyEar.rotation.z = 0.34 + hop * 0.42;
+            rightPuppyEar.rotation.z = -0.34 - hop * 0.42;
+          }
+          packGroup.position.y = bodyPivot.position.y;
+          return;
+        } else if (emoteType === "spin") {
+          bodyPivot.position.y = 0.08 + Math.abs(Math.sin(elapsed * 8)) * 0.08;
+          bodyPivot.rotation.y += dt * 7.2;
+          leftArm.rotation.x = -1.35;
+          rightArm.rotation.x = -1.35;
+          leftArm.rotation.z = 0.85;
+          rightArm.rotation.z = -0.85;
+          packGroup.position.y = bodyPivot.position.y;
+          packGroup.rotation.y = bodyPivot.rotation.y;
+          return;
+        }
+      } else if (bodyPivot.rotation.y !== 0) {
+        bodyPivot.rotation.y = 0;
+        packGroup.rotation.y = 0;
+        leftArm.rotation.z = 0;
+      }
+
       const walkPhase = elapsed * (7.5 + s * 3.5);
       const swing = Math.sin(walkPhase) * 0.55 * Math.min(1, s);
 
@@ -1999,9 +2490,14 @@ export function buildHikerCharacter() {
       packGroup.position.y = bodyPivot.position.y;
       packGroup.rotation.x = bodyPivot.rotation.x;
 
-      // 双小辫随微风与步伐俏皮轻晃
+      // 双小辫与元气小狗软垂耳随微风与步伐一颠一颠扑扇
       const braidBounce = Math.sin(walkPhase * 2) * (0.06 + s * 0.18);
       const breeze = Math.sin(elapsed * 3.4) * 0.08;
+      if (puppyEarsGroup.visible) {
+        const flap = Math.abs(Math.sin(walkPhase * 2)) * (0.06 + s * 0.26) + Math.sin(elapsed * 2.8) * 0.035;
+        leftPuppyEar.rotation.z = 0.34 + flap;
+        rightPuppyEar.rotation.z = -0.34 - flap;
+      }
       leftBraid.rotation.z = -0.18 - Math.abs(braidBounce) * 0.5 + breeze * 0.4;
       rightBraid.rotation.z = 0.18 + Math.abs(braidBounce) * 0.5 + breeze * 0.4;
       leftBraid.rotation.x = -0.12 - s * 0.25 + Math.cos(elapsed * 4.1) * 0.06;

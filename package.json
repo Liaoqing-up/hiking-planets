@@ -1,17 +1,17 @@
 {
   "name": "trails-among-the-stars",
-  "version": "3.7.1",
+  "version": "4.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "python3 -m http.server 8765 --bind 0.0.0.0",
     "tunnel": "cloudflared tunnel --url http://127.0.0.1:8765",
-    "dist": "DIST=\"$HOME/Desktop/行者的星球-网页发布包\" && rm -rf \"$DIST\" \"${DIST}.zip\" && mkdir -p \"$DIST/assets\" && cp index.html styles.css sw.js manifest.webmanifest \"$DIST/\" && cp -R js \"$DIST/js\" && cp -R vendor \"$DIST/vendor\" && cp -R assets/postcards \"$DIST/assets/postcards\" && cp assets/*.jpg assets/*.png \"$DIST/assets/\" && (cd \"$DIST\" && zip -rq \"${DIST}.zip\" .) && echo \"Published clean bundle to $DIST\""
+    "dist": "DIST=\"$HOME/Desktop/行者的星球-网页发布包\" && rm -rf \"$DIST\" \"${DIST}.zip\" && mkdir -p \"$DIST/assets/photos\" && cp index.html styles.css sw.js manifest.webmanifest \"$DIST/\" && cp -R js \"$DIST/js\" && cp -R vendor \"$DIST/vendor\" && cp -R assets/postcards \"$DIST/assets/postcards\" && cp -R assets/kitty \"$DIST/assets/kitty\" && cp -R assets/photos/miemie \"$DIST/assets/photos/miemie\" && cp assets/*.jpg assets/*.png \"$DIST/assets/\" && (cd \"$DIST\" && zip -rq \"${DIST}.zip\" .) && echo \"Published clean bundle to $DIST\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
     "three": "^0.187.0"
   }

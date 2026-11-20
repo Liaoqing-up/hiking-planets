@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./planetBuilder3D.js?v=3.7.1";
+import { getSurfaceRadius, PLANET_RADIUS } from "./planetBuilder3D.js?v=4.0.0-r1";
 
 function drawPlanetLabelCanvas(canvas, text, progressStr = "", isCleared = false) {
   const ctx = canvas.getContext("2d");
@@ -308,8 +308,77 @@ export function createSkyWonders(activePlanet, allPlanets) {
     });
   });
 
+  // ==================== 1.5 横贯深空的 3D 璀璨银河星云光带 (Milky Way Band) ====================
+  const milkyWayGroup = new THREE.Group();
+  const mwCount = 1400;
+  const mwPos = new Float32Array(mwCount * 3);
+  const mwCol = new Float32Array(mwCount * 3);
+  const paletteMW = [
+    new THREE.Color("#fff4d2"),
+    new THREE.Color("#a5ceff"),
+    new THREE.Color("#f5b8e6"),
+    new THREE.Color("#c7b3ff"),
+    new THREE.Color("#ffd59e"),
+  ];
+  for (let i = 0; i < mwCount; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    // 高斯式收束在银河赤道带附近，局部成团形成星云感
+    const spread = (Math.random() + Math.random() + Math.random() - 1.5) * 0.24;
+    const wave = Math.sin(theta * 3) * 0.08;
+    const phi = Math.PI * 0.5 + spread + wave;
+    const dist = 108 + Math.random() * 26;
+    mwPos[i * 3] = dist * Math.sin(phi) * Math.cos(theta);
+    mwPos[i * 3 + 1] = dist * Math.cos(phi);
+    mwPos[i * 3 + 2] = dist * Math.sin(phi) * Math.sin(theta);
+    const c = paletteMW[i % paletteMW.length];
+    const bright = 0.65 + Math.random() * 0.35;
+    mwCol[i * 3] = c.r * bright;
+    mwCol[i * 3 + 1] = c.g * bright;
+    mwCol[i * 3 + 2] = c.b * bright;
+  }
+  const mwGeo = new THREE.BufferGeometry();
+  mwGeo.setAttribute("position", new THREE.BufferAttribute(mwPos, 3));
+  mwGeo.setAttribute("color", new THREE.BufferAttribute(mwCol, 3));
+  // 柔和发光星尘贴图
+  const dotCanvas = document.createElement("canvas");
+  dotCanvas.width = 32;
+  dotCanvas.height = 32;
+  const dctx = dotCanvas.getContext("2d");
+  const dgrad = dctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  dgrad.addColorStop(0, "rgba(255,255,255,1)");
+  dgrad.addColorStop(0.35, "rgba(245,235,255,0.65)");
+  dgrad.addColorStop(1, "rgba(255,255,255,0)");
+  dctx.fillStyle = dgrad;
+  dctx.fillRect(0, 0, 32, 32);
+  const isGalaxyHero =
+    activePlanet.id === "kitty-sunset" ||
+    activePlanet.id === "tengger" ||
+    activePlanet.id === "miemie-shexiang";
+  const mwMat = new THREE.PointsMaterial({
+    size: isGalaxyHero ? 2.5 : 1.9,
+    map: new THREE.CanvasTexture(dotCanvas),
+    vertexColors: true,
+    transparent: true,
+    opacity: isGalaxyHero ? 0.88 : 0.62,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const mwPoints = new THREE.Points(mwGeo, mwMat);
+  milkyWayGroup.rotation.set(0.62, 0.35, -0.48);
+  milkyWayGroup.add(mwPoints);
+  group.add(milkyWayGroup);
+
   // ==================== 2. 高山飘雪 → 云开日照金山奇遇 ====================
-  const isAlpine = ["yading", "siguniang", "zhagana"].includes(activePlanet.id);
+  const isAlpine = [
+    "yading",
+    "siguniang",
+    "zhagana",
+    "kitty-changbai",
+    "kitty-zhagana",
+    "kitty-wusun",
+    "kitty-yading",
+    "miemie-yading",
+  ].includes(activePlanet.id);
   let snowPoints = null;
   const snowCount = 96;
   const snowOffsets = new Float32Array(snowCount * 3);
@@ -556,9 +625,18 @@ export function createSkyWonders(activePlanet, allPlanets) {
         }
       }
 
+      // 银河缓慢流转 + 星夜增亮
+      milkyWayGroup.rotation.y += dt * 0.012;
+      const targetMwOpacity = state.isNight ? 0.95 : isGalaxyHero ? 0.86 : 0.62;
+      mwMat.opacity = THREE.MathUtils.lerp(mwMat.opacity, targetMwOpacity, Math.min(1, dt * 2));
+
       // 星夜驻足自动流星雨
       if (meteorCooldown > 0) meteorCooldown -= dt;
-      const starryPlanet = activePlanet.id === "tengger" || activePlanet.id === "yili";
+      const starryPlanet =
+        activePlanet.id === "tengger" ||
+        activePlanet.id === "yili" ||
+        activePlanet.id === "kitty-sunset" ||
+        activePlanet.id === "miemie-shexiang";
       if (
         (state.isNight || starryPlanet) &&
         (state.idleSeconds ?? 0) > 2.8 &&

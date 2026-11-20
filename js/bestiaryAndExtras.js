@@ -8,6 +8,18 @@ const PORTRAIT_BG = {
   siguniang: ["#281c3b", "#6e4b8c"],
   maclehose: ["#102a3f", "#27708f"],
   yili: ["#1c2d1f", "#557d4c"],
+  "kitty-xiaowutai": ["#1a2e22", "#4b8b5e"],
+  "kitty-sunset": ["#2c1836", "#8c466e"],
+  "kitty-changbai": ["#12263f", "#3672a8"],
+  "kitty-zhagana": ["#162c28", "#3f7560"],
+  "kitty-daqing": ["#1c2f24", "#528258"],
+  "kitty-wusun": ["#1c2638", "#4e6d8c"],
+  "kitty-yading": ["#2b1e16", "#8a5a32"],
+  "miemie-tonggudang": ["#162b22", "#3e7d5c"],
+  "miemie-longji": ["#1a2b20", "#4b7c4e"],
+  "miemie-shexiang": ["#091c32", "#1e6494"],
+  "miemie-buyi": ["#1d2730", "#4f687a"],
+  "miemie-yading": ["#15243d", "#3c6494"],
 };
 
 function drawAnimalShape(ctx, planetId) {
@@ -244,7 +256,7 @@ function drawAnimalShape(ctx, planetId) {
       ctx.lineTo(gx - 1, 10);
       ctx.stroke();
     }
-  } else {
+  } else if (planetId === "zhagana") {
     // zhagana 高山小黑牦牛
     const coat = "#2d272b";
     ctx.fillStyle = coat;
@@ -277,6 +289,94 @@ function drawAnimalShape(ctx, planetId) {
     ctx.arc(-13, -15, 2.8, 0, Math.PI * 2);
     ctx.arc(1, -15, 2.8, 0, Math.PI * 2);
     ctx.fill();
+  } else if (planetId === "kitty-xiaowutai") {
+    // 🐱 小五台山野橘白小猫咪
+    ctx.strokeStyle = "#f59e42"; ctx.lineWidth = 9; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(22, 24); ctx.quadraticCurveTo(44, 4, 36, -24); ctx.stroke();
+    ctx.fillStyle = "#f59e42";
+    ctx.beginPath(); ctx.ellipse(0, 18, 25, 20, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#fffaf0";
+    ctx.beginPath(); ctx.ellipse(0, 20, 15, 14, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#f59e42";
+    [-18, 18].forEach((sx) => {
+      ctx.beginPath(); ctx.moveTo(sx * 0.4, -22); ctx.lineTo(sx * 1.15, -42); ctx.lineTo(sx * 1.35, -14); ctx.closePath(); ctx.fill();
+    });
+    ctx.beginPath(); ctx.arc(0, -10, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#1c1917";
+    ctx.beginPath(); ctx.arc(-8, -12, 3, 0, Math.PI * 2); ctx.arc(8, -12, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#f472b6";
+    ctx.beginPath(); ctx.arc(0, -6, 2.8, 0, Math.PI * 2); ctx.fill();
+  } else if (planetId === "kitty-changbai") {
+    // 🦌 长白山梅花小鹿
+    ctx.fillStyle = "#d97736";
+    ctx.beginPath(); ctx.ellipse(0, 18, 24, 18, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#fffbeb";
+    [[-10, 14], [6, 12], [-2, 22], [12, 20]].forEach(([sx, sy]) => {
+      ctx.beginPath(); ctx.arc(sx, sy, 3.5, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.strokeStyle = "#fde68a"; ctx.lineWidth = 4; ctx.lineCap = "round";
+    [-1, 1].forEach((s) => {
+      ctx.beginPath(); ctx.moveTo(s * 7, -24); ctx.lineTo(s * 14, -44); ctx.moveTo(s * 11, -35); ctx.lineTo(s * 19, -37); ctx.stroke();
+    });
+    ctx.fillStyle = "#d97736";
+    ctx.beginPath(); ctx.arc(0, -10, 19, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#1c1917";
+    ctx.beginPath(); ctx.arc(-7, -12, 2.8, 0, Math.PI * 2); ctx.arc(7, -12, 2.8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#7c2d12";
+    ctx.beginPath(); ctx.arc(0, -4, 3.2, 0, Math.PI * 2); ctx.fill();
+  } else if (planetId === "kitty-yading") {
+    // 🐿️ 抱松果亚丁小松鼠
+    ctx.fillStyle = "#9c5125";
+    ctx.beginPath(); ctx.ellipse(22, 4, 18, 28, 0.35, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#b46535";
+    ctx.beginPath(); ctx.ellipse(-4, 14, 19, 22, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#faeed7";
+    ctx.beginPath(); ctx.ellipse(-7, 16, 12, 16, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#b46535";
+    ctx.beginPath(); ctx.arc(-6, -12, 17, 0, Math.PI * 2); ctx.arc(-16, -27, 6, 0, Math.PI * 2); ctx.arc(4, -27, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#1c1917";
+    ctx.beginPath(); ctx.arc(-11, -13, 2.8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#5c3317";
+    ctx.beginPath(); ctx.ellipse(-16, 12, 7, 9, -0.2, 0, Math.PI * 2); ctx.fill();
+  } else if (planetId === "kitty-sunset") {
+    // 🐇 长耳星云兔
+    ctx.fillStyle = "#fffaf5";
+    ctx.beginPath();
+    ctx.ellipse(-9, -34, 6, 18, -0.15, 0, Math.PI * 2);
+    ctx.ellipse(9, -34, 6, 18, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, 18, 24, 19, 0, 0, Math.PI * 2); ctx.arc(0, -8, 19, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#1c1917";
+    ctx.beginPath(); ctx.arc(-7, -9, 2.8, 0, Math.PI * 2); ctx.arc(7, -9, 2.8, 0, Math.PI * 2); ctx.fill();
+  } else if (planetId === "kitty-zhagana") {
+    drawAnimalShape(ctx, "siguniang");
+  } else if (planetId === "kitty-daqing") {
+    drawAnimalShape(ctx, "yili");
+  } else if (planetId === "kitty-wusun" || planetId === "miemie-longji") {
+    // 🐴 天山/塞尔达旷野小马驹
+    ctx.fillStyle = planetId === "miemie-longji" ? "#8b5a2b" : "#9a5b37";
+    ctx.beginPath(); ctx.ellipse(6, 16, 28, 18, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(-24, -18, 14, 30, 6); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-24, -20, 15, 10, -0.25, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#1c1917";
+    ctx.beginPath(); ctx.arc(-28, -22, 2.6, 0, Math.PI * 2); ctx.fill();
+  } else if (planetId === "miemie-tonggudang") {
+    drawAnimalShape(ctx, "yili");
+  } else if (planetId === "miemie-shexiang") {
+    // 🐇 地心星穹萤光兔
+    ctx.fillStyle = "#67e8f9";
+    ctx.beginPath();
+    ctx.ellipse(-9, -34, 6.5, 18, -0.15, 0, Math.PI * 2);
+    ctx.ellipse(9, -34, 6.5, 18, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ecfeff";
+    ctx.beginPath(); ctx.ellipse(0, 18, 24, 19, 0, 0, Math.PI * 2); ctx.arc(0, -8, 19, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#083344";
+    ctx.beginPath(); ctx.arc(-7, -9, 2.8, 0, Math.PI * 2); ctx.arc(7, -9, 2.8, 0, Math.PI * 2); ctx.fill();
+  } else if (planetId === "miemie-buyi") {
+    drawAnimalShape(ctx, "kitty-xiaowutai");
+  } else if (planetId === "miemie-yading") {
+    drawAnimalShape(ctx, "zhagana");
   }
 
   ctx.restore();
@@ -344,7 +444,8 @@ export function capturePhotoWallpaper(
   webglCanvas,
   planetName = "行者的星球",
   altitudeText = "",
-  travelerName = ""
+  travelerName = "",
+  hostRole = "mine"
 ) {
   const isLandscape = webglCanvas.width >= webglCanvas.height * 1.05;
   const W = isLandscape ? 1600 : 1080;
@@ -412,15 +513,34 @@ export function capturePhotoWallpaper(
   } else {
     ctx.fillStyle = "rgba(232, 195, 107, 0.72)";
     ctx.font = "500 19px Georgia, serif";
-    ctx.fillText("行者的星球 · hikerplanets.netlify.app", W / 2 - 48, fy + fh + 152);
+    ctx.fillText(
+      hostRole === "kitty"
+        ? "🐾 Kitty 的星球 · hikerplanets.netlify.app"
+        : hostRole === "miemie"
+          ? "🐑 咩咩的星球 · hikerplanets.netlify.app"
+          : "行者的星球 · hikerplanets.netlify.app",
+      W / 2 - 48,
+      fy + fh + 152
+    );
   }
 
-  drawSiteQrStamp(ctx, fx + fw - 116, fy + fh + 36, 112, "dark");
+  drawSiteQrStamp(ctx, fx + fw - 116, fy + fh + 36, 112, "dark", hostRole);
 
   return out.toDataURL("image/png");
 }
 
-export function generateGrandPassportDataUrl(planets, saveData = {}, travelerName = "") {
+export function generateGrandPassportDataUrl(planets, saveData = {}, travelerName = "", hostRole = "mine") {
+  const firstOwner = planets[0]?.owner;
+  const passOwner =
+    firstOwner === "kitty"
+      ? "kitty"
+      : firstOwner === "miemie"
+        ? "miemie"
+        : firstOwner
+          ? "mine"
+          : hostRole === "kitty" || hostRole === "miemie"
+            ? hostRole
+            : "mine";
   const W = 800;
   const H = 1220;
   const canvas = document.createElement("canvas");
@@ -459,45 +579,65 @@ export function generateGrandPassportDataUrl(planets, saveData = {}, travelerNam
 
   ctx.fillStyle = "#fff6de";
   ctx.font = "700 42px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
-  ctx.fillText("山海皆星辰 · 全境行者", W / 2, 162);
+  ctx.fillText(
+    passOwner === "kitty"
+      ? "猫耳星云 · 七星全境行者"
+      : passOwner === "miemie"
+        ? "绵羊星云 · 五星全境行者"
+        : "山海皆星辰 · 全境行者",
+    W / 2,
+    162
+  );
 
   ctx.fillStyle = "#c9b384";
   ctx.font = "400 20px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
-  ctx.fillText("致耐心走完每一座垭口、每一片沙海与海岸的同路人", W / 2, 202);
+  ctx.fillText(
+    passOwner === "kitty"
+      ? "致去见那座山、追过日落八分钟与漫天星河的追光人"
+      : passOwner === "miemie"
+        ? "致潜入地心宇宙、背起大包走向无信号雪山的自由灵魂"
+        : "致耐心走完每一座垭口、每一片沙海与海岸的同路人",
+    W / 2,
+    202
+  );
 
-  // 2×3 六颗星球水彩勋章阵列
-  const cols = 3;
-  const cellW = 216;
+  // 自适应 6 星（3×2）或 7 星（上4+下3居中）水彩勋章阵列
+  const pList = planets.slice(0, 8);
+  const topCols = pList.length >= 7 ? 4 : 3;
+  const cellW = pList.length >= 7 ? 174 : 216;
   const cellH = 236;
-  const startX = (W - cols * cellW) / 2;
   const startY = 242;
+  const iconSz = pList.length >= 7 ? 124 : 144;
 
-  planets.slice(0, 6).forEach((p, idx) => {
-    const col = idx % cols;
-    const row = Math.floor(idx / cols);
-    const cx = startX + col * cellW + cellW / 2;
+  pList.forEach((p, idx) => {
+    const row = Math.floor(idx / topCols);
+    const col = idx % topCols;
+    const rowCount = row === 0 ? Math.min(topCols, pList.length) : pList.length - topCols;
+    const rowStartX = (W - rowCount * cellW) / 2;
+    const cx = rowStartX + col * cellW + cellW / 2;
     const cy = startY + row * cellH;
 
     const thumb = document.createElement("canvas");
     thumb.width = 160;
     thumb.height = 160;
     renderPlanetIllustration(thumb, p.id);
-    ctx.drawImage(thumb, cx - 72, cy, 144, 144);
+    ctx.drawImage(thumb, cx - iconSz / 2, cy, iconSz, iconSz);
 
     ctx.fillStyle = "#f9ecd0";
-    ctx.font = "600 19px 'ZCOOL XiaoWei', 'LXGW WenKai Screen', 'Songti SC', serif";
-    ctx.fillText(p.name, cx, cy + 172);
+    ctx.font = `${pList.length >= 7 ? "600 16.5px" : "600 19px"} 'ZCOOL XiaoWei', 'LXGW WenKai Screen', serif`;
+    ctx.fillText(p.name, cx, cy + iconSz + 26);
 
     ctx.fillStyle = "#f0c768";
-    ctx.font = "500 14.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
+    ctx.font = "500 14px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
     const cnt = (saveData.discovered?.[p.id] || []).length;
-    ctx.fillText(`✦ 印记 ${cnt}/${p.waypoints.length}`, cx, cy + 198);
+    ctx.fillText(`✦ 印记 ${cnt}/${p.waypoints.length}`, cx, cy + iconSz + 50);
   });
 
   // 汇总数据栏
   const totalWp = planets.reduce((s, p) => s + p.waypoints.length, 0);
   const doneWp = planets.reduce((s, p) => s + (saveData.discovered?.[p.id] || []).length, 0);
-  const creatureCnt = (saveData.creatures || []).length;
+  const pIdSet = new Set(planets.map((p) => p.id));
+  const creatureCnt = (saveData.creatures || []).filter((cid) => pIdSet.has(cid)).length;
 
   const boxY = 732;
   ctx.fillStyle = "rgba(240, 199, 104, 0.08)";
@@ -526,11 +666,19 @@ export function generateGrandPassportDataUrl(planets, saveData = {}, travelerNam
 
   ctx.fillStyle = "rgba(240, 199, 104, 0.72)";
   ctx.font = "500 16.5px Georgia, serif";
-  ctx.fillText("行者的星球 · hikerplanets.netlify.app", 78, 1126);
+  ctx.fillText(
+    passOwner === "kitty"
+      ? "🐾 Kitty 的星球 · hikerplanets.netlify.app"
+      : passOwner === "miemie"
+        ? "🐑 咩咩的星球 · hikerplanets.netlify.app"
+        : "行者的星球 · hikerplanets.netlify.app",
+    78,
+    1126
+  );
 
   drawPostmarkSeal(ctx, W - 278, 1068, {
     radius: 56,
-    bannerText: "全境穿越",
+    bannerText: passOwner === "kitty" ? "七星满贯" : passOwner === "miemie" ? "五星满贯" : "全境穿越",
     subText: "山海皆星辰",
     color: "#f2c864",
     paperBg: "#0a1126",
@@ -538,7 +686,7 @@ export function generateGrandPassportDataUrl(planets, saveData = {}, travelerNam
     angle: -0.16,
   });
 
-  drawSiteQrStamp(ctx, W - 166, 1008, 94, "dark");
+  drawSiteQrStamp(ctx, W - 166, 1008, 94, "dark", passOwner);
 
   return canvas.toDataURL("image/png");
 }
@@ -588,7 +736,16 @@ function wrapParagraph(ctx, text, maxWidth) {
   return lines;
 }
 
-export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName = "") {
+export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName = "", hostRole = "mine") {
+  const pOwner = planet?.owner;
+  const bmOwner =
+    pOwner === "kitty" || pOwner === "miemie"
+      ? pOwner
+      : pOwner
+        ? "mine"
+        : hostRole === "kitty" || hostRole === "miemie"
+          ? hostRole
+          : "mine";
   const W = 740;
   const H = 1280;
   const canvas = document.createElement("canvas");
@@ -718,7 +875,13 @@ export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName =
   ctx.textAlign = "left";
   ctx.fillStyle = "#7a5b34";
   ctx.font = "500 14.5px 'LXGW WenKai Screen', 'PingFang SC', sans-serif";
-  ctx.fillText(`珍藏日期：${dateStr}  ·  hikerplanets.netlify.app`, padX, by + bh - 42);
+  ctx.fillText(
+    `珍藏日期：${dateStr}  ·  ${
+      bmOwner === "kitty" ? "Kitty 的星球" : bmOwner === "miemie" ? "咩咩的星球" : "hikerplanets.netlify.app"
+    }`,
+    padX,
+    by + bh - 42
+  );
 
   drawPostmarkSeal(ctx, bx + bw - 208, by + bh - 82, {
     radius: 46,
@@ -730,7 +893,7 @@ export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName =
     angle: -0.18,
   });
 
-  drawSiteQrStamp(ctx, bx + bw - 124, by + bh - 126, 86, "parchment");
+  drawSiteQrStamp(ctx, bx + bw - 124, by + bh - 126, 86, "parchment", bmOwner);
 
   return canvas.toDataURL("image/png");
 }

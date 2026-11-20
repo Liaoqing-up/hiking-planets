@@ -84,6 +84,54 @@ export function renderPlanetIllustration(canvas, planetId) {
       rim: "#e4ffbd",
       glow: "rgba(168, 230, 108, 0.28)",
     },
+    "kitty-xiaowutai": {
+      seed: 2882, topA: "#e6f7d4", topB: "#78bd65", botA: "#3d7a4f", botB: "#234a34",
+      crater: "#316341", rim: "#f2fce4", glow: "rgba(156, 224, 130, 0.32)",
+    },
+    "kitty-changbai": {
+      seed: 2691, topA: "#d8f0ff", topB: "#5a9bd5", botA: "#3c6e58", botB: "#25453b",
+      crater: "#2f5748", rim: "#f0f9ff", glow: "rgba(126, 196, 255, 0.32)",
+    },
+    "kitty-sunset": {
+      seed: 808, topA: "#ffd29d", topB: "#e87a64", botA: "#6b4978", botB: "#2b244d",
+      crater: "#4a3363", rim: "#ffe4b8", glow: "rgba(255, 158, 109, 0.34)",
+    },
+    "kitty-zhagana": {
+      seed: 4650, topA: "#dff6ff", topB: "#6db4c8", botA: "#417a58", botB: "#294d3a",
+      crater: "#356149", rim: "#eefbff", glow: "rgba(140, 212, 232, 0.3)",
+    },
+    "kitty-daqing": {
+      seed: 2340, topA: "#e9fcd9", topB: "#84cc6c", botA: "#468a52", botB: "#285436",
+      crater: "#366e43", rim: "#f4ffe8", glow: "rgba(156, 224, 130, 0.3)",
+    },
+    "kitty-wusun": {
+      seed: 3800, topA: "#e6f7f5", topB: "#5ea898", botA: "#3a6b63", botB: "#22403d",
+      crater: "#2d544f", rim: "#ebfffb", glow: "rgba(122, 212, 200, 0.3)",
+    },
+    "kitty-yading": {
+      seed: 4700, topA: "#fff5df", topB: "#9bb8d4", botA: "#6e7d91", botB: "#3f4b63",
+      crater: "#51607a", rim: "#ffffff", glow: "rgba(255, 210, 138, 0.3)",
+    },
+    "miemie-tonggudang": {
+      seed: 2160, topA: "#d1fae5", topB: "#4d8a54", botA: "#374151", botB: "#1f2937",
+      crater: "#2d5e40", rim: "#ecfdf5", glow: "rgba(110, 231, 183, 0.32)",
+    },
+    "miemie-longji": {
+      seed: 2350, topA: "#ecfccb", topB: "#65a30d", botA: "#334155", botB: "#1e293b",
+      crater: "#3f6212", rim: "#f7fee7", glow: "rgba(163, 230, 53, 0.3)",
+    },
+    "miemie-shexiang": {
+      seed: 1890, topA: "#bae6fd", topB: "#0284c7", botA: "#1e3a8a", botB: "#0f172a",
+      crater: "#172554", rim: "#e0f2fe", glow: "rgba(56, 189, 248, 0.36)",
+    },
+    "miemie-buyi": {
+      seed: 1620, topA: "#fef3c7", topB: "#6b7f5e", botA: "#57534e", botB: "#292524",
+      crater: "#44403c", rim: "#fffbeb", glow: "rgba(251, 191, 36, 0.3)",
+    },
+    "miemie-yading": {
+      seed: 4750, topA: "#f0f9ff", topB: "#7dd3fc", botA: "#475569", botB: "#1e293b",
+      crater: "#334155", rim: "#ffffff", glow: "rgba(125, 211, 252, 0.32)",
+    },
   };
 
   const t = themes[planetId] || themes.tengger;
@@ -392,10 +440,39 @@ function drawPlanetCrownBack(ctx, id, cx, cy, r) {
     // 蚺蛇尖翠绿尖峰
     drawMountainPeak(ctx, cx - 22, topY + 24, 58, 52, "#4f9c5c", null);
     drawMountainPeak(ctx, cx + 14, topY + 26, 48, 36, "#66b567", null);
-  } else if (id === "yili") {
+  } else if (id === "yili" || id === "kitty-wusun") {
     // 远方连绵天山雪岭
     drawMountainPeak(ctx, cx - 26, topY + 22, 50, 44, "#799496", "#f5faff");
     drawMountainPeak(ctx, cx + 18, topY + 22, 54, 48, "#6f8a8f", "#f5faff");
+  } else if (id === "kitty-xiaowutai" || id === "miemie-tonggudang" || id === "miemie-buyi") {
+    // 小五台连绵青翠四台草甸山峰
+    drawMountainPeak(ctx, cx - 26, topY + 22, 46, 42, "#4f8c5a", "#dff5c8");
+    drawMountainPeak(ctx, cx + 8, topY + 20, 52, 50, "#3f7a4d", "#eef9dc");
+    drawMountainPeak(ctx, cx + 34, topY + 24, 38, 36, "#5a9964", "#dff5c8");
+  } else if (id === "kitty-changbai") {
+    // 长白山火山口环峰 + 中央蔚蓝天池
+    drawMountainPeak(ctx, cx - 30, topY + 22, 48, 48, "#5d738a", "#f2f8ff");
+    drawMountainPeak(ctx, cx + 30, topY + 22, 48, 46, "#546980", "#f2f8ff");
+    ctx.fillStyle = "#1b80e8";
+    ctx.beginPath();
+    ctx.ellipse(cx, topY + 4, 24, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#d8f0ff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  } else if (id === "kitty-sunset") {
+    // 落日橘金圆日余晖
+    ctx.fillStyle = "rgba(255, 196, 112, 0.88)";
+    ctx.beginPath();
+    ctx.arc(cx + 18, topY - 4, 22, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (id === "kitty-zhagana" || id === "miemie-longji") {
+    drawMountainPeak(ctx, cx - 20, topY + 22, 54, 52, "#7d92a6", "#eef8ff");
+    drawMountainPeak(ctx, cx + 24, topY + 24, 46, 42, "#8f9ca6", "#f5fbff");
+  } else if (id === "kitty-yading" || id === "miemie-yading") {
+    drawMountainPeak(ctx, cx - 26, topY + 22, 46, 54, "#7588a3", "#ffffff");
+    drawMountainPeak(ctx, cx + 2, topY + 20, 52, 70, "#859ab8", "#ffffff");
+    drawMountainPeak(ctx, cx + 28, topY + 24, 44, 48, "#6a7d96", "#f5faff");
   }
 }
 
@@ -524,6 +601,42 @@ function drawPlanetCrownFront(ctx, id, cx, cy, r) {
       ctx.ellipse(cx + dx, topY + dy, 4, 2.8, 0, 0, Math.PI * 2);
       ctx.fill();
     });
+  } else if (id === "kitty-xiaowutai") {
+    [-26, -12, 16, 28].forEach((dx, k) => {
+      ctx.fillStyle = "#facc15";
+      ctx.beginPath();
+      ctx.arc(cx + dx, topY + 14 + (k % 2) * 5, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  } else if (id === "kitty-changbai") {
+    drawSpruce(ctx, cx - 38, topY + 18, 1.0, "#2b6e4c");
+    drawSpruce(ctx, cx + 38, topY + 18, 0.95, "#35825a");
+  } else if (id === "kitty-sunset") {
+    // 2D 手绘白色大风车
+    [-22, 14].forEach((dx, idx) => {
+      const wx = cx + dx, wy = topY + 12 + idx * 4, wh = idx === 0 ? 34 : 26;
+      ctx.strokeStyle = "#fffdf8";
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(wx, wy);
+      ctx.lineTo(wx, wy - wh);
+      ctx.stroke();
+      for (let b = 0; b < 3; b++) {
+        const a = -0.4 + (b * Math.PI * 2) / 3;
+        ctx.beginPath();
+        ctx.moveTo(wx, wy - wh);
+        ctx.lineTo(wx + Math.cos(a) * (wh * 0.48), wy - wh + Math.sin(a) * (wh * 0.48));
+        ctx.stroke();
+      }
+    });
+  } else if (id === "kitty-daqing") {
+    drawTent(ctx, cx - 12, topY + 12, "#65c466");
+    drawTent(ctx, cx + 16, topY + 15, "#f59e0b");
+    drawSpruce(ctx, cx - 38, topY + 20, 0.95, "#3a8c52");
+  } else if (id === "kitty-zhagana" || id === "kitty-wusun" || id === "kitty-yading") {
+    drawSpruce(ctx, cx - 36, topY + 18, 1.0, "#2f734e");
+    drawSpruce(ctx, cx + 34, topY + 18, 0.95, "#d99b38");
+    drawTent(ctx, cx + 6, topY + 14, "#f472b6");
   }
 }
 

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { latLonToUnitVec, getSurfaceRadius } from "./planetBuilder3D.js?v=3.7.1";
+import { latLonToUnitVec, getSurfaceRadius } from "./planetBuilder3D.js?v=4.0.0-r1";
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -68,6 +68,116 @@ export const CREATURE_CATALOG = [
     emoji: "🐑",
     greeting: "云朵般蓬松的小羊羔欢快地原地蹦跳了两下",
     note: "“请给我画一只绵羊吧。”它从漫画星云跳进金秋与初雪的牧场。",
+  },
+  {
+    planetId: "kitty-xiaowutai",
+    owner: "kitty",
+    planetName: "那座山 · 小五台",
+    name: "山野小橘猫",
+    emoji: "🐱",
+    realPhoto: "./assets/kitty/k-31.jpg?v=4.0.0-r1",
+    greeting: "西台山石上的小橘猫喵呜一声，翘着长尾巴蹭了蹭你的裤脚",
+    note: "源自 Kitty 在山石间偶遇的真实喵星人——它替小五台的高山草甸保管着晒过太阳的温柔。",
+  },
+  {
+    planetId: "kitty-changbai",
+    owner: "kitty",
+    planetName: "长白山",
+    name: "长白梅花小鹿",
+    emoji: "🦌",
+    greeting: "林间梅花小鹿轻点蹄尖，头顶小鹿角在天池晴光下闪闪发亮",
+    note: "守候在长白山岳桦林与火山天池畔的灵动小鹿，背上的白斑像落满星光。",
+  },
+  {
+    planetId: "kitty-sunset",
+    owner: "kitty",
+    planetName: "银河与日落八分钟",
+    name: "追光星云兔",
+    emoji: "🐇",
+    greeting: "长耳朵小雪兔竖起耳朵，陪你一起望向风车边的落日余晖",
+    note: "它收集日落最后八分钟的橘金星尘，等夜幕降临时撒成满天银河。",
+  },
+  {
+    planetId: "kitty-zhagana",
+    owner: "kitty",
+    planetName: "措美峰东线与扎尕那",
+    name: "冰湖小雪狐",
+    emoji: "🦊",
+    greeting: "纯白小雪狐轻巧地跃过冰湖边缘，朝你歪了歪脑袋",
+    note: "守望措美峰冰封海子与扎尕那云雾石城的白色精灵。",
+  },
+  {
+    planetId: "kitty-daqing",
+    owner: "kitty",
+    planetName: "大青山云端营地",
+    name: "云朵小羊羔",
+    emoji: "🐑",
+    greeting: "软绵绵的云朵小羊在帐篷边欢快地转了个圈",
+    note: "大青山顶飘落的一朵白云，落在绿绒毯草甸上变成了陪你露营的伙伴。",
+  },
+  {
+    planetId: "kitty-wusun",
+    owner: "kitty",
+    planetName: "乌孙古道天山脊",
+    name: "天山小马驹",
+    emoji: "🐴",
+    greeting: "矫健的小马驹甩了甩鬃毛，陪你涉过天山峡谷的溪流",
+    note: "乌孙古道千年的风声里，它是最懂重装行者脚步的忠实伙伴。",
+  },
+  {
+    planetId: "kitty-yading",
+    owner: "kitty",
+    planetName: "稻城亚丁",
+    name: "栈道小松鼠",
+    emoji: "🐿️",
+    realPhoto: "./assets/kitty/k-30.jpg?v=4.0.0-r1",
+    greeting: "蓬松大尾巴的小松鼠双手捧着松果，好奇地凑到镜头前营业！",
+    note: "源自 Kitty 在亚丁木栈道栏杆上真实抓拍到的贪吃小松鼠——心都要被它萌化啦！",
+  },
+  {
+    planetId: "miemie-tonggudang",
+    owner: "miemie",
+    planetName: "铜鼓荡与地心奇境",
+    name: "黑石草甸小绵羊",
+    emoji: "🐑",
+    greeting: "铜鼓荡黑石林旁的小绵羊咩咩叫了一声，踩着绿草甸跑来蹭你",
+    note: "源自咩咩在贵州安顺铜鼓荡遇见的漫山闲步牧群——在黑石与绿草间从不赶时间。",
+  },
+  {
+    planetId: "miemie-longji",
+    owner: "miemie",
+    planetName: "龙脊天路",
+    name: "塞尔达旷野小马",
+    emoji: "🐴",
+    greeting: "龙脊山谷的小马驹扬起前蹄，想载你一起驰骋人间塞尔达！",
+    note: "守望刀劈斧砍喀斯特龙脊与关岭冰臼大地之眼的追风小马。",
+  },
+  {
+    planetId: "miemie-shexiang",
+    owner: "miemie",
+    planetName: "麝香洞 · 地心宇宙",
+    name: "地心星穹萤光兔",
+    emoji: "🐇",
+    greeting: "耳朵泛着幽蓝微光的地心小兔蹦了蹦，为你照亮宇宙穹顶",
+    note: "栖息在麝香洞幽邃星河穹顶下的小精灵，替探洞者守护百万年的钟乳微光。",
+  },
+  {
+    planetId: "miemie-buyi",
+    owner: "miemie",
+    planetName: "布依古寨与猫跳峡",
+    name: "猫跳峡飞石小猫",
+    emoji: "🐱",
+    greeting: "灵巧的山野小猫踩着礁石轻盈一跃，喵呜一声落在青石巷口！",
+    note: "源自猫跳峡‘古时野猫踩礁石一跃过河’的美丽传说，爱在千年布依石瓦上晒太阳。",
+  },
+  {
+    planetId: "miemie-yading",
+    owner: "miemie",
+    planetName: "亚丁大环反穿 · 重装",
+    name: "无信号雪原小牦牛",
+    emoji: "🐃",
+    greeting: "敦实的小牦牛摇着铜铃，陪你在没有信号的雪山营地生火发呆",
+    note: "六天五晚重装反穿路上的温暖守望者：每天一个小目标，抵达营地就足够啦。",
   },
 ];
 
@@ -230,11 +340,12 @@ function buildCreatureMesh(planetId) {
     tailPivot.add(tail);
     standPivot.add(headPivot, tailPivot);
     bodyPivot.add(standPivot);
-  } else if (planetId === "siguniang") {
-    // 《小王子》暖橙雪线小狐狸
-    const orange = toon("#ea7434");
+  } else if (planetId === "siguniang" || planetId === "kitty-zhagana") {
+    // 《小王子》暖橙雪线小狐狸 / 措美峰冰湖纯白小雪狐
+    const isSnowFox = planetId === "kitty-zhagana";
+    const orange = toon(isSnowFox ? "#dbeafe" : "#ea7434");
     const cream = toon("#fff7eb");
-    const dark = toon("#2c201e");
+    const dark = toon(isSnowFox ? "#334155" : "#2c201e");
     makeLegs("#2c201e", 0.19, 0.028, 0.075, 0.11);
     const torso = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 12), orange);
     torso.scale.set(0.86, 0.85, 1.32);
@@ -267,7 +378,7 @@ function buildCreatureMesh(planetId) {
     tailTip.position.set(0, 0.12, -0.22);
     tailPivot.add(tailMain, tailTip);
     bodyPivot.add(headPivot, tailPivot);
-  } else if (planetId === "yili") {
+  } else if (planetId === "yili" || planetId === "kitty-daqing" || planetId === "miemie-tonggudang") {
     // 蓬松云朵小羊羔
     const wool = toon("#fcfaf2");
     const faceMat = toon("#382f2c");
@@ -394,6 +505,187 @@ function buildCreatureMesh(planetId) {
     tailPivot.add(upperFluke, lowerFluke);
 
     bodyPivot.add(body, snout, belly, mouth, dorsalMain, dorsalSmall, peduncle, headPivot, tailPivot);
+  } else if (planetId === "kitty-xiaowutai" || planetId === "miemie-buyi") {
+    // 🐱 山野橘白小猫咪（还原 kitty.docx 西台岩石上的猫咪！）
+    const orangeFur = toon("#f59e42");
+    const creamFur = toon("#fffaf0");
+    const pinkEar = toon("#f9a8d4");
+    const goldMat = new THREE.MeshStandardMaterial({ color: "#fbbf24", metalness: 0.7, roughness: 0.25 });
+    makeLegs("#f59e42", 0.17, 0.026, 0.068, 0.1);
+    const torso = new THREE.Mesh(new THREE.SphereGeometry(0.145, 14, 12), orangeFur);
+    torso.scale.set(0.88, 0.85, 1.32);
+    torso.position.y = 0.24;
+    const chestBib = new THREE.Mesh(new THREE.SphereGeometry(0.105, 12, 10), creamFur);
+    chestBib.position.set(0, 0.23, 0.1);
+    bellMesh = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), goldMat);
+    bellMesh.position.set(0, 0.25, 0.19);
+    bodyPivot.add(torso, chestBib, bellMesh);
+
+    headPivot.position.set(0, 0.36, 0.17);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.122, 14, 12), orangeFur);
+    head.scale.set(1.08, 0.96, 0.96);
+    const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.062, 10, 8), creamFur);
+    muzzle.scale.set(1.15, 0.78, 0.8);
+    muzzle.position.set(0, -0.028, 0.088);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 6), pinkEar);
+    nose.position.set(0, -0.012, 0.132);
+    for (const sx of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.048, 0.095, 4), orangeFur);
+      ear.position.set(sx * 0.078, 0.11, 0.01);
+      ear.rotation.set(0.1, sx * 0.3, -sx * 0.32);
+      const inner = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.058, 4), pinkEar);
+      inner.position.set(sx * 0.076, 0.106, 0.026);
+      inner.rotation.set(0.1, sx * 0.3, -sx * 0.32);
+      headPivot.add(ear, inner);
+    }
+    addEyesAndBlush(headPivot, 0.052, 0.016, 0.104);
+    headPivot.add(head, muzzle, nose);
+
+    tailPivot.position.set(0, 0.28, -0.18);
+    const tailLow = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.026, 0.2, 8), orangeFur);
+    tailLow.position.set(0, 0.08, -0.05);
+    tailLow.rotation.x = -0.55;
+    const tailTip = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), creamFur);
+    tailTip.position.set(0, 0.17, -0.1);
+    tailPivot.add(tailLow, tailTip);
+    bodyPivot.add(headPivot, tailPivot);
+  } else if (planetId === "kitty-changbai") {
+    // 🦌 长白山梅花小鹿
+    const fawnFur = toon("#d97736");
+    const creamSpot = toon("#fffbeb");
+    const antlerMat = toon("#fde68a");
+    makeLegs("#c26427", 0.22, 0.024, 0.068, 0.11);
+    const torso = new THREE.Mesh(new THREE.SphereGeometry(0.145, 14, 12), fawnFur);
+    torso.scale.set(0.84, 0.88, 1.38);
+    torso.position.y = 0.29;
+    const chest = new THREE.Mesh(new THREE.SphereGeometry(0.095, 10, 8), creamSpot);
+    chest.position.set(0, 0.28, 0.12);
+    bodyPivot.add(torso, chest);
+    for (const [sx, sy, sz] of [[-0.08, 0.34, -0.02], [0.08, 0.34, 0.03], [-0.07, 0.32, -0.11], [0.07, 0.33, -0.09]]) {
+      const sp = new THREE.Mesh(new THREE.SphereGeometry(0.026, 6, 6), creamSpot);
+      sp.position.set(sx, sy, sz);
+      bodyPivot.add(sp);
+    }
+    headPivot.position.set(0, 0.44, 0.17);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.112, 12, 10), fawnFur);
+    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.058, 10, 8), creamSpot);
+    snout.position.set(0, -0.022, 0.086);
+    for (const sx of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), fawnFur);
+      ear.scale.set(1.3, 0.55, 0.5);
+      ear.position.set(sx * 0.11, 0.05, 0);
+      ear.rotation.z = sx * 0.35;
+      const antler = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.018, 0.12, 6), antlerMat);
+      antler.position.set(sx * 0.048, 0.13, 0.01);
+      antler.rotation.z = -sx * 0.22;
+      headPivot.add(ear, antler);
+    }
+    addEyesAndBlush(headPivot, 0.05, 0.015, 0.096);
+    headPivot.add(head, snout);
+    tailPivot.position.set(0, 0.33, -0.19);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.09, 6), creamSpot);
+    tail.rotation.x = 0.6;
+    tailPivot.add(tail);
+    bodyPivot.add(headPivot, tailPivot);
+  } else if (planetId === "kitty-yading") {
+    // 🐿️ 亚丁栈道抱松果小松鼠（还原 kitty.docx 稻城亚丁npc！）
+    const brownFur = toon("#b46535");
+    const bellyFur = toon("#faeed7");
+    const pineConeMat = toon("#6b3e23");
+    makeLegs("#965026", 0.14, 0.025, 0.062, 0.075);
+    const torso = new THREE.Mesh(new THREE.SphereGeometry(0.135, 14, 12), brownFur);
+    torso.scale.set(0.92, 1.18, 0.95);
+    torso.position.set(0, 0.24, 0.02);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.105, 12, 10), bellyFur);
+    belly.scale.set(0.82, 1.05, 0.65);
+    belly.position.set(0, 0.23, 0.075);
+    // 双手捧着一颗可爱松果
+    const pineCone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.048, 0), pineConeMat);
+    pineCone.scale.set(0.85, 1.2, 0.85);
+    pineCone.position.set(0, 0.25, 0.155);
+    bodyPivot.add(torso, belly, pineCone);
+
+    headPivot.position.set(0, 0.4, 0.06);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.105, 12, 10), brownFur);
+    for (const sx of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.034, 8, 8), brownFur);
+      ear.scale.set(0.7, 1.15, 0.5);
+      ear.position.set(sx * 0.072, 0.095, 0.0);
+      headPivot.add(ear);
+    }
+    addEyesAndBlush(headPivot, 0.048, 0.015, 0.092);
+    headPivot.add(head);
+
+    // 超大蓬松翘起的大松鼠尾巴！
+    tailPivot.position.set(0, 0.2, -0.1);
+    const t1 = new THREE.Mesh(new THREE.SphereGeometry(0.115, 12, 10), brownFur);
+    t1.scale.set(0.78, 1.35, 0.95);
+    t1.position.set(0, 0.12, -0.09);
+    const t2 = new THREE.Mesh(new THREE.SphereGeometry(0.105, 12, 10), brownFur);
+    t2.position.set(0, 0.27, -0.11);
+    tailPivot.add(t1, t2);
+    bodyPivot.add(headPivot, tailPivot);
+  } else if (planetId === "kitty-sunset" || planetId === "miemie-shexiang") {
+    // 🐇 追光长耳星云兔
+    const whiteFur = toon("#fffaf5");
+    const pinkMat = toon("#f9a8d4");
+    makeLegs("#f5ebe1", 0.13, 0.026, 0.065, 0.085);
+    const torso = new THREE.Mesh(new THREE.SphereGeometry(0.145, 14, 12), whiteFur);
+    torso.scale.set(0.95, 0.92, 1.2);
+    torso.position.y = 0.22;
+    bodyPivot.add(torso);
+    headPivot.position.set(0, 0.34, 0.14);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), whiteFur);
+    for (const sx of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.034, 10, 8), whiteFur);
+      ear.scale.set(0.65, 2.5, 0.45);
+      ear.position.set(sx * 0.052, 0.145, -0.01);
+      ear.rotation.z = -sx * 0.14;
+      const inner = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), pinkMat);
+      inner.scale.set(0.6, 2.1, 0.4);
+      inner.position.set(sx * 0.052, 0.14, 0.008);
+      inner.rotation.z = -sx * 0.14;
+      headPivot.add(ear, inner);
+    }
+    addEyesAndBlush(headPivot, 0.048, 0.012, 0.096);
+    headPivot.add(head);
+    tailPivot.position.set(0, 0.23, -0.17);
+    tailPivot.add(new THREE.Mesh(new THREE.SphereGeometry(0.052, 10, 8), whiteFur));
+    bodyPivot.add(headPivot, tailPivot);
+  } else if (planetId === "kitty-wusun" || planetId === "miemie-longji") {
+    // 🐴 天山小马驹
+    const horseCoat = toon("#9a5b37");
+    const maneMat = toon("#3b2316");
+    const blazeMat = toon("#fff8eb");
+    makeLegs("#6e3e23", 0.24, 0.028, 0.075, 0.13);
+    const torso = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), horseCoat);
+    torso.scale.set(0.86, 0.88, 1.38);
+    torso.position.y = 0.31;
+    bodyPivot.add(torso);
+    headPivot.position.set(0, 0.45, 0.2);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.075, 0.16, 10), horseCoat);
+    neck.position.set(0, -0.05, -0.02);
+    neck.rotation.x = 0.35;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.095, 12, 10), horseCoat);
+    head.scale.set(0.88, 0.92, 1.32);
+    head.position.set(0, 0.03, 0.04);
+    const blaze = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), blazeMat);
+    blaze.position.set(0, 0.04, 0.13);
+    const mane = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.16, 0.08), maneMat);
+    mane.position.set(0, 0.02, -0.05);
+    for (const sx of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.068, 6), horseCoat);
+      ear.position.set(sx * 0.05, 0.12, 0.01);
+      headPivot.add(ear);
+    }
+    addEyesAndBlush(headPivot, 0.052, 0.038, 0.12);
+    headPivot.add(neck, head, blaze, mane);
+    tailPivot.position.set(0, 0.33, -0.22);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.048, 0.22, 8), maneMat);
+    tail.position.set(0, -0.06, -0.06);
+    tail.rotation.x = 2.4;
+    tailPivot.add(tail);
+    bodyPivot.add(headPivot, tailPivot);
   } else {
     // zhagana 高山小黑牦牛
     const coat = toon("#2d272b");
@@ -495,8 +787,8 @@ function buildCreatureMesh(planetId) {
 }
 
 export function buildPlanetCreature(planetConfig, initiallyBonded = false) {
-  const pid = planetConfig.id;
-  const meta = CREATURE_META[pid] || CREATURE_META.siguniang;
+  const pid = planetConfig.creatureType || planetConfig.id;
+  const meta = CREATURE_META[planetConfig.id] || CREATURE_META[pid] || CREATURE_META.siguniang;
   const anchorWp = planetConfig.waypoints[1] || planetConfig.waypoints[0];
   const homeDir = latLonToUnitVec(anchorWp.lat + 8, anchorWp.lon - 11);
 

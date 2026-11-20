@@ -1,26 +1,70 @@
 import * as THREE from "three";
-import { PLANETS } from "./data.js?v=3.7.1";
-import { sound } from "./audio.js?v=3.7.1";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=3.7.1";
+import { PLANETS as MY_PLANETS } from "./data.js?v=4.0.0-r1";
+import { KITTY_PLANETS, NEIGHBOR_PROFILES, RESONANCE_LINKS } from "./kittyUniverse.js?v=4.0.0-r1";
+import { MIEMIE_PLANETS } from "./miemieUniverse.js?v=4.0.0-r1";
+import {
+  loadSocialState,
+  saveSocialState,
+  encodeGuestPlanetPayload,
+  decodeGuestPlanetPayload,
+  hydrateGuestPlanet,
+  buildNeighborSocialRig,
+  generateCoopSnapshotDataUrl,
+  generateNeighborInviteCardDataUrl,
+  encodeReplyLetter,
+  decodeReplyLetter,
+} from "./neighborSocial.js?v=4.0.0-r1";
+import { sound } from "./audio.js?v=4.0.0-r1";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=4.0.0-r1";
 import {
   PLANET_RADIUS,
   latLonToUnitVec,
   getSurfaceRadius,
   buildPlanetWorld,
   buildHikerCharacter,
-} from "./planetBuilder3D.js?v=3.7.1";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=3.7.1";
-import { createSkyWonders } from "./skyWonders3D.js?v=3.7.1";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=3.7.1";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=3.7.1";
-import { buildCampfireRig } from "./campfireRadio.js?v=3.7.1";
-import { createFootprintTrail } from "./footprints3D.js?v=3.7.1";
+} from "./planetBuilder3D.js?v=4.0.0-r1";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=4.0.0-r1";
+import { createSkyWonders } from "./skyWonders3D.js?v=4.0.0-r1";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=4.0.0-r1";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=4.0.0-r1";
+import { buildCampfireRig } from "./campfireRadio.js?v=4.0.0-r1";
+import {
+  buildHotpotRig,
+  encodeFlagToken,
+  decodeFlagToken,
+  loadPlantedFlags,
+  savePlantedFlag,
+  buildFlagMesh,
+  generateDuoFinisherCertDataUrl,
+} from "./trailSocialExtras.js?v=4.0.0-r1";
+import { createFootprintTrail } from "./footprints3D.js?v=4.0.0-r1";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=3.7.1";
+} from "./bestiaryAndExtras.js?v=4.0.0-r1";
+
+const socialState = loadSocialState();
+const guestPlanets = (socialState.customPlanets || []).map((raw) => hydrateGuestPlanet(raw));
+const HOST_ROLE_KEY = "hiking_planets_host_role_v1";
+function getPlanetsForUniverse(uni) {
+  if (uni === "kitty") return [...KITTY_PLANETS];
+  if (uni === "miemie") return [...MIEMIE_PLANETS];
+  return [...MY_PLANETS, ...guestPlanets];
+}
+
+let activeHostRole = "mine";
+try {
+  const savedRole = localStorage.getItem(HOST_ROLE_KEY);
+  if (savedRole === "kitty" || savedRole === "miemie") activeHostRole = savedRole;
+} catch (_) {}
+let currentUniverse = activeHostRole;
+let PLANETS = getPlanetsForUniverse(currentUniverse);
+
+function getAllKnownPlanets() {
+  return [...MY_PLANETS, ...KITTY_PLANETS, ...MIEMIE_PLANETS, ...guestPlanets];
+}
 
 const SAVE_KEY = "hiking_planets_save_v1";
 
@@ -175,6 +219,12 @@ let activeSceneZone = null;
 let activeCreature = null;
 let activeSkyWonders = null;
 let activeManiCairn = null;
+let activeNeighborRig = null;
+let activeNeighborHostNear = false;
+let activeResonanceNear = false;
+let neighborModalOpen = false;
+let resonanceModalOpen = false;
+let creatorModalOpen = false;
 let activeFootprints = null;
 let activeManiNear = false;
 let maniModalOpen = false;
@@ -276,9 +326,20 @@ function isAnyModalOpen() {
     bestiaryModalOpen ||
     finaleModalOpen ||
     atlasModalOpen ||
-    reelModalOpen
+    reelModalOpen ||
+    neighborModalOpen ||
+    resonanceModalOpen ||
+    creatorModalOpen ||
+    flagModalOpen
   );
 }
+
+let flagModalOpen = false;
+let activePlantedFlagObjs = [];
+let activePlantedFlagNear = null;
+let pendingIncomingFlag = null;
+const hotpotRig = buildHotpotRig();
+scene.add(hotpotRig.group);
 
 function disposeCurrentWorld() {
   clearGuideArc();
@@ -286,6 +347,9 @@ function disposeCurrentWorld() {
   isAutoStroll = false;
   document.getElementById("btn-auto-stroll")?.classList.remove("active");
   campfireRig.hide();
+  hotpotRig.hide();
+  activePlantedFlagObjs = [];
+  activePlantedFlagNear = null;
   isCampfireMode = false;
   isTelescopeMode = false;
   activeSceneZone = null;
@@ -293,6 +357,9 @@ function disposeCurrentWorld() {
   activeCreature = null;
   activeSkyWonders = null;
   activeManiCairn = null;
+  activeNeighborRig = null;
+  activeNeighborHostNear = false;
+  activeResonanceNear = false;
   activeFootprints = null;
   document.getElementById("campfire-mixer")?.classList.add("hidden");
   document.getElementById("btn-campfire-mode")?.classList.remove("active");
@@ -376,27 +443,131 @@ function updateTitleLayout() {
   }
 }
 
+function applyHostRoleUI(role, rebuildScene = false) {
+  activeHostRole = role === "kitty" ? "kitty" : role === "miemie" ? "miemie" : "mine";
+  try {
+    localStorage.setItem(HOST_ROLE_KEY, activeHostRole);
+  } catch (_) {}
+
+  document.querySelectorAll("#host-role-switcher .host-role-btn").forEach((b) => {
+    b.classList.toggle("active", b.dataset.hostRole === activeHostRole);
+  });
+
+  const isKittyHost = activeHostRole === "kitty";
+  const isMiemieHost = activeHostRole === "miemie";
+  const presetNames = new Set(["", "清哥", "Kitty", "咩咩", "山海行者"]);
+  if (presetNames.has((saveData.travelerName || "").trim())) {
+    saveData.travelerName = isKittyHost ? "Kitty" : isMiemieHost ? "咩咩" : "清哥";
+    const tInput = document.getElementById("ticket-traveler-input");
+    if (tInput) tInput.value = saveData.travelerName;
+    persistSave();
+  }
+
+  const eyebrow = document.getElementById("title-eyebrow-text");
+  const heading = document.getElementById("title-main-heading");
+  const poem = document.getElementById("title-main-poem");
+  const startBtn = document.getElementById("btn-start-journey");
+  const neighborBtn = document.getElementById("btn-visit-kitty-title");
+  const miemieBtn = document.getElementById("btn-visit-miemie-title");
+  if (eyebrow) {
+    eyebrow.textContent = isKittyHost
+      ? "KITTY AMONG THE STARS · 猫耳星云主场"
+      : isMiemieHost
+        ? "MIEMIE RISING · 绵羊星云主场"
+        : "TRAILS AMONG THE STARS · 山海皆星辰";
+  }
+  if (heading) {
+    heading.textContent = isKittyHost ? "Kitty 的星球" : isMiemieHost ? "咩咩的星球" : "行者的星球";
+  }
+  if (poem) {
+    poem.textContent = isKittyHost
+      ? "心里总有一座小五台，去追日落的最后八分钟，把长白天池、银河与山野小猫都凝成只属于 Kitty 的星球。"
+      : isMiemieHost
+        ? "喜欢没有信号的地方与未知；我有足够的力量背起大大的背包，从地心宇宙走到雪山垭口。"
+        : "有些山川太过辽阔，记忆便把走过的每一段路，凝成了一颗只属于行者的星球。";
+  }
+  if (startBtn) {
+    startBtn.textContent = isKittyHost
+      ? "✦ 开启 Kitty 的 7 颗星球"
+      : isMiemieHost
+        ? "✦ 开启咩咩的 5 颗星球"
+        : "✦ 点击 · 开始旅程";
+  }
+  if (neighborBtn) {
+    neighborBtn.textContent = isKittyHost ? "🪐 串门 · 清哥的星球" : "🐾 串门 · Kitty 的星球";
+  }
+  if (miemieBtn) {
+    miemieBtn.textContent = isMiemieHost ? "🪐 串门 · 清哥的星球" : "🐑 串门 · 咩咩的星球";
+  }
+
+  // 星图顶部切换 Tab 顺序与主次文案随当前登录星主动态反转！
+  const switcher = document.getElementById("universe-switcher");
+  const tabMine = switcher?.querySelector('.uni-tab[data-uni="mine"]');
+  const tabKitty = switcher?.querySelector('.uni-tab[data-uni="kitty"]');
+  const tabMiemie = switcher?.querySelector('.uni-tab[data-uni="miemie"]');
+  const tabCreator = document.getElementById("btn-open-creator");
+  if (tabMine && tabKitty && tabMiemie && switcher) {
+    tabMine.textContent = activeHostRole === "mine" ? "🪐 我的星系" : "🪐 清哥的星系";
+    tabKitty.textContent = isKittyHost ? "🐾 我的星系 (Kitty)" : "🐾 Kitty 的星系";
+    tabMiemie.textContent = isMiemieHost ? "🐑 我的星系 (咩咩)" : "🐑 咩咩的星系";
+    const order =
+      isKittyHost ? [tabKitty, tabMine, tabMiemie] : isMiemieHost ? [tabMiemie, tabMine, tabKitty] : [tabMine, tabKitty, tabMiemie];
+    order.forEach((t) => switcher.appendChild(t));
+    if (tabCreator) switcher.appendChild(tabCreator);
+  }
+
+  document.title = isKittyHost
+    ? "Kitty 的星球 · 猫耳星云 | TRAILS AMONG THE STARS"
+    : isMiemieHost
+      ? "咩咩的星球 · 咩星崛起 | TRAILS AMONG THE STARS"
+      : "行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS";
+
+  if (rebuildScene) {
+    switchUniverse(activeHostRole);
+    if (mode === "title") setupTitleScene();
+  }
+}
+
 function setupTitleScene() {
   disposeCurrentWorld();
   activePlanet = null;
   skyPhase = "day";
   isNight = false;
-  hiker.setOutfit("tengger");
+  applyHostRoleUI(activeHostRole, false);
+  const isKittyHost = activeHostRole === "kitty";
+  const isMiemieHost = activeHostRole === "miemie";
+  hiker.setOutfit(isKittyHost ? "kitty-host" : isMiemieHost ? "miemie-host" : "mine-host");
   hiker.setHeadlamp(false);
   sound.setPlanetBGM("space");
 
-  currentWorld = buildPlanetWorld({
-    id: "title",
-    name: "起点星",
-    palette: {
-      halo: "#f2c866",
-      low: "#4a8756",
-      mid: "#78b566",
-      high: "#f6f9ff",
-      particle: "#ffe5a3",
-    },
-    waypoints: [],
-  });
+  const coverCfg = isKittyHost
+    ? {
+        id: "title",
+        terrainType: "kitty-changbai",
+        name: "猫耳起点星",
+        palette: {
+          halo: "#f9a8d4",
+          low: "#4a7f5e",
+          mid: "#6fa377",
+          high: "#eef5ff",
+          water: "#1a74d4",
+          particle: "#fbcfe8",
+        },
+        waypoints: [],
+      }
+    : {
+        id: "title",
+        name: "起点星",
+        palette: {
+          halo: "#f2c866",
+          low: "#4a8756",
+          mid: "#78b566",
+          high: "#f6f9ff",
+          particle: "#ffe5a3",
+        },
+        waypoints: [],
+      };
+  currentWorld = buildPlanetWorld(coverCfg);
   currentWorld.group.userData.baseY = -1.2;
   currentWorld.group.position.set(6.2, -1.2, 0);
   currentWorld.group.visible = true;
@@ -420,24 +591,52 @@ const elMapTitle = document.getElementById("map-title");
 const elMapStats = document.getElementById("map-stats");
 const elMapQuote = document.getElementById("map-quote");
 
+const RESONANCE_CLUSTERS = [
+  {
+    ids: ["zhagana", "kitty-zhagana"],
+    title: "甘南双星同频 · 措美峰与扎尕那",
+    members: { mine: "zhagana", kitty: "kitty-zhagana" },
+  },
+  {
+    ids: ["yili", "kitty-wusun"],
+    title: "天山南北同频 · 伊犁与乌孙古道",
+    members: { mine: "yili", kitty: "kitty-wusun" },
+  },
+  {
+    ids: ["yading", "kitty-yading", "miemie-yading"],
+    title: "川西双星同频 · 稻城亚丁三神山",
+    members: { mine: "yading", kitty: "kitty-yading", miemie: "miemie-yading" },
+  },
+];
+
+function hasResonanceWithActiveHost(planet) {
+  if (!planet) return false;
+  if ((planet.owner || "mine") === activeHostRole) return false;
+  return RESONANCE_CLUSTERS.some((c) => c.ids.includes(planet.id) && Boolean(c.members[activeHostRole]));
+}
+
 const planetNodeEls = [];
 
 function initScrollMapUI() {
   elPlanetGrid.innerHTML = "";
+  elPlanetGrid.classList.toggle("grid-many-planets", PLANETS.length >= 7);
+  planetNodeEls.length = 0;
   PLANETS.forEach((p, idx) => {
+    const hasRes = hasResonanceWithActiveHost(p);
     const node = document.createElement("div");
-    node.className = "planet-node";
+    node.className = `planet-node${hasRes ? " has-resonance" : ""}`;
     node.setAttribute("role", "option");
     node.innerHTML = `
       <div class="planet-visual">
         <div class="planet-ring"></div>
         <canvas class="planet-thumb"></canvas>
-        <span class="planet-stamp">0/4</span>
+        ${hasRes ? '<span class="resonance-badge-dot" title="跨宇宙双星同频">⚡同频</span>' : ""}
+        <span class="planet-stamp">0/${p.waypoints.length}</span>
       </div>
       <div class="planet-node-label">${p.name}</div>
     `;
     const canvas = node.querySelector("canvas");
-    renderPlanetIllustration(canvas, p.id);
+    renderPlanetIllustration(canvas, p.terrainType || p.id);
 
     node.addEventListener("click", () => {
       if (selectedPlanetIdx === idx) {
@@ -456,6 +655,49 @@ function initScrollMapUI() {
   selectMapPlanet(0);
 }
 
+function switchUniverse(uniId, targetPlanetId = null) {
+  currentUniverse = uniId === "kitty" ? "kitty" : uniId === "miemie" ? "miemie" : "mine";
+  PLANETS = getPlanetsForUniverse(currentUniverse);
+  document.querySelectorAll("#universe-switcher .uni-tab[data-uni]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.uni === currentUniverse);
+  });
+  const prof = NEIGHBOR_PROFILES[currentUniverse] || NEIGHBOR_PROFILES.mine;
+  const headingEl = document.getElementById("scroll-heading");
+  const subEl = document.getElementById("scroll-subtitle");
+  const latinEl = document.getElementById("scroll-latin");
+  if (headingEl) {
+    headingEl.textContent =
+      currentUniverse === "kitty"
+        ? activeHostRole === "kitty" ? "Kitty 的山海旅程" : "Kitty 的猫耳星云"
+        : currentUniverse === "miemie"
+          ? activeHostRole === "miemie" ? "咩咩的山海旅程" : "咩咩的绵羊星云"
+          : activeHostRole === "mine" ? "行 者 的 旅 程" : "邻居 · 清哥的星系";
+  }
+  if (latinEl) {
+    latinEl.textContent =
+      currentUniverse === "kitty"
+        ? "KITTY'S STARRY TRAILS · UNIVERSE K"
+        : currentUniverse === "miemie"
+          ? "MIEMIE RISING · UNIVERSE M"
+          : "LE VOYAGE DU RANDONNEUR · UNIVERSE A";
+  }
+  if (subEl) {
+    subEl.textContent =
+      currentUniverse === activeHostRole
+        ? prof.motto
+        : currentUniverse === "kitty"
+          ? "欢迎串门！这是好朋友 Kitty 走过的七颗山海星球与偶遇的小生灵"
+          : currentUniverse === "miemie"
+            ? "欢迎串门！这是好朋友咩咩从贵州安顺地心秘境走到亚丁重装反穿的五颗星球"
+            : "欢迎串门！这是好朋友清哥走过的六座山海星球";
+  }
+  initScrollMapUI();
+  if (targetPlanetId) {
+    const idx = PLANETS.findIndex((x) => x.id === targetPlanetId);
+    if (idx >= 0) selectMapPlanet(idx);
+  }
+}
+
 function refreshScrollMapBadges() {
   PLANETS.forEach((p, idx) => {
     const disc = getDiscoveredSet(p.id);
@@ -468,12 +710,16 @@ function refreshScrollMapBadges() {
     if (stamp) stamp.textContent = done ? `✦ ${sealWord}` : `${disc.size}/${p.waypoints.length}`;
   });
 
-  // 更新全星系总印记进度、生灵图集计数与 24/24 终章手札解锁状态
+  // 更新全星系总印记进度、生灵图集计数与终章手札解锁状态
   const totalWp = PLANETS.reduce((s, p) => s + p.waypoints.length, 0);
   const doneWp = PLANETS.reduce((s, p) => s + getDiscoveredSet(p.id).size, 0);
-  const creatureCount = (saveData.creatures || []).length;
+  const planetIdsSet = new Set(PLANETS.map((p) => p.id));
+  const creatureCount = (saveData.creatures || []).filter((cid) => planetIdsSet.has(cid)).length;
   const totalEl = document.getElementById("scroll-total-progress");
-  if (totalEl) totalEl.textContent = `✦ 星系印记 ${doneWp} / ${totalWp}`;
+  if (totalEl) {
+    totalEl.textContent = `✦ 星系印记 ${doneWp} / ${totalWp}`;
+    totalEl.title = `点击翻阅 ${totalWp} 处星系印记明信片总图集`;
+  }
   const mapBestiaryBtn = document.getElementById("btn-map-bestiary");
   if (mapBestiaryBtn) mapBestiaryBtn.textContent = `🐾 生灵图集 ${creatureCount} / ${PLANETS.length}`;
   const hudBestiaryBtn = document.getElementById("btn-hud-bestiary");
@@ -512,6 +758,12 @@ function selectMapPlanet(idx) {
     <span class="stat-pill">足迹印记 ${disc.size} / ${p.waypoints.length}</span>
   `;
   elMapQuote.textContent = `“${p.quote}”`;
+  const resBtn = document.getElementById("btn-map-resonance");
+  if (resBtn) {
+    const hasRes = hasResonanceWithActiveHost(p);
+    resBtn.classList.toggle("hidden", !hasRes);
+    if (hasRes) resBtn.textContent = "⚡ 双星同频共鸣";
+  }
   // 在星图浏览时即提前预加载选中星球照片
   prefetchPlanetPhotos(p);
 }
@@ -551,7 +803,30 @@ function enterPlanet(idx) {
   const p = PLANETS[idx];
   activePlanet = p;
   disposeCurrentWorld();
-  hiker.setOutfit(p.id);
+  const planetOwner = p.owner || "mine";
+  // 三位星主去别人星球串门时均保持各自招牌穿搭；在自己星球则换上对应路线的冲锋衣与帽饰
+  const hostOutfit =
+    activeHostRole === "kitty" && planetOwner !== "kitty"
+      ? "kitty-host"
+      : activeHostRole === "miemie" && planetOwner !== "miemie"
+        ? "miemie-host"
+        : activeHostRole === "mine" && planetOwner !== "mine"
+          ? "mine-host"
+          : p.id;
+  hiker.setOutfit(hostOutfit);
+  // 「银河与日落八分钟」默认开启紫金暮色；「麝香洞·地心宇宙」默认进入幽蓝地心星夜并点亮探洞头灯！
+  if (p.id === "kitty-sunset") {
+    skyPhase = "dusk";
+    isNight = false;
+  } else if (p.id === "miemie-shexiang") {
+    skyPhase = "night";
+    isNight = true;
+    setTimeout(() => {
+      if (activePlanet?.id === "miemie-shexiang") {
+        showWonderToast("🔦 已步入麝香洞 · 地心宇宙穹顶，探洞头灯与幽蓝萤光已为你点亮", 4200);
+      }
+    }, 900);
+  }
 
   const discSet = getDiscoveredSet(p.id);
   currentWorld = buildPlanetWorld(p, discSet);
@@ -577,6 +852,26 @@ function enterPlanet(idx) {
 
   activeManiCairn = buildManiCairn3D(p);
   currentWorld.group.add(activeManiCairn.group);
+
+  // V4.2 双星主自适应迎宾实体 (邻居主人3D角色 + 发光星际漂流瓶 + 跨宇宙双星同频水晶碑)
+  const resPayload = hasResonanceWithActiveHost(p) ? RESONANCE_LINKS[p.id] || { partnerId: activeHostRole } : null;
+  activeNeighborRig = buildNeighborSocialRig(p, resPayload, activeHostRole);
+  currentWorld.group.add(activeNeighborRig.group);
+  activePlantedFlagObjs = loadPlantedFlags(p.id).map((fl) => {
+    const obj = buildFlagMesh(p.id, fl);
+    currentWorld.group.add(obj.group);
+    return obj;
+  });
+  pendingHostAction = null;
+  document.getElementById("companion-follow-pill")?.classList.add("hidden");
+  document.getElementById("host-action-popover")?.classList.add("hidden");
+  const hubBtn = document.getElementById("btn-neighbor-hub");
+  if (hubBtn) {
+    hubBtn.textContent = "🍾 漂流瓶";
+  }
+  hideCompanionBubble();
+  syncBottleUnreadBeacon();
+  maybeShowFirstLandGuide();
   idleSeconds = 0;
   refreshTicketButtons();
   refreshScrollMapBadges();
@@ -649,6 +944,26 @@ function renderHudWaypoints() {
     });
     elHudWaypoints.appendChild(btn);
   });
+
+  // V4.2 右上角导航栏新增「找星主 / 并肩同行」一键自动寻路胶囊
+  if (activeNeighborRig?.isNeighborPlanet && activeNeighborRig.hostChar) {
+    const hostBtn = document.createElement("button");
+    hostBtn.type = "button";
+    hostBtn.id = "btn-wp-find-host";
+    const resRole = activeNeighborRig.residentRole;
+    const resLabel = resRole === "kitty" ? "Kitty" : resRole === "miemie" ? "咩咩" : "星主";
+    const resIcon = resRole === "kitty" ? "🐾" : resRole === "miemie" ? "🐑" : "🏔️";
+    const following = activeNeighborRig.isFollowing;
+    hostBtn.className = `wp-pill wp-chip wp-host-nav ${following ? "following" : ""}`;
+    hostBtn.textContent = following ? `🤝 与${resLabel}同行中` : `${resIcon} 导航 · 找${resLabel}`;
+    hostBtn.title = "点击自动导航行走到星球伙伴身旁并开启互动";
+    hostBtn.addEventListener("click", () => {
+      navigateToHostAndOpenMenu(hostBtn);
+      sound.init();
+      sound.playHover();
+    });
+    elHudWaypoints.appendChild(hostBtn);
+  }
 }
 
 function toggleAutoStroll(force) {
@@ -699,8 +1014,8 @@ function cycleSkyPhase() {
 
 function applyLightingTheme(immediate = false) {
   const pal = activePlanet ? activePlanet.palette : { skyDay: "#0a1228", skyNight: "#060918" };
-  let bgHex = pal.skyDay;
-  if (skyPhase === "night") bgHex = pal.skyNight;
+  let bgHex = pal.skyDay || "#101a36";
+  if (skyPhase === "night") bgHex = pal.skyNight || "#060918";
   else if (skyPhase === "dusk") bgHex = "#24193c";
 
   const targetBg = new THREE.Color(bgHex);
@@ -719,6 +1034,13 @@ function applyLightingTheme(immediate = false) {
     hemiLight.intensity = 0.88;
     sunLight.intensity = 1.62;
     sunLight.color.set("#ff8c42");
+  } else if (activePlanet?.id === "miemie-shexiang") {
+    // 麝香洞专属深渊青蓝萤光穹顶天光
+    hemiLight.color.set("#38bdf8");
+    hemiLight.groundColor.set("#082f49");
+    hemiLight.intensity = 0.62;
+    sunLight.intensity = 0.68;
+    sunLight.color.set("#67e8f9");
   } else {
     hemiLight.color.set("#9db8ff");
     hemiLight.groundColor.set("#1b2540");
@@ -766,8 +1088,14 @@ function togglePhotoMode(force) {
   if (isPhotoMode) {
     clickRing.visible = false;
     if (guideArcLine) guideArcLine.visible = false;
-  } else if (guideArcLine) {
-    guideArcLine.visible = true;
+  } else {
+    // 退出留影模式时立即恢复舒适的初始标准徒步视角（告别全景残留）
+    photoPresetIdx = 0;
+    camPitch = 0.56;
+    camDist = 11.0;
+    const presetBtn = document.getElementById("btn-photo-preset");
+    if (presetBtn) presetBtn.textContent = PHOTO_PRESETS[0].label;
+    if (guideArcLine) guideArcLine.visible = true;
   }
 }
 
@@ -793,32 +1121,65 @@ async function refreshTicketPreviewImage() {
   let fileName = "行者的星球-纪念印记.png";
   let modalTitle = "山海纪念票根";
   let modalSub = "将走过的山海与星辰装进专属典藏卡片";
-  if (currentTicketContext.type === "summit" && activePlanet) {
+  if (currentTicketContext.type === "finisher" && activePlanet) {
+    const hostLabel = getResidentPartnerName();
+    dataUrl = generateDuoFinisherCertDataUrl(activePlanet, hostLabel, traveler, saveData.steps || 88);
+    fileName = `并肩完赛荣誉证-${activePlanet.name}-${hostLabel}x${traveler}.png`;
+    modalTitle = `🏅 《${activePlanet.name}》双人并肩完赛证`;
+    modalSub = `✦ ${hostLabel} × ${traveler} 全路标并肩打卡达成 · 长按或下载珍藏`;
+  } else if (currentTicketContext.type === "summit" && activePlanet) {
     const discSet = getDiscoveredSet(activePlanet.id);
-    dataUrl = await generateSummitTicketDataUrl(activePlanet, discSet, saveData.steps || 0, traveler);
-    fileName = `行者的星球-${activePlanet.name}-登顶纪念票根.png`;
+    const compName = activeNeighborRig?.isFollowing ? getResidentPartnerName() : "";
+    dataUrl = await generateSummitTicketDataUrl(activePlanet, discSet, saveData.steps || 0, traveler, {
+      hostRole: activeHostRole,
+      companionName: compName,
+    });
+    const brandPrefix =
+      activeHostRole === "kitty" ? "Kitty的星球" : activeHostRole === "miemie" ? "咩咩的星球" : "行者的星球";
+    fileName = `${brandPrefix}-${activePlanet.name}-登顶纪念票根.png`;
     modalTitle = `${activePlanet.name} · 纪念票根`;
-    modalSub = `已点亮 ${discSet.size} / ${activePlanet.waypoints.length} 处山海印记 · 支持烫金印签`;
+    modalSub = compName
+      ? `✦ 与 ${compName} 并肩同行登顶  ·  已点亮 ${discSet.size} / ${activePlanet.waypoints.length} 处印记`
+      : `已点亮 ${discSet.size} / ${activePlanet.waypoints.length} 处山海印记 · 支持烫金印签`;
   } else if (currentTicketContext.type === "passport") {
-    dataUrl = generateGrandPassportDataUrl(PLANETS, saveData, traveler);
-    fileName = "行者的星球-全星系大满贯荣誉护照.png";
-    modalTitle = "全星系大满贯荣誉护照";
-    modalSub = "24 / 24 处山海印记全境穿越达成典藏";
+    const passUni = currentUniverse || activeHostRole;
+    const passPlanets =
+      passUni === "kitty" ? KITTY_PLANETS : passUni === "miemie" ? MIEMIE_PLANETS : CORE_MINE_PLANETS;
+    const totalPassWp = passPlanets.reduce((s, p) => s + p.waypoints.length, 0);
+    dataUrl = generateGrandPassportDataUrl(passPlanets, saveData, traveler, passUni);
+    fileName = `${
+      passUni === "kitty"
+        ? "Kitty的星球-猫耳星云七星护照"
+        : passUni === "miemie"
+          ? "咩咩的星球-绵羊星云五星护照"
+          : "行者的星球-全星系大满贯荣誉护照"
+    }.png`;
+    modalTitle =
+      passUni === "kitty"
+        ? "🐾 猫耳星云 · 七星全满贯护照"
+        : passUni === "miemie"
+          ? "🐑 绵羊星云 · 五星全满贯护照"
+          : "全星系大满贯荣誉护照";
+    modalSub = `${totalPassWp} / ${totalPassWp} 处山海印记全境穿越达成典藏`;
   } else if (currentTicketContext.type === "wallpaper" && currentTicketContext.snapCanvas) {
     dataUrl = capturePhotoWallpaper(
       currentTicketContext.snapCanvas,
       currentTicketContext.planetName,
       currentTicketContext.altText,
-      traveler
+      traveler,
+      activeHostRole
     );
-    fileName = `行者的星球-${currentTicketContext.planetName}-留影壁纸.png`;
+    const wpBrand =
+      activeHostRole === "kitty" ? "Kitty的星球" : activeHostRole === "miemie" ? "咩咩的星球" : "行者的星球";
+    fileName = `${wpBrand}-${currentTicketContext.planetName}-留影壁纸.png`;
     modalTitle = `${currentTicketContext.planetName} · 留影壁纸`;
     modalSub = "拍立得星海锁屏纪念壁纸 · 可印上旅人署名";
   } else if (currentTicketContext.type === "bookmark" && currentTicketContext.planet && currentTicketContext.wp) {
     dataUrl = await generatePostcardBookmarkDataUrl(
       currentTicketContext.planet,
       currentTicketContext.wp,
-      traveler
+      traveler,
+      activeHostRole
     );
     fileName = `行者的星球-${currentTicketContext.wp.shortName || currentTicketContext.wp.name}-故事书签.png`;
     modalTitle = `${currentTicketContext.wp.shortName || currentTicketContext.wp.name} · 故事书签`;
@@ -878,8 +1239,15 @@ function openBestiaryModal() {
   const grid = document.getElementById("bestiary-grid");
   if (!grid) return;
   const metSet = new Set(saveData.creatures || []);
+  const uniCatalog = CREATURE_CATALOG.filter((c) =>
+    currentUniverse === "kitty"
+      ? c.owner === "kitty"
+      : currentUniverse === "miemie"
+        ? c.owner === "miemie"
+        : !c.owner
+  );
   grid.innerHTML = "";
-  CREATURE_CATALOG.forEach((item) => {
+  uniCatalog.forEach((item) => {
     const unlocked = metSet.has(item.planetId);
     const card = document.createElement("div");
     card.className = `bestiary-card ${unlocked ? "unlocked" : "locked"}`;
@@ -937,6 +1305,18 @@ function renderAtlasGridUI() {
 
   const totalWp = PLANETS.reduce((s, p) => s + p.waypoints.length, 0);
   const doneWp = PLANETS.reduce((s, p) => s + getDiscoveredSet(p.id).size, 0);
+  if (atlasFilterPlanetId !== "all" && !PLANETS.some((p) => p.id === atlasFilterPlanetId)) {
+    atlasFilterPlanetId = "all";
+  }
+  const atlasTitleEl = document.getElementById("atlas-title");
+  if (atlasTitleEl) {
+    atlasTitleEl.textContent =
+      currentUniverse === "kitty"
+        ? `猫耳星云 · ${totalWp} 帧山海印记`
+        : currentUniverse === "miemie"
+          ? `绵羊星云 · ${totalWp} 帧山海印记`
+          : `山海 · ${totalWp} 帧星辰印记`;
+  }
 
   tabsEl.innerHTML = "";
   const makeTab = (id, label) => {
@@ -1231,10 +1611,35 @@ function startStarWarpToPlanet(targetIdx, targetName) {
 function openFinaleModal() {
   finaleModalOpen = true;
   ensureHistoryGuard();
-  document.getElementById("modal-finale")?.classList.remove("hidden");
+  const modal = document.getElementById("modal-finale");
+  if (modal) {
+    const totalWp = PLANETS.reduce((s, p) => s + p.waypoints.length, 0);
+    const eyeEl = modal.querySelector(".finale-eyebrow");
+    const bodyEl = modal.querySelector(".finale-body");
+    const passBtn = document.getElementById("btn-generate-passport");
+    if (eyeEl) eyeEl.textContent = `✦ ALL ${totalWp} STARLIGHT TRAILS COMPLETED ✦`;
+    if (bodyEl) {
+      if (currentUniverse === "kitty") {
+        bodyEl.innerHTML = `<p>真没想到，你竟然耐心地走完了猫耳星云七颗星球上的全部 ${totalWp} 个角落。</p><p>从小五台的金莲花与山野小猫、追日落的最后八分钟、长白天池的风散云开，到扎尕那云雾、大青山露营、重装翻越乌孙古道与亚丁栈道上的小松鼠——每一段奔赴山海的滚烫热爱，都在这片星空里闪闪发光。</p><p>谢谢你来 Kitty 的宇宙吹风散步。愿我们永远保有去见那座山的勇气✨</p>`;
+      } else if (currentUniverse === "miemie") {
+        bodyEl.innerHTML = `<p>真没想到，你竟然耐心地走完了绵羊星云五颗星球上的全部 ${totalWp} 个角落。</p><p>从铜鼓荡黑石草甸与牛倒岩地心瀑布、龙脊天路的人间塞尔达、麝香洞幽蓝地心宇宙、千年布依古寨与猫跳峡，到七人六天五晚自主重装反穿亚丁的无信号营地——原来我们都有足够的力量，背起大大的背包走过未知。</p><p>谢谢你来咩咩的宇宙探秘吹风。路线不止一条，而我们都在路上✨</p>`;
+      } else {
+        bodyEl.innerHTML = `<p>真没想到，你竟然耐心地走完了这 ${PLANETS.length} 颗星球上的全部 ${totalWp} 个角落。</p><p>从腾格里的夜空烟花、亚丁风雪夜死守的帐篷、扎尕那十一个垭口的白雪，到等了四年的大峰 5025 米石碑、咸田湾的海浪日出，还有伊犁升起的那轮黄月亮——这些原本只属于山野失联时刻的记忆，因为你的驻足，在星空里重新亮起了一遍。</p><p>谢谢你来我的宇宙吹风散步。山海未完，愿我们在下一座没有天花板的旷野重逢✨</p>`;
+      }
+    }
+    if (passBtn) {
+      passBtn.textContent =
+        currentUniverse === "kitty"
+          ? "🏆 签发猫耳星云七星护照"
+          : currentUniverse === "miemie"
+            ? "🏆 签发绵羊星云五星护照"
+            : "🏆 签发全星系大满贯护照";
+    }
+    modal.classList.remove("hidden");
+  }
   sound.init();
   sound.playDiscoverWaypoint(true);
-  trackEvent("拆阅24全满贯终章手札");
+  trackEvent("拆阅全满贯终章手札", { universe: currentUniverse });
 }
 
 function closeFinaleModal() {
@@ -1357,6 +1762,11 @@ function openWaypointJournal(wpObj) {
     wpObj.markDiscovered();
     persistSave();
   }
+  if (activeNeighborRig?.isFollowing) {
+    activeNeighborRig.celebrateWaypoint?.(playerUp);
+    hiker.triggerEmote("cheer", 2.0);
+    showCompanionBubble(`🎉 太棒啦！陪你一起打卡「${wpObj.data.shortName || wpObj.data.name}」✨`, 3600);
+  }
 
   const nowAllDone = list.length >= activePlanet.waypoints.length;
   sound.playDiscoverWaypoint(nowAllDone && !wasAlreadyAllDone);
@@ -1390,13 +1800,16 @@ function openWaypointJournal(wpObj) {
     const doneWp = PLANETS.reduce((s, p) => s + getDiscoveredSet(p.id).size, 0);
     if (doneWp >= totalWp) {
       document.getElementById("banner-complete-text").textContent =
-        "🏆 24/24 全境穿越达成！已为你解锁《终章手札》";
+        `🏆 ${doneWp}/${totalWp} 全境穿越达成！已为你解锁《终章手札》`;
     } else {
       const sealWord = PLANET_SEAL_TITLE[activePlanet.id] || "穿越成功";
       document.getElementById("banner-complete-text").textContent = `✦ ${sealWord} · 已集齐「${activePlanet.name}」全部印记 · 可领取纪念票根`;
     }
     banner.classList.remove("hidden");
     setTimeout(() => banner.classList.add("hidden"), 6500);
+    if (activeNeighborRig?.isFollowing) {
+      setTimeout(() => triggerDuoFinisherCeremony(true), 900);
+    }
   }
 }
 
@@ -1478,6 +1891,97 @@ function syncCampfireAudio() {
   sound.setCampfireMix({ active: isCampfireMode, fire, wind, nature, music });
 }
 
+const CAMPFIRE_STORIES = {
+  tengger: [
+    "沙脊在夜色里凉下来了，躺平抬头，整条银河就像直接倒进腾格里的沙海里。",
+    "白天踩过的每一道滚烫沙梁，到了篝火边都变成了下酒的故事。",
+  ],
+  yading: [
+    "三神山隐进深蓝星幕，四千九百米的垭口风声里，呼吸和心跳都格外清晰。",
+    "牛奶海与五色海的蓝还在眼底发亮，喝口热茶，明天继续转山。",
+  ],
+  zhagana: [
+    "措美峰的风雪留在身后，扎尕那木屋顶上的炊烟和我们的篝火连成了一片。",
+    "走过乱石垭口才懂，山谷深处的这一小团暖火有多珍贵。",
+  ],
+  siguniang: [
+    "五千米的星光离头顶好近，垭口玛尼堆上的风马旗正替行者把心愿吹向远方。",
+    "从长坪沟到毕棚沟，雪山不说话，却把每一步坚持都记了下来。",
+  ],
+  maclehose: [
+    "海浪拍着西贡的白沙滩，咸湿海风混着柴火香，这是属于山海行者的夜。",
+    "远处的海面泛着幽蓝微光，百里麦径的疲惫都被海浪轻轻抚平了。",
+  ],
+  yili: [
+    "赛里木湖的蓝与琼库什台的云杉林在夜风里摇晃，天山脚下的夏夜长乐未央。",
+    "大海道的戈壁星辰辽阔无边，仿佛整颗星球只剩下风声与跳动的火苗。",
+  ],
+  "kitty-xiaowutai": [
+    "心里总有一座山，吹着太行屋脊清冽的夜风，连金莲花都在星光下轻轻摇晃。",
+    "白天在西台偶遇的小橘猫不知睡了没，愿每一个奔赴山野的人都有好梦。",
+  ],
+  "kitty-sunset": [
+    "追完日落的最后八分钟，晚霞退成深紫星海，大风车在银河下慢慢旋转。",
+    "白昼与星夜交界的温柔时刻，幸好有这堆篝火把浪漫再延长一点。",
+  ],
+  "kitty-changbai": [
+    "火山口的天池在星夜里静得像一块蓝宝石，林间偶尔传来梅花鹿踩过松针的轻响。",
+    "等一场风散云开看见天池全貌，是长白山送给行者最浪漫的礼物。",
+  ],
+  "kitty-zhagana": [
+    "云雾绕着藏寨石城，篝火噼啪作响，甘南的夏夜凉爽得让人不想睡去。",
+    "翻过高山草甸与峡谷栈道，把满眼绿意都烘进今晚的热茶里。",
+  ],
+  "kitty-daqing": [
+    "在云端草甸扎下营帐，草浪翻涌到脚边，伸手仿佛就能触到低垂的星辰。",
+    "帐篷外的篝火暖融融的，这大概就是山野露营最治愈的瞬间。",
+  ],
+  "kitty-wusun": [
+    "跨过冰河、翻过达坂，重装徒步后的这一杯篝火热茶，胜过世间万千滋味。",
+    "天山深处没有喧嚣，只有雪峰月色与并肩走过古道的滚烫回响。",
+  ],
+  "kitty-yading": [
+    "秋色里的彩林与雪山在夜幕下安静睡去，白天栈道上的小松鼠一定也藏好了松果。",
+    "高海拔的星空清澈透明，每一颗星都在替三神山守护赶路的人。",
+  ],
+  "miemie-tonggudang": [
+    "黑石林与绿草甸在夜风里安静下来，白天漫山闲步的牛马羊也回栏歇息了。",
+    "洞外是铜鼓荡的青绿牧歌，洞内是牛倒岩的地心飞瀑，贵州的山水藏着太多惊喜。",
+  ],
+  "miemie-longji": [
+    "走过巨龙脊背般的刀锋天路，夜里围炉回想，仍像闯进了一场人间塞尔达传说。",
+    "第四纪冰川留下的大地之眼映着星光，亿万年的时光在篝火边静静流淌。",
+  ],
+  "miemie-shexiang": [
+    "关掉头灯小憩片刻，麝香洞的幽蓝穹顶与萤光石笋，就像置身真正的地心宇宙。",
+    "水滴从钟乳石尖落入暗河，叮咚回响，奏出地心深处最空灵的夜曲。",
+  ],
+  "miemie-buyi": [
+    "石瓦、石墙、石巷在月色下温润如玉，千年布依古寨正翻开它安静的夜晚篇章。",
+    "猫跳峡的哗哗水声顺风飘来，烤着火听古老传说，山野岁月格外温柔。",
+  ],
+  "miemie-yading": [
+    "我喜欢没有信号的地方，每天一个小目标——今晚平安抵达营地、围着火堆就足够了。",
+    "卸下大大的重装背包才发现，原来自己有足够的力量走过未知，而我们还在路上。",
+  ],
+};
+let campStoryIdx = 0;
+
+function refreshCampfireStoryUI(advance = false) {
+  const pid = activePlanet?.id || "tengger";
+  const pool = CAMPFIRE_STORIES[pid] || CAMPFIRE_STORIES.tengger;
+  if (advance) campStoryIdx = (campStoryIdx + 1) % pool.length;
+  else campStoryIdx = campStoryIdx % pool.length;
+  const textEl = document.getElementById("campfire-story-text");
+  if (textEl) textEl.textContent = `“${pool[campStoryIdx]}”`;
+  const titleEl = document.getElementById("campfire-header-title");
+  if (titleEl) {
+    titleEl.textContent = activeNeighborRig?.isFollowing
+      ? `🔥 正与 ${getResidentPartnerName()} 并排围炉烤火 · 听风夜话`
+      : `🔥 ${activePlanet?.name || "营地"} · 围炉夜话电台`;
+  }
+}
+
 function toggleCampfireMode(force) {
   if (mode !== "planet" || !activePlanet) return;
   isCampfireMode = typeof force === "boolean" ? force : !isCampfireMode;
@@ -1489,9 +1993,17 @@ function toggleCampfireMode(force) {
   if (isCampfireMode) {
     walkTargetDir = null;
     clickRing.visible = false;
-    campfireRig.placeInFrontOfHiker(playerUp, playerForward, hiker.root.position);
+    hotpotRig.hide();
+    campfireRig.placeInFrontOfHiker(playerUp, playerForward, hiker.root.position, activePlanet.owner || "mine");
+    refreshCampfireStoryUI(false);
     syncCampfireAudio();
-    showWonderToast("🔥 已卸下背包围炉而坐 · 可调节下方篝火与风声混音");
+    if (activeNeighborRig?.isFollowing) {
+      const line = activeNeighborRig.pickCampfireLine?.();
+      if (line) showCompanionBubble(line, 4600);
+      showWonderToast(`⛺ 已搭起暖光星空帐篷 · 与 ${getResidentPartnerName()} 并排围炉夜话`);
+    } else {
+      showWonderToast("⛺ 已在篝火畔支起暖光星空帐篷 · 可切换夜话或调节混音");
+    }
     trackEvent("开启围炉电台", { planet: activePlanet.name });
   } else {
     campfireRig.hide();
@@ -1618,6 +2130,10 @@ window.addEventListener("keydown", (e) => {
     else if (e.code === "Enter" || e.code === "Space") enterPlanet(selectedPlanetIdx);
     else if (e.code === "Escape") setupTitleScene();
   } else if (mode === "planet") {
+    if (flagModalOpen) {
+      if (e.code === "Escape") closeFlagModal();
+      return;
+    }
     if (maniModalOpen) {
       if (e.code === "Escape") closeManiModal();
       return;
@@ -1626,6 +2142,16 @@ window.addEventListener("keydown", (e) => {
       openWaypointJournal(activeWaypointNear);
     } else if (e.code === "KeyE" && activeManiNear) {
       openManiModal();
+    } else if (e.code === "KeyE" && activePlantedFlagNear) {
+      openFlagModal(activePlantedFlagNear.data);
+    } else if (e.code === "KeyE" && activeNeighborHostNear) {
+      openNeighborHubModal();
+    } else if (e.code === "KeyE" && activeResonanceNear) {
+      openResonanceModal(activePlanet?.id);
+    } else if (e.code === "KeyF") {
+      openFlagModal(null);
+    } else if (e.code === "KeyN") {
+      openNeighborHubModal();
     } else if (e.code === "KeyG") {
       openAtlasModal();
     } else if (e.code === "KeyB") {
@@ -1772,6 +2298,16 @@ window.addEventListener("pointermove", (e) => {
           clickable = true;
         }
       }
+      if (!clickable && activeNeighborRig) {
+        const objs = [
+          activeNeighborRig.hostChar?.root,
+          activeNeighborRig.bottleGroup,
+          activeNeighborRig.resonanceGroup,
+        ].filter(Boolean);
+        if (objs.length && raycaster.intersectObjects(objs, true).length > 0) {
+          clickable = true;
+        }
+      }
       renderer.domElement.style.cursor = clickable ? "pointer" : "";
     }
     return;
@@ -1856,6 +2392,50 @@ window.addEventListener("pointerup", (e) => {
       }
     }
 
+    // 2.2 检测是否点击了星球主人 / 同行伙伴 / 星际漂流瓶 / 双星同频碑 / 主角自己
+    if (activeNeighborRig) {
+      if (
+        activeNeighborRig.hostChar?.root &&
+        raycaster.intersectObject(activeNeighborRig.hostChar.root, true).length > 0
+      ) {
+        handleHostCharacterClick();
+        return;
+      }
+      if (
+        activeNeighborRig.bottleGroup &&
+        raycaster.intersectObject(activeNeighborRig.bottleGroup, true).length > 0
+      ) {
+        openNeighborHubModal();
+        return;
+      }
+      if (
+        activeNeighborRig.resonanceGroup &&
+        raycaster.intersectObject(activeNeighborRig.resonanceGroup, true).length > 0
+      ) {
+        openResonanceModal();
+        return;
+      }
+    }
+    if (hiker?.root && raycaster.intersectObject(hiker.root, true).length > 0) {
+      if (activeNeighborRig?.hostChar && playerUp.distanceTo(activeNeighborRig.hostUp) < 0.34) {
+        triggerDuoInteractionScene();
+      } else {
+        hiker.triggerEmote("cheer", 2.0);
+        sound.init();
+        sound.playPetChime();
+        showWonderToast("🙌 迎着山风开心蹦了蹦！点击右上角「找星主」或地面即可继续出发～", 2800);
+      }
+      return;
+    }
+
+    // 点击地面行走时收起星主浮动菜单并解除双人静坐
+    closeHostPopover();
+    if (duoSitActive) {
+      duoSitActive = false;
+      hiker.setSitting(false);
+      activeNeighborRig?.clearDuoSit?.();
+    }
+
     if (isCampfireMode) return;
     const hits = raycaster.intersectObject(currentWorld.terrainMesh, false);
     if (hits.length > 0) {
@@ -1889,6 +2469,7 @@ document.getElementById("btn-global-sound").addEventListener("click", () => {
 document.getElementById("btn-start-journey").addEventListener("click", () => {
   sound.init();
   sound.playSelectPlanet();
+  switchUniverse(activeHostRole);
   openStarMap();
 });
 
@@ -1948,9 +2529,17 @@ document.getElementById("photo-exit-hint").addEventListener("click", () => {
 elPromptInteract.addEventListener("click", () => {
   if (activeWaypointNear) openWaypointJournal(activeWaypointNear);
   else if (activeManiNear) openManiModal();
+  else if (activePlantedFlagNear) openFlagModal(activePlantedFlagNear.data);
+  else if (activeNeighborHostNear) openNeighborHubModal();
+  else if (activeResonanceNear) openResonanceModal(activePlanet?.id);
 });
 
 document.getElementById("btn-campfire-mode")?.addEventListener("click", () => toggleCampfireMode());
+document.getElementById("btn-next-camp-story")?.addEventListener("click", () => {
+  sound.init();
+  sound.playHover();
+  refreshCampfireStoryUI(true);
+});
 document.getElementById("btn-exit-campfire")?.addEventListener("click", () => toggleCampfireMode(false));
 ["mix-fire", "mix-wind", "mix-nature", "mix-music"].forEach((id) => {
   document.getElementById(id)?.addEventListener("input", syncCampfireAudio);
@@ -2183,9 +2772,15 @@ function updatePlanetExploration(dt, elapsed) {
     if (wpObj.data.soundZone && ang < 0.28) {
       detectedSoundZone = wpObj.data.soundZone;
     }
+    if (activePlanet.id === "miemie-tonggudang" && wpObj.data.id === "mm-tgd-3" && ang < 0.27) {
+      detectedSoundZone = "cave_echo";
+    }
+  }
+  if (!detectedSoundZone && activePlanet.id === "miemie-shexiang") {
+    detectedSoundZone = "cave_echo";
   }
 
-  // 触发特定场景音效（雪山垭口呼啸风声、咸田湾生日八音盒等）
+  // 触发特定场景音效（雪山垭口呼啸风声、咸田湾生日八音盒、地心溶洞水滴回声等）
   if (detectedSoundZone !== activeSceneZone) {
     activeSceneZone = detectedSoundZone;
     sound.setSceneZone(activeSceneZone);
@@ -2194,6 +2789,8 @@ function updatePlanetExploration(dt, elapsed) {
     terrainStatusText = "🎂 咸田湾营地 · 八音盒《生日快乐歌》";
   } else if (!terrainStatusText && activeSceneZone === "gale_pass") {
     terrainStatusText = "🌬 高山风口 · 经幡猎猎";
+  } else if (!terrainStatusText && activeSceneZone === "cave_echo") {
+    terrainStatusText = "💧 地心溶洞 · 钟乳水滴回响";
   }
 
   let slopeFactor = 1.0;
@@ -2248,15 +2845,20 @@ function updatePlanetExploration(dt, elapsed) {
   }
 
   orientHikerOnSphere(scene, playerUp, playerForward, activePlanet.id);
-  hiker.update(dt, elapsed, isCampfireMode ? 0 : speed / 3.6);
+  if (speed > 0.08 && duoSitActive && !isCampfireMode) {
+    duoSitActive = false;
+    hiker.setSitting(false);
+    activeNeighborRig?.clearDuoSit?.();
+  }
+  hiker.update(dt, elapsed, isCampfireMode || duoSitActive ? 0 : speed / 3.6);
   if (speed === 0) idleSeconds += dt;
 
-  // 动态映射海拔表
+  // 动态映射海拔表（带数值解析保底，彻底杜绝 NaN）
   const curR = hiker.root.position.length();
   const hRatio = THREE.MathUtils.clamp((curR - PLANET_RADIUS + 0.2) / 2.0, 0, 1);
-  const altMeters = Math.round(
-    THREE.MathUtils.lerp(activePlanet.stats.baseAlt, activePlanet.stats.peakAlt, hRatio)
-  );
+  const bAlt = Number.isFinite(activePlanet.stats?.baseAlt) ? activePlanet.stats.baseAlt : 1600;
+  const pAlt = Number.isFinite(activePlanet.stats?.peakAlt) ? activePlanet.stats.peakAlt : 2800;
+  const altMeters = Math.round(THREE.MathUtils.lerp(bAlt, pAlt, hRatio));
   elHudAlt.textContent = `海拔 ${altMeters.toLocaleString()} m`;
 
   // 更新 V3.3 星球奇遇实体（小生灵驯养结伴跟随与围炉打盹 · 动态脚印 · 天气奇遇与流星雨 · 玛尼堆 · 营地篝火）
@@ -2309,7 +2911,80 @@ function updatePlanetExploration(dt, elapsed) {
   if (activeManiCairn) {
     activeManiCairn.update(elapsed);
   }
-  campfireRig.update(elapsed);
+  // 牛倒岩·地心瀑布洞窟自动头灯感应（草甸白昼步入溶洞口自动点亮双人头灯，出洞恢复）
+  let inCaveZone = false;
+  if (activePlanet?.id === "miemie-tonggudang" && currentWorld) {
+    const caveWp = currentWorld.waypointObjs.find((w) => w.data.id === "mm-tgd-3");
+    if (caveWp && playerUp.angleTo(caveWp.unitDir) < 0.27) inCaveZone = true;
+  }
+  if (inCaveZone !== Boolean(window.__lastInCaveZone)) {
+    window.__lastInCaveZone = inCaveZone;
+    hiker.setHeadlamp((skyPhase === "night" || inCaveZone) && mode === "planet");
+    if (inCaveZone && skyPhase !== "night") {
+      showWonderToast("🔦 已步入牛倒岩地心瀑布洞窟 · 探洞头灯自动点亮", 3400);
+    }
+  }
+
+  if (activeNeighborRig) {
+    const nb = activeNeighborRig.update(
+      dt,
+      elapsed,
+      playerUp,
+      isNight || inCaveZone,
+      isCampfireMode,
+      playerForward,
+      speed
+    );
+    activeNeighborHostNear = nb.nearHost || nb.nearBottle;
+    activeResonanceNear = nb.nearResonance;
+    updateCompanionSpeechTick(dt, speed);
+    if (firstLandGuideActive && speed > 0.12) dismissFirstLandGuide();
+    if (
+      pendingHostAction &&
+      activeNeighborRig.hostChar &&
+      playerUp.distanceTo(activeNeighborRig.hostUp) < 0.22
+    ) {
+      const act = pendingHostAction;
+      pendingHostAction = null;
+      walkTargetDir = null;
+      clickRing.visible = false;
+      if (act === "interact") triggerDuoInteractionScene();
+      else openHostPopover();
+    }
+    if (nb.justGreeted && activePlanet) {
+      const pOwner = activePlanet.owner || "mine";
+      const visitorLabel =
+        activeHostRole === "kitty" ? "Kitty" : activeHostRole === "miemie" ? "咩咩" : "清哥";
+      const resPartner = getResidentPartnerName();
+      const greetMsg =
+        pOwner !== activeHostRole
+          ? activePlanet.hostSpotGreeting ||
+            (pOwner === "kitty"
+              ? `🐾 Kitty 朝 ${visitorLabel} 开心挥手：欢迎来「${activePlanet.name}」串门！`
+              : pOwner === "miemie"
+                ? `🐑 咩咩朝 ${visitorLabel} 开心挥手：欢迎来「${activePlanet.name}」串门探秘！`
+                : `🏔️ 清哥朝 ${visitorLabel} 开心挥手：欢迎来「${activePlanet.name}」串门吹风！`)
+          : `⚡ 同频偶遇！邻居 ${resPartner} 也在同一片山脉向你挥手致意～`;
+      showWonderToast(greetMsg, 4600);
+    }
+  }
+  campfireRig.update(elapsed, dt);
+  if (hotpotRig.group.visible && speed > 0.14) {
+    hotpotRig.hide();
+  }
+  hotpotRig.update(elapsed);
+
+  activePlantedFlagNear = null;
+  let minFlagAng = 0.14;
+  for (const flObj of activePlantedFlagObjs) {
+    flObj.pennant.rotation.y = Math.sin(elapsed * 4.6 + flObj.unitDir.x * 5) * 0.24;
+    flObj.topStar.rotation.y = elapsed * 2.2;
+    const fAng = playerUp.angleTo(flObj.unitDir);
+    if (fAng < minFlagAng) {
+      minFlagAng = fAng;
+      activePlantedFlagNear = flObj;
+    }
+  }
 
   // 检测附近可打卡的徒步路标或垭口星光玛尼堆（当大峰石碑与玛尼堆相邻时，按最近距离精准触发）
   let nearest = null;
@@ -2343,6 +3018,30 @@ function updatePlanetExploration(dt, elapsed) {
     elPromptText.textContent = isMobileShort
       ? "🪨 点击垭口玛尼堆留痕"
       : "🪨 按 [E] 或点击 · 垭口星光玛尼堆留痕";
+    elPromptInteract.classList.remove("hidden");
+  } else if (activePlantedFlagNear && !isAnyModalOpen() && !isCampfireMode) {
+    elPromptText.textContent = isMobileShort
+      ? `🚩 查看「${activePlantedFlagNear.data.author}」的串门旗`
+      : `🚩 按 [E] 或点击 · 查看「${activePlantedFlagNear.data.author}」插下的串门旗`;
+    elPromptInteract.classList.remove("hidden");
+  } else if (activeNeighborHostNear && !isAnyModalOpen() && !isCampfireMode) {
+    const pOwner = activePlanet?.owner || "mine";
+    const visitingOther = pOwner !== activeHostRole;
+    const hostLabel =
+      pOwner === "kitty" ? "Kitty" : pOwner === "miemie" ? "咩咩" : activePlanet?.ownerName || "清哥";
+    const hostIcon = pOwner === "kitty" ? "🐾" : pOwner === "miemie" ? "🐑" : "🏔️";
+    elPromptText.textContent = visitingOther
+      ? isMobileShort
+        ? `${hostIcon} 点击与 ${hostLabel} 串门合影`
+        : `${hostIcon} 按 [E] 或点击 · 与星球主人 ${hostLabel} 合影 & 漂流瓶`
+      : isMobileShort
+        ? "📮 点击查看星际邮筒与同频手帐"
+        : "📮 按 [E] 或点击 · 打开我的星际邮筒与串门手帐";
+    elPromptInteract.classList.remove("hidden");
+  } else if (activeResonanceNear && !isAnyModalOpen() && !isCampfireMode) {
+    elPromptText.textContent = isMobileShort
+      ? "⚡ 点击查看双星同频记忆"
+      : "⚡ 按 [E] 或点击 · 开启跨宇宙双星同频记忆";
     elPromptInteract.classList.remove("hidden");
   } else {
     elPromptInteract.classList.add("hidden");
@@ -2574,22 +3273,1139 @@ window.addEventListener("popstate", () => {
   }
 });
 
-// 支持同行队友专属星球直达链接（如 https://hikerplanets.netlify.app/#siguniang 或 ?planet=maclehose）
-function resolveDeepLinkPlanetIndex() {
-  const qPlanet = new URLSearchParams(window.location.search).get("planet");
-  const hashPlanet = window.location.hash.replace(/^#\/?/, "").trim().toLowerCase();
-  const targetKey = (qPlanet || hashPlanet || "").toLowerCase();
-  if (!targetKey) return -1;
-  return PLANETS.findIndex((p) => p.id === targetKey);
+// ==================== V4.2 星际漂流瓶 · 星主互动 · 并肩同行控制器 ====================
+let pendingHostAction = null;
+let duoSitActive = false;
+let duoSceneStep = 0;
+let duoCamRestoreTimer = null;
+
+function getResidentPartnerName() {
+  if (!activeNeighborRig) return "星球伙伴";
+  if (activeNeighborRig.residentRole === "kitty") return "Kitty";
+  if (activeNeighborRig.residentRole === "miemie") return "咩咩";
+  return "清哥";
 }
 
-initScrollMapUI();
-const deepIdx = resolveDeepLinkPlanetIndex();
-if (deepIdx >= 0) {
-  enterPlanet(deepIdx);
-} else {
+function navigateToHostAndOpenMenu(pillBtn = null) {
+  if (!activeNeighborRig?.hostChar || !activePlanet) return;
+  if (isAutoStroll) toggleAutoStroll(false);
+  if (isCampfireMode) toggleCampfireMode(false);
+  const dist = playerUp.distanceTo(activeNeighborRig.hostUp);
+  if (dist < 0.22) {
+    openHostPopover();
+    return;
+  }
+  const targetDir = activeNeighborRig.hostUp.clone();
+  showGuideArcToDir(targetDir, "#f9a8d4", pillBtn);
+  walkTargetDir = targetDir;
+  const r = getSurfaceRadius(activePlanet.id, targetDir);
+  clickRing.position.copy(targetDir).multiplyScalar(r + 0.05);
+  clickRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), targetDir);
+  clickRing.visible = true;
+  pendingHostAction = "menu";
+  showWonderToast(`🧭 星光导航已点亮 · 正在自动走往「${getResidentPartnerName()}」身旁…`, 2800);
+}
+
+function handleHostCharacterClick() {
+  if (!activeNeighborRig?.hostChar) return;
+  const pop = document.getElementById("host-action-popover");
+  const isPopOpen = pop && !pop.classList.contains("hidden");
+  if (playerUp.distanceTo(activeNeighborRig.hostUp) < 0.3) {
+    if (isPopOpen) triggerDuoInteractionScene();
+    else openHostPopover();
+  } else {
+    navigateToHostAndOpenMenu();
+  }
+}
+
+function syncCompanionUI() {
+  const following = Boolean(activeNeighborRig?.isFollowing);
+  const partner = getResidentPartnerName();
+  const rRole = activeNeighborRig?.residentRole;
+  const rIcon = rRole === "kitty" ? "🐾" : rRole === "miemie" ? "🐑" : "🏔️";
+  const pill = document.getElementById("companion-follow-pill");
+  const label = document.getElementById("companion-follow-label");
+  if (pill) pill.classList.toggle("hidden", !following);
+  if (label) label.textContent = `${rIcon} 正与 ${partner} 并肩同行`;
+  const popFollowBtn = document.getElementById("btn-pop-follow");
+  if (popFollowBtn) {
+    popFollowBtn.textContent = following
+      ? `👋 结束同行 · 送 ${partner} 回营地`
+      : `🤝 邀请 ${partner} 并肩同行`;
+  }
+  renderHudWaypoints();
+}
+
+function openHostPopover() {
+  if (!activeNeighborRig?.hostChar) return;
+  const partner = getResidentPartnerName();
+  const rRole = activeNeighborRig.residentRole;
+  const rIcon = rRole === "kitty" ? "🐾" : rRole === "miemie" ? "🐑" : "🏔️";
+  const titleEl = document.getElementById("host-pop-title");
+  if (titleEl) titleEl.textContent = `${rIcon} 星球伙伴 · ${partner}`;
+  const interactBtn = document.getElementById("btn-pop-interact");
+  if (interactBtn) {
+    interactBtn.textContent =
+      rRole === "miemie"
+        ? "🐑 咩星萤光互动"
+        : rRole === "kitty"
+          ? "🐾 猫爪星芒互动"
+          : "🏔️ 山海星火互动";
+  }
+  syncCompanionUI();
+  document.getElementById("host-action-popover")?.classList.remove("hidden");
+  activeNeighborRig.triggerHostWave();
+  sound.init();
+  sound.playHover();
+}
+
+function closeHostPopover() {
+  document.getElementById("host-action-popover")?.classList.add("hidden");
+}
+
+function toggleCompanionFollow(force) {
+  if (!activeNeighborRig?.hostChar) return;
+  const next = typeof force === "boolean" ? force : !activeNeighborRig.isFollowing;
+  activeNeighborRig.setFollowing(next);
+  syncCompanionUI();
+  closeHostPopover();
+  const partner = getResidentPartnerName();
+  sound.init();
+  sound.playSelectPlanet?.();
+  if (next) {
+    hiker.triggerEmote("cheer", 1.5);
+    showCompanionBubble(activeNeighborRig.pickCompanionLine?.() || "出发吧！我陪你一起走完这座山✨", 3600);
+    showWonderToast(`🤝 ${partner} 开心地背好行囊加入了队伍！点顶部胶囊可随时挥手道别～`, 3800);
+  } else {
+    hideCompanionBubble();
+    hiker.triggerWave();
+    showWonderToast(`👋 与 ${partner} 挥手道别，TA 已回到营地星际漂流瓶旁守候～`, 3200);
+  }
+}
+
+function triggerDuoInteractionScene() {
+  if (!activeNeighborRig?.hostChar || !activePlanet) return;
+  closeHostPopover();
+  closeNeighborHubModal();
+  const partner = getResidentPartnerName();
+  const hostUp = activeNeighborRig.hostUp;
+  // 让主角站到星主正身旁面对面/并肩黄金距离
+  const arbitrary = Math.abs(hostUp.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+  const tangent = new THREE.Vector3().crossVectors(hostUp, arbitrary).normalize();
+  playerUp.copy(hostUp).addScaledVector(tangent, 0.068).normalize();
+  const faceToHost = hostUp.clone().sub(playerUp).normalize();
+  playerForward.copy(faceToHost).sub(playerUp.clone().multiplyScalar(faceToHost.dot(playerUp))).normalize();
+  orientHikerOnSphere(scene, playerUp, playerForward, activePlanet.id);
+
+  const midUp = hostUp.clone().add(playerUp).normalize();
+  const scenes = [
+    { mode: "cheer", text: `🙌 与 ${partner} 在山巅击掌欢呼！漫天星芒为你们喝彩 ✨` },
+    { mode: "rose", text: `🌹 互赠一朵发光的小王子星辰玫瑰，愿山海常相逢！` },
+    { mode: "spin", text: `💫 和 ${partner} 在微缩星球的草坡上跳起星光圆舞曲～` },
+    { mode: "sit", text: `🌠 与 ${partner} 卸下背包并肩席地而坐，静看银河流动（移动即可起身）` },
+  ];
+  const cur = scenes[duoSceneStep % scenes.length];
+  duoSceneStep += 1;
+
+  const faceToPlayer = playerUp.clone().sub(hostUp).normalize();
+  if (cur.mode === "sit") {
+    const viewFwd = new THREE.Vector3().crossVectors(tangent, midUp).normalize();
+    playerForward.copy(viewFwd);
+    orientHikerOnSphere(scene, playerUp, playerForward, activePlanet.id);
+    hiker.setSitting(true);
+    duoSitActive = true;
+    activeNeighborRig.triggerDuoAction("sit", midUp, viewFwd);
+  } else {
+    duoSitActive = false;
+    hiker.setSitting(false);
+    hiker.triggerEmote(cur.mode === "spin" ? "spin" : cur.mode === "rose" ? "wave" : "cheer", 2.8);
+    activeNeighborRig.triggerDuoAction(cur.mode, midUp, faceToPlayer);
+  }
+
+  // 推近到柔和舒适的平视微俯双人电影特写机位，3秒后平缓回到标准视角
+  camPitch = 0.24;
+  camDist = 7.2;
+  if (duoCamRestoreTimer) clearTimeout(duoCamRestoreTimer);
+  if (cur.mode !== "sit") {
+    duoCamRestoreTimer = setTimeout(() => {
+      if (!isPhotoMode) {
+        camPitch = 0.56;
+        camDist = 11.0;
+      }
+    }, 3100);
+  }
+  sound.init();
+  sound.playDiscover?.();
+  const rRole = activeNeighborRig.residentRole;
+  const ROLE_DUO_LINES = {
+    miemie: {
+      cheer: "咩星人报到🐑！重装大包都挡不住我们登顶！",
+      rose: "收下这朵地心发光玫瑰🌹，下座山继续约！",
+      spin: "欢迎来到人间塞尔达，转个圈吹吹山风✨",
+      sit: "没有信号的地方最自在，坐下听风和水滴声吧⛺",
+    },
+    kitty: {
+      cheer: "耶🐾！终于在山顶等到你来串门啦～",
+      rose: "猫耳星云的落日玫瑰送给你🌹！",
+      spin: "趁日落最后八分钟，一起跳支星光舞吧💫",
+      sit: "并排坐着等第一颗流星划过天际吧🌠",
+    },
+    mine: {
+      cheer: "山海重逢🏔️！走，翻过前面那座垭口！",
+      rose: "把沙漠与雪山的星光玫瑰送给你🌹！",
+      spin: "风雪散尽就是日照金山，尽情欢呼吧✨",
+      sit: "卸下重装包歇歇脚，山野的星空不赶时间⛺",
+    },
+  };
+  const bubbleLine = (ROLE_DUO_LINES[rRole] || ROLE_DUO_LINES.mine)[cur.mode];
+  if (bubbleLine) showCompanionBubble(bubbleLine, 3800);
+  showWonderToast(cur.text, 3600);
+}
+
+// 🍲 V4.6 支炉头煮高山小火锅 & 露营钛杯碰杯互动
+function triggerHotpotFeast() {
+  if (!activeNeighborRig?.hostChar || !activePlanet) return;
+  closeHostPopover();
+  closeNeighborHubModal();
+  if (isCampfireMode) toggleCampfireMode(false);
+  const partner = getResidentPartnerName();
+  const hostUp = activeNeighborRig.hostUp;
+  const arbitrary = Math.abs(hostUp.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+  const tangent = new THREE.Vector3().crossVectors(hostUp, arbitrary).normalize();
+  playerUp.copy(hostUp).addScaledVector(tangent, 0.085).normalize();
+  const midUp = hostUp.clone().add(playerUp).normalize();
+  const faceToHost = hostUp.clone().sub(playerUp).normalize();
+  playerForward.copy(faceToHost).sub(playerUp.clone().multiplyScalar(faceToHost.dot(playerUp))).normalize();
+  orientHikerOnSphere(scene, playerUp, playerForward, activePlanet.id);
+
+  const viewFwd = new THREE.Vector3().crossVectors(tangent, midUp).normalize();
+  hiker.setSitting(true);
+  duoSitActive = true;
+  activeNeighborRig.triggerDuoAction("sit", midUp, viewFwd);
+  hotpotRig.placeAt(activePlanet.id, midUp);
+
+  camPitch = 0.28;
+  camDist = 7.4;
+  sound.init();
+  sound.playHotpotClink?.();
+  const HOTPOT_LINES = {
+    miemie: "海拔四千米的红汤小火锅咕嘟咕嘟🍲，重装背上来的肥牛就是香！干杯🍻！",
+    kitty: "哇～山顶热乎乎的番茄小火锅配星空也太幸福了吧🍲！干杯✨！",
+    mine: "支起高山气罐炉头🍲！风雪再大，一口热汤下肚浑身都是劲，碰一个🍻！",
+  };
+  showCompanionBubble(HOTPOT_LINES[activeNeighborRig.residentRole] || HOTPOT_LINES.mine, 4600);
+  showWonderToast(`🍲 已与 ${partner} 支起高山炉头煮小火锅 · 露营钛杯碰杯干饭！（移动即可收锅）`, 4200);
+  trackEvent("营地支炉煮火锅", { planet: activePlanet.name, partner });
+}
+
+// 🏅 V4.6 双人并肩完赛授牌仪式 & 签发《双人并肩完赛荣誉证》
+function triggerDuoFinisherCeremony(fromAuto = false) {
+  if (!activePlanet || !activeNeighborRig) return;
+  closeHostPopover();
+  const discSet = getDiscoveredSet(activePlanet.id);
+  const total = activePlanet.waypoints.length;
+  const partner = getResidentPartnerName();
+  if (discSet.size < total) {
+    if (!activeNeighborRig.isFollowing) toggleCompanionFollow(true);
+    showCompanionBubble(`还差 ${total - discSet.size} 处路标就能拿联名完赛证啦，走，我陪你去打卡🏅！`, 4200);
+    showWonderToast(`🏅 已邀 ${partner} 并肩同行！集齐剩余 ${total - discSet.size} 处路标即可触发双人授牌仪式`, 4000);
+    return;
+  }
+  const midUp = activeNeighborRig.hostUp.clone().add(playerUp).normalize();
+  const faceDir = playerForward.clone();
+  hiker.setSitting(false);
+  hiker.triggerEmote("cheer", 3.2);
+  activeNeighborRig.triggerDuoAction("cheer", midUp, faceDir);
+  camPitch = 0.25;
+  camDist = 7.6;
+  sound.init();
+  sound.playDiscoverWaypoint?.(true);
+  showCompanionBubble(`🏅 完赛授牌达成！恭喜我们并肩走完「${activePlanet.name}」全部路标🎉！`, 4500);
+  showWonderToast(`🏅 双人并肩完赛达成！正在为你与 ${partner} 签发联名完赛荣誉证…`, 3800);
+  setTimeout(async () => {
+    if (!journalOpen) {
+      currentTicketContext = { type: "finisher" };
+      await refreshTicketPreviewImage();
+      ticketModalOpen = true;
+      document.getElementById("modal-ticket")?.classList.remove("hidden");
+    }
+  }, fromAuto ? 1400 : 650);
+  trackEvent("签发双人并肩完赛证", { planet: activePlanet.name, partner });
+}
+
+// ==================== V4.3 头顶3D轻语气泡 · 漂流瓶未读星标 · 首次轻引导 ====================
+let companionBubbleTimer = 0;
+let companionAutoChatCooldown = 8.5;
+let firstLandGuideActive = false;
+let firstLandGuideTimer = null;
+const _tmpHeadProj = new THREE.Vector3();
+
+function showCompanionBubble(text, durationMs = 3400) {
+  const el = document.getElementById("companion-speech-bubble");
+  if (!el || !activeNeighborRig?.hostChar) return;
+  el.textContent = text;
+  el.classList.remove("hidden");
+  companionBubbleTimer = durationMs / 1000;
+}
+
+function hideCompanionBubble() {
+  companionBubbleTimer = 0;
+  document.getElementById("companion-speech-bubble")?.classList.add("hidden");
+}
+
+function updateCompanionSpeechTick(dt, playerSpeed) {
+  const el = document.getElementById("companion-speech-bubble");
+  if (activeNeighborRig?.isFollowing && (playerSpeed > 0.1 || isCampfireMode)) {
+    companionAutoChatCooldown -= dt;
+    if (companionAutoChatCooldown <= 0 && companionBubbleTimer <= 0) {
+      companionAutoChatCooldown = isCampfireMode ? 11 + Math.random() * 5 : 12.5 + Math.random() * 6;
+      const line = isCampfireMode
+        ? activeNeighborRig.pickCampfireLine?.()
+        : activeNeighborRig.pickCompanionLine?.();
+      if (line) showCompanionBubble(line, 3800);
+    }
+  }
+  if (companionBubbleTimer > 0 && el && activeNeighborRig?.hostChar) {
+    companionBubbleTimer -= dt;
+    if (companionBubbleTimer <= 0 || isPhotoMode) {
+      hideCompanionBubble();
+      return;
+    }
+    const worldHead = activeNeighborRig.getHostHeadWorldPos?.(_tmpHeadProj);
+    if (worldHead) {
+      worldHead.project(camera);
+      if (worldHead.z < 1) {
+        const sx = (worldHead.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (-worldHead.y * 0.5 + 0.5) * window.innerHeight;
+        el.style.left = `${THREE.MathUtils.clamp(sx, 128, window.innerWidth - 128)}px`;
+        el.style.top = `${THREE.MathUtils.clamp(sy - 12, 68, window.innerHeight - 140)}px`;
+      }
+    }
+  }
+}
+
+function syncBottleUnreadBeacon() {
+  const key = getNeighborBucketKey();
+  const seenKey = `hp_bottle_seen_${key}`;
+  const totalNotes = (socialState.notes[key] || []).length;
+  const seenCount = Number(localStorage.getItem(seenKey) || 0);
+  const hasUnread = totalNotes > seenCount;
+  activeNeighborRig?.setUnreadBeacon?.(hasUnread);
+  document.getElementById("btn-neighbor-hub")?.classList.toggle("has-unread-bottle", hasUnread);
+}
+
+function markBottleReadNow() {
+  const key = getNeighborBucketKey();
+  const totalNotes = (socialState.notes[key] || []).length;
+  try {
+    localStorage.setItem(`hp_bottle_seen_${key}`, String(totalNotes));
+  } catch (_) {}
+  activeNeighborRig?.setUnreadBeacon?.(false);
+  document.getElementById("btn-neighbor-hub")?.classList.remove("has-unread-bottle");
+}
+
+function maybeShowFirstLandGuide() {
+  try {
+    if (localStorage.getItem("hp_first_land_guided_v43")) return;
+  } catch (_) {}
+  const el = document.getElementById("first-land-guide");
+  if (!el) return;
+  firstLandGuideActive = true;
+  el.classList.remove("hidden");
+  if (firstLandGuideTimer) clearTimeout(firstLandGuideTimer);
+  firstLandGuideTimer = setTimeout(dismissFirstLandGuide, 4200);
+}
+
+function dismissFirstLandGuide() {
+  if (!firstLandGuideActive) return;
+  firstLandGuideActive = false;
+  if (firstLandGuideTimer) clearTimeout(firstLandGuideTimer);
+  document.getElementById("first-land-guide")?.classList.add("hidden");
+  try {
+    localStorage.setItem("hp_first_land_guided_v43", "1");
+  } catch (_) {}
+}
+
+function warpToPlanetGlobal(targetPlanetId) {
+  const veil = document.getElementById("warp-veil");
+  const label = document.getElementById("warp-label");
+  const all = getAllKnownPlanets();
+  const target = all.find((x) => x.id === targetPlanetId);
+  if (!target || warpActive) return;
+
+  closeNeighborHubModal();
+  closeResonanceModal();
+  closeCreatorModal();
+  closeHostPopover();
+
+  warpActive = true;
+  warpTimer = 1.12;
+  if (label) label.textContent = `✦ 星轨穿梭 · 正在飞往「${target.name}」…`;
+  if (veil) {
+    veil.classList.remove("hidden");
+    requestAnimationFrame(() => veil.classList.add("active"));
+  }
+  sound.init();
+  sound.playSelectPlanet();
+  triggerHaptic(22);
+
+  setTimeout(() => {
+    const targetUni = target.owner === "kitty" ? "kitty" : target.owner === "miemie" ? "miemie" : "mine";
+    if (currentUniverse !== targetUni) switchUniverse(targetUni, target.id);
+    const idx = PLANETS.findIndex((x) => x.id === target.id);
+    if (idx >= 0) enterPlanet(idx);
+  }, 480);
+
+  setTimeout(() => {
+    if (veil) {
+      veil.classList.remove("active");
+      setTimeout(() => veil.classList.add("hidden"), 360);
+    }
+    camera.fov = 45;
+    camera.updateProjectionMatrix();
+    warpActive = false;
+  }, 1120);
+}
+
+function getNeighborBucketKey() {
+  if (!activePlanet) return currentUniverse === "kitty" || currentUniverse === "miemie" ? currentUniverse : "mine";
+  if (activePlanet.owner === "kitty" || activePlanet.owner === "miemie") return activePlanet.owner;
+  if (activePlanet.owner === "guest") return activePlanet.id;
+  return "mine";
+}
+
+function renderNeighborNotesUI() {
+  const key = getNeighborBucketKey();
+  const listEl = document.getElementById("neighbor-notes-list");
+  const roseEl = document.getElementById("rose-count-num");
+  if (roseEl) roseEl.textContent = String(socialState.roses[key] ?? 12);
+  if (!listEl) return;
+  const arr = socialState.notes[key] || [];
+  listEl.innerHTML = arr
+    .slice(0, 8)
+    .map(
+      (n) => `
+      <div class="mani-note-item">
+        <span class="mani-note-stone">${n.badge || "📮"}</span>
+        <div class="mani-note-content">
+          <div class="mani-note-text">“${n.text}”</div>
+          <div class="mani-note-meta">— ${n.from} · ${n.time || "星际串门"}</div>
+        </div>
+      </div>`
+    )
+    .join("");
+}
+
+function openNeighborHubModal() {
+  closeHostPopover();
+  const p = activePlanet || PLANETS[selectedPlanetIdx];
+  const pOwner = p?.owner || currentUniverse;
+  const isHome = pOwner === activeHostRole;
+  const hostName = pOwner === "kitty" ? "Kitty" : pOwner === "miemie" ? "咩咩" : p?.ownerName || "清哥";
+  document.getElementById("neighbor-hub-title").textContent = isHome
+    ? `🍾 我的星际漂流瓶 · 「${p?.name || "主场星云"}」`
+    : pOwner === "guest"
+      ? `🍾 客座漂流瓶 · ${hostName} 的「${p.name}」`
+      : `🍾 星际漂流瓶 · 邻居 ${hostName} 的「${p?.name || "星云"}」`;
+  document.getElementById("neighbor-hub-sub").textContent = isHome
+    ? "打捞顺着银河漂流而来的好友纸条与星辰玫瑰，或放流一只漂流瓶去邻居家串门吧！"
+    : p?.hostSpotGreeting || `写张星海纸条塞进漂流瓶，或拉上 ${hostName} 拍张平视双人拍立得吧！`;
+
+  const duoBtn = document.getElementById("btn-hub-duo-interact");
+  if (duoBtn) duoBtn.classList.toggle("hidden", !activeNeighborRig?.hostChar);
+
+  const resBtn = document.getElementById("btn-hub-resonance");
+  if (resBtn) resBtn.classList.toggle("hidden", !hasResonanceWithActiveHost(p));
+  const warpBtn = document.getElementById("btn-warp-neighbor-uni");
+  if (warpBtn) {
+    warpBtn.textContent =
+      currentUniverse === activeHostRole
+        ? activeHostRole === "mine"
+          ? "🐑 串门去邻居星系"
+          : "🪐 串门去清哥的星系"
+        : activeHostRole === "kitty"
+          ? "🐾 返回我的猫耳星云"
+          : activeHostRole === "miemie"
+            ? "🐑 返回我的绵羊星云"
+            : "🪐 返回我的主星系";
+  }
+  markBottleReadNow();
+  renderNeighborNotesUI();
+  neighborModalOpen = true;
+  document.getElementById("modal-neighbor-hub")?.classList.remove("hidden");
+  sound.init();
+  sound.playHover();
+}
+
+function closeNeighborHubModal() {
+  neighborModalOpen = false;
+  document.getElementById("modal-neighbor-hub")?.classList.add("hidden");
+}
+
+const RES_ROLE_META = {
+  mine: { name: "清哥", icon: "🪐", colCls: "", tagCls: "" },
+  kitty: { name: "Kitty", icon: "🐾", colCls: "kitty-col", tagCls: "kitty-tag" },
+  miemie: { name: "咩咩", icon: "🐑", colCls: "miemie-col", tagCls: "miemie-tag" },
+};
+
+function buildResonanceNote(leftRole, rightRole, clusterIds, isSelfLeft) {
+  const prefix = isSelfLeft ? "你" : RES_ROLE_META[leftRole].name;
+  const other = RES_ROLE_META[rightRole].name;
+  if (clusterIds.includes("zhagana")) {
+    return `${prefix}与邻居 ${other} 曾先后翻越措美峰 4600 米的风雪垭口，也在扎尕那的云雾石城里看过同一片绿浪。`;
+  }
+  if (clusterIds.includes("yili")) {
+    return `${prefix}与邻居 ${other} 一南一北奔赴同一脉天山——一边是伊犁河谷与大海道的旷野繁星，一边是重装翻越乌孙古道达坂的滚烫青春。`;
+  }
+  return `同一片稻城亚丁三神山，见证了${prefix}与邻居 ${other} 各自的滚烫足迹——路线不止一条，选择不止一个，而你们都在路上。`;
+}
+
+function openResonanceModal(planetId, preferredPartnerRole = null) {
+  const pid = planetId || activePlanet?.id || PLANETS[selectedPlanetIdx]?.id;
+  const cluster = RESONANCE_CLUSTERS.find((c) => c.ids.includes(pid));
+  if (!cluster) return;
+  const all = getAllKnownPlanets();
+  const curP = all.find((x) => x.id === pid);
+  if (!curP) return;
+
+  const curRole = curP.owner || "mine";
+  const memberRoles = Object.keys(cluster.members);
+  const selfInCluster = Boolean(cluster.members[activeHostRole]);
+  const leftRole = selfInCluster ? activeHostRole : curRole;
+  const otherRoles = memberRoles.filter((r) => r !== leftRole);
+  const rightRole =
+    preferredPartnerRole && otherRoles.includes(preferredPartnerRole)
+      ? preferredPartnerRole
+      : curRole !== leftRole && otherRoles.includes(curRole)
+        ? curRole
+        : otherRoles[0];
+
+  const leftP = all.find((x) => x.id === cluster.members[leftRole]);
+  const rightP = all.find((x) => x.id === cluster.members[rightRole]);
+  if (!leftP || !rightP) return;
+
+  const lMeta = RES_ROLE_META[leftRole] || RES_ROLE_META.mine;
+  const rMeta = RES_ROLE_META[rightRole] || RES_ROLE_META.kitty;
+
+  const isTrinity = preferredPartnerRole === "trinity" && memberRoles.length >= 3;
+  const thirdRole = otherRoles.find((r) => r !== rightRole) || otherRoles[1];
+  const thirdP = thirdRole ? all.find((x) => x.id === cluster.members[thirdRole]) : null;
+  const tMeta = RES_ROLE_META[thirdRole] || RES_ROLE_META.miemie;
+
+  const modalEl = document.getElementById("modal-resonance");
+  const bookEl = modalEl?.querySelector(".resonance-book");
+  const eyeEl = modalEl?.querySelector(".mani-eyebrow");
+  const gridEl = modalEl?.querySelector(".resonance-compare-grid");
+  bookEl?.classList.toggle("trinity-mode", isTrinity);
+  gridEl?.classList.toggle("trinity-grid", isTrinity);
+  if (eyeEl) {
+    eyeEl.textContent = isTrinity
+      ? "✦ TRINITY STAR ALIGNMENT · 跨宇宙三星连珠隐藏彩蛋 ✦"
+      : "✦ TWIN-STAR TRAIL RESONANCE · 跨宇宙双星同频 ✦";
+  }
+
+  document.getElementById("resonance-title").textContent = isTrinity
+    ? "🌌 三星连珠 · 同一座亚丁的三种青春"
+    : `⚡ ${cluster.title}`;
+  document.getElementById("resonance-sub").textContent = isTrinity
+    ? "全宇宙 18 颗星球里，唯独稻城亚丁同时印下了清哥（大环线死守风雪帐篷）、Kitty（栈道松鼠与牛奶海晴空）、咩咩（六天五晚无信号重装反穿）三个人的脚印——同一座央迈勇，三种走法，在星海重逢。"
+    : buildResonanceNote(leftRole, rightRole, cluster.ids, selfInCluster);
+
+  const tabsEl = document.getElementById("resonance-partner-tabs");
+  if (tabsEl) {
+    tabsEl.innerHTML = "";
+    if (memberRoles.length >= 3) {
+      tabsEl.classList.remove("hidden");
+      const pairBtn = document.createElement("button");
+      pairBtn.type = "button";
+      pairBtn.className = `uni-tab ${!isTrinity ? "active" : ""}`;
+      pairBtn.textContent = `⚡ 双星对照（我 × ${rMeta.name}）`;
+      pairBtn.onclick = () => openResonanceModal(pid, rightRole);
+      const triBtn = document.createElement("button");
+      triBtn.type = "button";
+      triBtn.className = `uni-tab trinity-tab ${isTrinity ? "active" : ""}`;
+      triBtn.textContent = "🌌 三星连珠 · 三人亚丁特辑";
+      triBtn.onclick = () => openResonanceModal(pid, "trinity");
+      tabsEl.append(pairBtn, triBtn);
+    } else {
+      tabsEl.classList.add("hidden");
+    }
+  }
+
+  const fillCol = (side, pObj, roleKey, isSelfCard) => {
+    if (!pObj) return;
+    const m = RES_ROLE_META[roleKey] || RES_ROLE_META.mine;
+    const col = document.getElementById(`res-col-${side}`);
+    const tag = document.getElementById(`res-tag-${side}`);
+    const jmp = document.getElementById(`res-jump-${side}`);
+    if (col) col.className = `res-col ${m.colCls}`.trim();
+    if (tag) {
+      tag.className = `res-owner-tag ${m.tagCls}`.trim();
+      tag.textContent = isSelfCard ? `${m.icon} 我的亚丁记忆（${m.name}）` : `${m.icon} 邻居 · ${m.name} 的星球记忆`;
+    }
+    document.getElementById(`res-img-${side}`).src = pObj.waypoints[0]?.photo || "";
+    document.getElementById(`res-name-${side}`).textContent = `${pObj.name} · ${pObj.stats.altitude}`;
+    document.getElementById(`res-text-${side}`).textContent = pObj.waypoints[0]?.memory || pObj.quote;
+    if (jmp) {
+      jmp.classList.toggle("hidden", !isTrinity);
+      jmp.textContent =
+        mode === "planet" && activePlanet?.id === pObj.id
+          ? `📍 当前正在此星球漫步`
+          : roleKey === activeHostRole
+            ? `🚀 返回我的「${pObj.name}」`
+            : `🚀 飞往 ${m.name} 的「${pObj.name}」`;
+      jmp.onclick = () => warpToPlanetGlobal(pObj.id);
+    }
+  };
+
+  fillCol("left", leftP, leftRole, selfInCluster);
+  fillCol("right", rightP, rightRole, false);
+  const colThird = document.getElementById("res-col-third");
+  if (isTrinity && thirdP) {
+    fillCol("third", thirdP, thirdRole, false);
+    colThird?.classList.remove("hidden");
+  } else {
+    colThird?.classList.add("hidden");
+  }
+
+  const warpTwinBtn = document.getElementById("btn-warp-twin-planet");
+  if (warpTwinBtn) {
+    warpTwinBtn.classList.toggle("hidden", isTrinity);
+    const jumpTarget = pid === rightP.id ? leftP : rightP;
+    const jumpRole = jumpTarget.owner || "mine";
+    const jumpMeta = RES_ROLE_META[jumpRole] || RES_ROLE_META.mine;
+    warpTwinBtn.textContent =
+      jumpRole === activeHostRole
+        ? `🚀 返回我的「${jumpTarget.name}」`
+        : `🚀 串门跃迁至「邻居 ${jumpMeta.name} · ${jumpTarget.name}」`;
+    warpTwinBtn.onclick = () => warpToPlanetGlobal(jumpTarget.id);
+  }
+
+  closeNeighborHubModal();
+  resonanceModalOpen = true;
+  modalEl?.classList.remove("hidden");
+  sound.init();
+  if (isTrinity) sound.playDiscoverWaypoint?.(true);
+  else sound.playSelectPlanet();
+  trackEvent(isTrinity ? "开启三星连珠亚丁彩蛋" : "开启双星同频共鸣", { title: cluster.title, partner: rightRole });
+}
+
+function closeResonanceModal() {
+  resonanceModalOpen = false;
+  document.getElementById("modal-resonance")?.classList.add("hidden");
+}
+
+let latestCreatedGuestPlanet = null;
+let latestCreatedShareUrl = "";
+
+function openCreatorModal() {
+  creatorModalOpen = true;
+  document.getElementById("creator-share-result")?.classList.add("hidden");
+  document.getElementById("modal-create-planet")?.classList.remove("hidden");
+  sound.init();
+  sound.playHover();
+}
+
+function closeCreatorModal() {
+  creatorModalOpen = false;
+  document.getElementById("modal-create-planet")?.classList.add("hidden");
+}
+
+// 扉页双星主身份切换舱 + 串门副按钮自适应
+document.querySelectorAll("#host-role-switcher .host-role-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const r = btn.dataset.hostRole;
+    const nextRole = r === "kitty" ? "kitty" : r === "miemie" ? "miemie" : "mine";
+    if (nextRole === activeHostRole) return;
+    sound.init();
+    sound.playSelectPlanet();
+    applyHostRoleUI(nextRole, true);
+    showWonderToast(
+      nextRole === "kitty"
+        ? "🐾 已切换至「Kitty 星主主场」· 7 颗猫耳星云已就绪！"
+        : nextRole === "miemie"
+          ? "🐑 已切换至「咩咩星主主场」· 5 颗绵羊星云已就绪！"
+          : "🏔️ 已切换至「清哥主场」· 6 颗山海星球已就绪！",
+      3200
+    );
+  });
+});
+
+document.getElementById("btn-visit-kitty-title")?.addEventListener("click", () => {
+  sound.init();
+  sound.playSelectPlanet();
+  const neighborUni = activeHostRole === "kitty" ? "mine" : "kitty";
+  switchUniverse(neighborUni);
+  openStarMap();
+  trackEvent("扉页串门拜访邻居星系", { neighborUni });
+});
+
+document.getElementById("btn-visit-miemie-title")?.addEventListener("click", () => {
+  sound.init();
+  sound.playSelectPlanet();
+  const neighborUni = activeHostRole === "miemie" ? "mine" : "miemie";
+  switchUniverse(neighborUni);
+  openStarMap();
+  trackEvent("扉页串门拜访邻居星系", { neighborUni });
+});
+
+document.querySelectorAll("#universe-switcher .uni-tab[data-uni]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    sound.init();
+    sound.playSelectPlanet();
+    switchUniverse(btn.dataset.uni);
+    trackEvent("星图切换宇宙", { universe: btn.dataset.uni });
+  });
+});
+
+document.getElementById("btn-open-creator")?.addEventListener("click", openCreatorModal);
+document.getElementById("btn-close-creator")?.addEventListener("click", closeCreatorModal);
+document.getElementById("btn-map-resonance")?.addEventListener("click", () => {
+  const p = PLANETS[selectedPlanetIdx];
+  if (p) openResonanceModal(p.id);
+});
+document.getElementById("btn-neighbor-hub")?.addEventListener("click", openNeighborHubModal);
+document.getElementById("btn-close-neighbor-hub")?.addEventListener("click", closeNeighborHubModal);
+document.getElementById("btn-hub-resonance")?.addEventListener("click", () => {
+  if (activePlanet) openResonanceModal(activePlanet.id);
+});
+document.getElementById("btn-close-resonance")?.addEventListener("click", closeResonanceModal);
+
+document.getElementById("btn-warp-neighbor-uni")?.addEventListener("click", () => {
+  closeNeighborHubModal();
+  const nextUni =
+    currentUniverse !== activeHostRole
+      ? activeHostRole
+      : activeHostRole === "mine"
+        ? "miemie"
+        : "mine";
+  const veil = document.getElementById("warp-veil");
+  const label = document.getElementById("warp-label");
+  if (label) {
+    label.textContent =
+      nextUni === "kitty"
+        ? "✦ 星轨穿梭 · 正在飞往「Kitty 的猫耳星云」…"
+        : nextUni === "miemie"
+          ? "✦ 星轨穿梭 · 正在飞往「咩咩的绵羊星云」…"
+          : "✦ 星轨穿梭 · 正在飞往「清哥主星系」…";
+  }
+  if (veil) {
+    veil.classList.remove("hidden");
+    requestAnimationFrame(() => veil.classList.add("active"));
+  }
+  sound.init();
+  sound.playSelectPlanet();
+  setTimeout(() => {
+    switchUniverse(nextUni);
+    openStarMap();
+  }, 440);
+  setTimeout(() => {
+    if (veil) {
+      veil.classList.remove("active");
+      setTimeout(() => veil.classList.add("hidden"), 350);
+    }
+  }, 1050);
+});
+
+document.getElementById("btn-send-rose")?.addEventListener("click", () => {
+  const key = getNeighborBucketKey();
+  socialState.roses[key] = (socialState.roses[key] ?? 12) + 1;
+  saveSocialState(socialState);
+  renderNeighborNotesUI();
+  activeNeighborRig?.triggerHostWave();
+  sound.init();
+  sound.playDiscover?.();
+  showWonderToast("🌹 已赠予一朵小王子的星辰玫瑰 · 星球主人开心向你挥手！");
+});
+
+let latestReplyShareUrl = "";
+
+document.getElementById("neighbor-note-form")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const authorEl = document.getElementById("neighbor-note-author");
+  const textEl = document.getElementById("neighbor-note-text");
+  const text = (textEl?.value || "").trim();
+  if (!text) return;
+  const defaultName =
+    activeHostRole === "kitty" ? "Kitty" : activeHostRole === "miemie" ? "咩咩" : saveData.travelerName || "清哥";
+  const from = (authorEl?.value || "").trim() || defaultName;
+  const key = getNeighborBucketKey();
+  if (!Array.isArray(socialState.notes[key])) socialState.notes[key] = [];
+  socialState.notes[key].unshift({ from, badge: "🍾 漂流瓶信笺", text, time: "刚刚放流" });
+  saveSocialState(socialState);
+  if (textEl) textEl.value = "";
+  renderNeighborNotesUI();
+  activeNeighborRig?.triggerHostWave();
+
+  // 生成零后端跨手机「星海漂流瓶链接」
+  const targetOwner = key === "kitty" || key === "miemie" ? key : "mine";
+  const lToken = encodeReplyLetter({ toOwner: targetOwner, from, text, roses: 1 });
+  const baseUrl = window.location.origin + window.location.pathname;
+  latestReplyShareUrl = `${baseUrl}?host=${targetOwner}&letter=${lToken}`;
+  const replyBtn = document.getElementById("btn-copy-reply-letter");
+  if (replyBtn) replyBtn.classList.remove("hidden");
+
+  showWonderToast("🍾 纸条已塞进星际漂流瓶放流！可点下方按钮复制漂流瓶链接发给 TA～");
+});
+
+document.getElementById("btn-copy-reply-letter")?.addEventListener("click", () => {
+  if (!latestReplyShareUrl) return;
+  navigator.clipboard?.writeText(latestReplyShareUrl).catch(() => {});
+  showWonderToast("🍾 星海漂流瓶链接已复制！发给对方微信点开即可打捞收信！");
+});
+
+function captureCoopPolaroid() {
+  if (mode !== "planet" || !activePlanet) {
+    closeNeighborHubModal();
+    closeHostPopover();
+    enterPlanet(selectedPlanetIdx);
+    return;
+  }
+  closeNeighborHubModal();
+  closeHostPopover();
+
+  const savedPos = camera.position.clone();
+  const savedUp = camera.up.clone();
+  const savedQuat = camera.quaternion.clone();
+
+  if (activeNeighborRig?.hostChar) {
+    // 黄金平视微仰双人人像机位：两人并肩面向镜头微笑挥手，背景衬出弧形雪峰与璀璨星河！
+    const hUp = activeNeighborRig.hostUp.clone();
+    const arb = Math.abs(hUp.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+    const rightTan = new THREE.Vector3().crossVectors(hUp, arb).normalize();
+    const camFwd = new THREE.Vector3().crossVectors(rightTan, hUp).normalize();
+
+    playerUp.copy(hUp).addScaledVector(rightTan, 0.055).normalize();
+    playerForward.copy(camFwd);
+    orientHikerOnSphere(scene, playerUp, playerForward, activePlanet.id);
+    activeNeighborRig.orientChar(hUp, camFwd);
+    hiker.poseWaveSnapshot?.();
+    activeNeighborRig.hostChar.poseWaveSnapshot?.();
+
+    const midUp = hUp.clone().add(playerUp).normalize();
+    const midR = getSurfaceRadius(activePlanet.id, midUp);
+    const groundMid = midUp.clone().multiplyScalar(midR);
+    camera.up.copy(midUp);
+    camera.position
+      .copy(groundMid)
+      .addScaledVector(midUp, 0.92)
+      .addScaledVector(camFwd, 3.85);
+    camera.lookAt(groundMid.clone().addScaledVector(midUp, 1.05));
+  } else {
+    hiker.poseWaveSnapshot?.();
+  }
+
+  renderer.render(scene, camera);
+  const visitor =
+    saveData.travelerName || (activeHostRole === "kitty" ? "Kitty" : activeHostRole === "miemie" ? "咩咩" : "清哥");
+  const url = generateCoopSnapshotDataUrl(renderer.domElement, activePlanet, visitor, activeHostRole);
+
+  // 抓拍完毕毫秒级无损还原正常游戏相机，不干扰后续操作
+  camera.position.copy(savedPos);
+  camera.up.copy(savedUp);
+  camera.quaternion.copy(savedQuat);
+
+  const previewImg = document.getElementById("ticket-preview-img");
+  const dlBtn = document.getElementById("btn-download-ticket");
+  const titleEl = document.getElementById("ticket-modal-title");
+  if (previewImg) previewImg.src = url;
+  if (dlBtn) {
+    dlBtn.href = url;
+    dlBtn.download = `星际串门同框-${activePlanet.name}.png`;
+  }
+  if (titleEl) titleEl.textContent = `🐾 星际串门双人同框 · ${activePlanet.name}`;
+  ticketModalOpen = true;
+  document.getElementById("modal-ticket")?.classList.remove("hidden");
+  sound.init();
+  sound.playSelectPlanet();
+  trackEvent("拍摄星际串门双人拍立得", { planet: activePlanet.name });
+}
+
+document.getElementById("btn-coop-photo")?.addEventListener("click", captureCoopPolaroid);
+document.getElementById("btn-hub-duo-interact")?.addEventListener("click", triggerDuoInteractionScene);
+document.getElementById("companion-follow-pill")?.addEventListener("click", () => toggleCompanionFollow(false));
+document.getElementById("btn-close-host-pop")?.addEventListener("click", closeHostPopover);
+document.getElementById("btn-pop-follow")?.addEventListener("click", () => toggleCompanionFollow());
+document.getElementById("btn-pop-hotpot")?.addEventListener("click", triggerHotpotFeast);
+document.getElementById("btn-pop-interact")?.addEventListener("click", triggerDuoInteractionScene);
+document.getElementById("btn-pop-photo")?.addEventListener("click", captureCoopPolaroid);
+document.getElementById("btn-pop-finisher")?.addEventListener("click", () => triggerDuoFinisherCeremony(false));
+document.getElementById("btn-plant-flag")?.addEventListener("click", () => openFlagModal(null));
+document.getElementById("btn-close-flag-modal")?.addEventListener("click", closeFlagModal);
+
+let viewingFlagItem = null;
+function buildFlagShareLink(flagObj) {
+  const token = encodeFlagToken(flagObj);
+  const pObj = getAllKnownPlanets().find((x) => x.id === flagObj.planetId);
+  const targetHost = pObj?.owner || "mine";
+  const base = window.location.origin + window.location.pathname;
+  return `${base}?host=${targetHost}&planet=${encodeURIComponent(flagObj.planetId)}&flag=${token}`;
+}
+
+function openFlagModal(existingFlag = null) {
+  if (mode !== "planet" || !activePlanet) return;
+  closeHostPopover();
+  viewingFlagItem = existingFlag;
+  flagModalOpen = true;
+  const viewBox = document.getElementById("flag-view-box");
+  const formEl = document.getElementById("flag-plant-form");
+  const copyBtn = document.getElementById("btn-copy-existing-flag");
+  const titleEl = document.getElementById("flag-modal-title");
+  if (existingFlag) {
+    if (titleEl) titleEl.textContent = `🚩 「${existingFlag.author}」插下的串门纪念旗`;
+    document.getElementById("flag-view-meta").textContent = `📍 ${activePlanet.name} · ${existingFlag.date || "2026"}`;
+    document.getElementById("flag-view-msg").textContent = `“${existingFlag.msg}”`;
+    viewBox?.classList.remove("hidden");
+    formEl?.classList.add("hidden");
+    copyBtn?.classList.remove("hidden");
+  } else {
+    if (titleEl) titleEl.textContent = `🚩 在「${activePlanet.name}」插面串门旗`;
+    const authorIn = document.getElementById("flag-author-input");
+    if (authorIn && !authorIn.value) authorIn.value = getTravelerName();
+    viewBox?.classList.add("hidden");
+    formEl?.classList.remove("hidden");
+    copyBtn?.classList.add("hidden");
+  }
+  document.getElementById("modal-plant-flag")?.classList.remove("hidden");
+  sound.init();
+  sound.playHover();
+}
+
+function closeFlagModal() {
+  flagModalOpen = false;
+  document.getElementById("modal-plant-flag")?.classList.add("hidden");
+}
+
+document.getElementById("btn-copy-existing-flag")?.addEventListener("click", async () => {
+  if (!viewingFlagItem) return;
+  const url = buildFlagShareLink(viewingFlagItem);
+  try { await navigator.clipboard.writeText(url); } catch {}
+  showWonderToast("🔗 已复制这面串门旗的微信坐标直达链接！", 3600);
+});
+
+document.getElementById("flag-plant-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!activePlanet || !currentWorld) return;
+  const author = document.getElementById("flag-author-input").value.trim() || getTravelerName();
+  const msg = document.getElementById("flag-msg-input").value.trim() || "到此吹风打卡，山海常相逢！";
+  const saved = savePlantedFlag({
+    planetId: activePlanet.id,
+    author,
+    role: activeHostRole,
+    msg,
+    up: [playerUp.x, playerUp.y, playerUp.z],
+    date: new Date().toISOString().slice(0, 10),
+  });
+  const meshObj = buildFlagMesh(activePlanet.id, saved);
+  currentWorld.group.add(meshObj.group);
+  activePlantedFlagObjs.push(meshObj);
+  document.getElementById("flag-msg-input").value = "";
+  closeFlagModal();
+  hiker.triggerEmote("cheer", 2.0);
+  sound.init();
+  sound.playDiscover?.();
+  const url = buildFlagShareLink(saved);
+  try { await navigator.clipboard.writeText(url); } catch {}
+  showWonderToast(`🚩 已在脚下插好 3D 串门营旗！坐标直达链接已复制，快发给好友微信吧～`, 4800);
+  trackEvent("插下3D串门纪念营旗", { planet: activePlanet.name, author });
+});
+document.querySelectorAll(".bottle-preset-chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    const input = document.getElementById("neighbor-note-text");
+    if (input) {
+      input.value = chip.dataset.preset || "";
+      input.focus();
+      sound.init();
+      sound.playHover();
+    }
+  });
+});
+document.getElementById("btn-pop-bottle")?.addEventListener("click", openNeighborHubModal);
+
+document.getElementById("creator-form")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const cfg = {
+    ownerName: document.getElementById("cr-owner").value.trim() || "远方山友",
+    planetName: document.getElementById("cr-name").value.trim() || "云海秘境星",
+    elevation: document.getElementById("cr-elev").value.trim() || "3000m",
+    template: document.getElementById("cr-template").value,
+    creature: document.getElementById("cr-creature").value,
+    quote: document.getElementById("cr-quote").value.trim(),
+    memory: document.getElementById("cr-memory").value.trim() || "山风吹过的时候，我把这段路留在了星空里。",
+  };
+  const token = encodeGuestPlanetPayload(cfg);
+  const rawMini = {
+    o: cfg.ownerName, n: cfg.planetName, e: cfg.elevation,
+    t: cfg.template, c: cfg.creature, q: cfg.quote, m: cfg.memory,
+  };
+  socialState.customPlanets.push(rawMini);
+  saveSocialState(socialState);
+  const hydrated = hydrateGuestPlanet(rawMini);
+  guestPlanets.push(hydrated);
+  latestCreatedGuestPlanet = hydrated;
+  const baseUrl = window.location.origin + window.location.pathname;
+  latestCreatedShareUrl = `${baseUrl}?guest=${token}`;
+
+  document.getElementById("cr-share-url").value = latestCreatedShareUrl;
+  document.getElementById("creator-share-result")?.classList.remove("hidden");
+  switchUniverse("mine", hydrated.id);
+  sound.init();
+  sound.playSelectPlanet();
+  trackEvent("创建客座邻居星球", { name: cfg.planetName });
+});
+
+document.getElementById("btn-copy-share-url")?.addEventListener("click", () => {
+  const url = document.getElementById("cr-share-url")?.value || "";
+  navigator.clipboard?.writeText(url).catch(() => {});
+  showWonderToast("📋 专属星门串门链接已复制！快发给好友来你的星球玩吧～");
+});
+
+document.getElementById("btn-land-new-planet")?.addEventListener("click", () => {
+  if (!latestCreatedGuestPlanet) return;
+  closeCreatorModal();
+  warpToPlanetGlobal(latestCreatedGuestPlanet.id);
+});
+
+document.getElementById("btn-poster-new-planet")?.addEventListener("click", () => {
+  if (!latestCreatedGuestPlanet) return;
+  closeCreatorModal();
+  const url = generateNeighborInviteCardDataUrl(latestCreatedGuestPlanet, latestCreatedShareUrl);
+  const previewImg = document.getElementById("ticket-preview-img");
+  const dlBtn = document.getElementById("btn-download-ticket");
+  const titleEl = document.getElementById("ticket-modal-title");
+  if (previewImg) previewImg.src = url;
+  if (dlBtn) {
+    dlBtn.href = url;
+    dlBtn.download = `星际串门邀请函-${latestCreatedGuestPlanet.name}.png`;
+  }
+  if (titleEl) titleEl.textContent = `💌 星际串门邀请海报 · ${latestCreatedGuestPlanet.name}`;
+  ticketModalOpen = true;
+  document.getElementById("modal-ticket")?.classList.remove("hidden");
+});
+
+// 支持专属双星主登录 (?host=kitty / ?host=mine)、跨手机收信 (?letter=<token>)、客座星球 (?guest=<token>) 与直达星球
+function bootFromUrlParams() {
+  const sp = new URLSearchParams(window.location.search);
+  const hostParam = (sp.get("host") || sp.get("role") || "").toLowerCase();
+  if (hostParam === "kitty" || hostParam === "miemie" || hostParam === "mine") {
+    applyHostRoleUI(hostParam, false);
+    currentUniverse = activeHostRole;
+    PLANETS = getPlanetsForUniverse(currentUniverse);
+  } else {
+    applyHostRoleUI(activeHostRole, false);
+  }
+
+  // 解析好友从微信发来的星际带话信笺 ?letter=<token>
+  const letterToken = sp.get("letter");
+  if (letterToken) {
+    const incoming = decodeReplyLetter(letterToken);
+    if (incoming && incoming.m) {
+      const bucket = incoming.to === "kitty" || incoming.to === "miemie" ? incoming.to : "mine";
+      if (!Array.isArray(socialState.notes[bucket])) socialState.notes[bucket] = [];
+      const exists = socialState.notes[bucket].some((n) => n.from === incoming.f && n.text === incoming.m);
+      if (!exists) {
+        socialState.notes[bucket].unshift({
+          from: incoming.f,
+          badge: "🍾 星海漂流瓶",
+          text: incoming.m,
+          time: "顺银河漂达",
+        });
+        socialState.roses[bucket] = (socialState.roses[bucket] ?? 12) + (Number(incoming.r) || 1);
+        saveSocialState(socialState);
+      }
+      setTimeout(() => {
+        showWonderToast(`🍾 打捞起一只来自「${incoming.f}」的星际漂流瓶：“${incoming.m}”`, 6000);
+      }, 950);
+    }
+  }
+  const flagToken = sp.get("flag");
+  if (flagToken) {
+    const incomingFlag = decodeFlagToken(flagToken);
+    if (incomingFlag) {
+      const savedFlag = savePlantedFlag(incomingFlag);
+      const pid = savedFlag.planetId;
+      if (pid.startsWith("kitty-")) switchUniverse("kitty", pid);
+      else if (pid.startsWith("miemie-")) switchUniverse("miemie", pid);
+      else switchUniverse("mine", pid);
+      const fIdx = PLANETS.findIndex((x) => x.id === pid);
+      if (fIdx >= 0) {
+        enterPlanet(fIdx);
+        const targetDir = new THREE.Vector3(...savedFlag.up).normalize();
+        showGuideArcToDir(targetDir, "#fbbf24");
+        setTimeout(() => {
+          showWonderToast(`🚩 收到来自「${savedFlag.author}」的山脊串门旗：“${savedFlag.msg}” · 顺着金色星尘去看看吧！`, 6200);
+        }, 850);
+        return;
+      }
+    }
+  }
+
+  const guestToken = sp.get("guest") || sp.get("visit");
+  if (guestToken) {
+    const sharedPlanet = decodeGuestPlanetPayload(guestToken);
+    if (sharedPlanet) {
+      if (!guestPlanets.some((x) => x.id === sharedPlanet.id)) {
+        guestPlanets.unshift(sharedPlanet);
+      }
+      switchUniverse("mine", sharedPlanet.id);
+      const gIdx = PLANETS.findIndex((x) => x.id === sharedPlanet.id);
+      if (gIdx >= 0) {
+        enterPlanet(gIdx);
+        return;
+      }
+    }
+  }
+
+  const uniParam = (sp.get("universe") || sp.get("neighbor") || "").toLowerCase();
+  const qPlanet = (sp.get("planet") || "").toLowerCase();
+  const hashKey = window.location.hash.replace(/^#\/?/, "").trim().toLowerCase();
+  const targetKey = qPlanet || hashKey;
+
+  if (uniParam === "kitty" || targetKey === "kitty") {
+    switchUniverse("kitty");
+    openStarMap();
+    return;
+  }
+  if (uniParam === "miemie" || targetKey === "miemie") {
+    switchUniverse("miemie");
+    openStarMap();
+    return;
+  }
+  if (uniParam === "mine" || targetKey === "mine") {
+    switchUniverse("mine");
+    openStarMap();
+    return;
+  }
+
+  if (targetKey) {
+    if (targetKey.startsWith("kitty-")) {
+      switchUniverse("kitty", targetKey);
+    } else if (targetKey.startsWith("miemie-")) {
+      switchUniverse("miemie", targetKey);
+    } else if ([...MY_PLANETS, ...guestPlanets].some((p) => p.id === targetKey)) {
+      switchUniverse("mine", targetKey);
+    } else {
+      initScrollMapUI();
+    }
+    const pIdx = PLANETS.findIndex((p) => p.id === targetKey);
+    if (pIdx >= 0) {
+      enterPlanet(pIdx);
+      return;
+    }
+  } else {
+    initScrollMapUI();
+  }
   setupTitleScene();
 }
+
+window.addEventListener("hashchange", () => {
+  const hk = window.location.hash.replace(/^#\/?/, "").trim().toLowerCase();
+  if (hk && getAllKnownPlanets().some((p) => p.id === hk)) {
+    warpToPlanetGlobal(hk);
+  }
+});
+
+bootFromUrlParams();
 animate();
 
 // 首帧 WebGL 星空就绪后柔和揭开绘本帷幕

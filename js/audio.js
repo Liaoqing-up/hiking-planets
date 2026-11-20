@@ -103,6 +103,133 @@ const THEMES = {
     melody: [233.08, 293.66, 349.23, 466.16, 523.25, 466.16, 392.0, 349.23, 293.66, 349.23, 466.16, 392.0],
     bass: [116.54, 174.61, 146.83, 155.56],
   },
+  "kitty-xiaowutai": {
+    // 小五台·那座山：Cadd9 明朗温暖原木吉他分解琶音与太行草甸夏风
+    tempoMs: 520,
+    waveMain: "triangle",
+    waveSub: "sine",
+    harmonicRatio: 2,
+    harmonicGain: 0.11,
+    attack: 0.018,
+    decay: 2.15,
+    windFreq: 310,
+    windVol: 0.068,
+    melody: [261.63, 329.63, 392.0, 587.33, 523.25, 392.0, 329.63, 440.0, 493.88, 523.25, 659.25, 587.33],
+    bass: [130.81, 164.81, 174.61, 196.0],
+  },
+  "kitty-sunset": {
+    // 银河与日落八分钟：Eb大调空灵水晶八音盒慢拍（落日紫金余晖与旋转风车）
+    tempoMs: 740,
+    waveMain: "sine",
+    waveSub: "triangle",
+    harmonicRatio: 2,
+    harmonicGain: 0.21,
+    attack: 0.014,
+    decay: 3.1,
+    windFreq: 225,
+    windVol: 0.05,
+    melody: [311.13, 392.0, 466.16, 622.25, 587.33, 466.16, 392.0, 523.25, 466.16, 392.0, 349.23, 311.13],
+    bass: [155.56, 116.54, 130.81, 103.83],
+  },
+  "kitty-changbai": {
+    // 长白山天池：A大调澄澈冰晶风铃与林海鹿鸣泛音
+    tempoMs: 650,
+    waveMain: "sine",
+    waveSub: "sine",
+    harmonicRatio: 3,
+    harmonicGain: 0.13,
+    attack: 0.022,
+    decay: 2.85,
+    windFreq: 360,
+    windVol: 0.075,
+    melody: [440.0, 554.37, 659.25, 880.0, 739.99, 659.25, 554.37, 493.88, 440.0, 554.37, 659.25, 493.88],
+    bass: [110.0, 146.83, 164.81, 138.59],
+  },
+  "kitty-daqing": {
+    // 大青山云端营地：Ab大调静谧云海竖琴泛音
+    tempoMs: 700,
+    waveMain: "triangle",
+    waveSub: "sine",
+    harmonicRatio: 1.5,
+    harmonicGain: 0.1,
+    attack: 0.045,
+    decay: 3.2,
+    windFreq: 260,
+    windVol: 0.06,
+    melody: [207.65, 261.63, 311.13, 415.3, 466.16, 415.3, 311.13, 261.63, 277.18, 349.23, 415.3, 311.13],
+    bass: [103.83, 130.81, 138.59, 155.56],
+  },
+  "miemie-shexiang": {
+    // 麝香洞地心宇宙：Dm9 幽邃地心溶洞水滴星琴与空谷泛音
+    tempoMs: 680,
+    waveMain: "sine",
+    waveSub: "triangle",
+    harmonicRatio: 3,
+    harmonicGain: 0.16,
+    attack: 0.014,
+    decay: 3.1,
+    windFreq: 190,
+    windVol: 0.055,
+    melody: [293.66, 349.23, 440.0, 523.25, 659.25, 587.33, 523.25, 440.0, 392.0, 440.0, 659.25, 587.33],
+    bass: [146.83, 116.54, 130.81, 110.0],
+  },
+  "miemie-tonggudang": {
+    // 铜鼓荡与地心奇境：G大调高山黑石草甸牧铃与暗河泛音
+    tempoMs: 560,
+    waveMain: "triangle",
+    waveSub: "sine",
+    harmonicRatio: 2,
+    harmonicGain: 0.14,
+    attack: 0.02,
+    decay: 2.35,
+    windFreq: 295,
+    windVol: 0.065,
+    melody: [392.0, 493.88, 587.33, 659.25, 587.33, 493.88, 440.0, 392.0, 587.33, 783.99, 659.25, 587.33],
+    bass: [196.0, 146.83, 164.81, 130.81],
+  },
+  "miemie-longji": {
+    // 龙脊天路·人间塞尔达：Fmaj9 旷野留白竖琴与山脊清风
+    tempoMs: 670,
+    waveMain: "sine",
+    waveSub: "triangle",
+    harmonicRatio: 2,
+    harmonicGain: 0.19,
+    attack: 0.016,
+    decay: 2.95,
+    windFreq: 340,
+    windVol: 0.072,
+    melody: [349.23, 440.0, 523.25, 659.25, 783.99, 659.25, 523.25, 587.33, 523.25, 440.0, 392.0, 349.23],
+    bass: [174.61, 130.81, 146.83, 196.0],
+  },
+  "miemie-buyi": {
+    // 布依古寨与猫跳峡：D大调五声轻快木吉他与峡谷潺潺溪流
+    tempoMs: 500,
+    waveMain: "triangle",
+    waveSub: "sine",
+    harmonicRatio: 2,
+    harmonicGain: 0.12,
+    attack: 0.015,
+    decay: 2.05,
+    windFreq: 410,
+    windVol: 0.062,
+    seaWave: true,
+    melody: [293.66, 369.99, 440.0, 587.33, 493.88, 440.0, 369.99, 329.63, 369.99, 440.0, 493.88, 587.33],
+    bass: [146.83, 185.0, 196.0, 220.0],
+  },
+  "miemie-yading": {
+    // 亚丁大环反穿·重装：Em9 苍茫雪岭低音与无畏冰晶星弦
+    tempoMs: 690,
+    waveMain: "sine",
+    waveSub: "sine",
+    harmonicRatio: 1.5,
+    harmonicGain: 0.15,
+    attack: 0.035,
+    decay: 3.15,
+    windFreq: 380,
+    windVol: 0.082,
+    melody: [329.63, 392.0, 493.88, 587.33, 659.25, 587.33, 493.88, 440.0, 392.0, 493.88, 587.33, 329.63],
+    bass: [164.81, 130.81, 146.83, 123.47],
+  },
 };
 
 class SoundEngine {
@@ -222,7 +349,13 @@ class SoundEngine {
   }
 
   setPlanetBGM(planetId = "space") {
-    const nextKey = THEMES[planetId] ? planetId : "space";
+    const BGM_ALIAS = {
+      "kitty-zhagana": "zhagana",
+      "kitty-wusun": "yili",
+      "kitty-yading": "yading",
+    };
+    const resolved = BGM_ALIAS[planetId] || planetId;
+    const nextKey = THEMES[resolved] ? resolved : "space";
     if (this.currentThemeKey !== nextKey) {
       this.currentThemeKey = nextKey;
       this.stepIndex = 0;
@@ -297,7 +430,43 @@ class SoundEngine {
           this.playPastureBell();
         }
       }, 3600);
+    } else if (zone === "cave_echo") {
+      // 麝香洞地心宇宙 / 牛倒岩地心瀑布：深邃溶洞低频共鸣 + 钟乳石空灵水滴回声
+      this.windFilter.frequency.setTargetAtTime(165, now, 0.7);
+      this.windFilter.Q.setTargetAtTime(3.4, now, 0.7);
+      this.windGain.gain.setTargetAtTime(0.085, now, 0.7);
+      this.playCaveDripEcho();
+      this.zoneTimer = setInterval(() => {
+        if (this.enabled && this.activeZone === "cave_echo") {
+          this.playCaveDripEcho();
+        }
+      }, 2850);
     }
+  }
+
+  playCaveDripEcho() {
+    if (!this.initialized || !this.enabled || !this.ctx) return;
+    const basePool = [987.77, 1174.66, 1318.51, 1567.98];
+    const f0 = basePool[Math.floor(Math.random() * basePool.length)];
+    const now = this.ctx.currentTime;
+    // 主水滴「叮—」快速上扬清脆包络 + 三重溶洞远方回声衰减
+    [0, 0.28, 0.56].forEach((d, idx) => {
+      const t = now + d;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(f0 * (idx === 0 ? 0.74 : 1.0), t);
+      osc.frequency.exponentialRampToValueAtTime(f0 * (idx === 0 ? 1.32 : 1.02), t + 0.065);
+      const vol = 0.036 * Math.pow(0.46, idx);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+      osc.connect(g);
+      g.connect(this.masterGain);
+      if (this.reverbInput) g.connect(this.reverbInput);
+      osc.start(t);
+      osc.stop(t + 0.46);
+    });
   }
 
   playBirthdayMusicBox() {
@@ -573,6 +742,16 @@ class SoundEngine {
       this.windGain.gain.setTargetAtTime(targetWind, now, 0.3);
     }
     this._musicScale = active ? music : 1.0;
+  }
+
+  playHotpotClink() {
+    if (!this.initialized || !this.enabled || !this.ctx) return;
+    // 清脆高山露营钛金属马克杯碰杯「叮！」泛音 + 红汤咕嘟气泡轻响
+    this.playTone(1760, { duration: 0.75, volume: 0.045, delay: 0.02, harmonicRatio: 2.76, harmonicGain: 0.25, attack: 0.005 });
+    this.playTone(2349.3, { duration: 0.55, volume: 0.032, delay: 0.05, attack: 0.005 });
+    [0.24, 0.42, 0.62].forEach((d, i) => {
+      this.playTone(260 + i * 55, { duration: 0.14, volume: 0.03, delay: d, waveMain: "sine", attack: 0.01 });
+    });
   }
 }
 
