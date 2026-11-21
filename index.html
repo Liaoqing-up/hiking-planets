@@ -10,22 +10,22 @@
   <meta property="og:type" content="website" />
   <meta property="og:title" content="行者的星球 · 山海皆星辰" />
   <meta property="og:description" content="把走过的沙漠、雪山、垭口、海岸与旷野搓成了星球，欢迎登陆我的宇宙吹风散步🪐" />
-  <meta property="og:url" content="https://hikerplanets.netlify.app/" />
-  <meta property="og:image" content="https://hikerplanets.netlify.app/assets/og-cover.jpg" />
+  <meta property="og:url" content="https://hikerplanets.pages.dev/" />
+  <meta property="og:image" content="https://hikerplanets.pages.dev/assets/og-cover.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="行者的星球 · 山海皆星辰" />
   <meta name="twitter:description" content="把走过的山海搓成了星球，欢迎登陆我的宇宙吹风散步🪐" />
-  <meta name="twitter:image" content="https://hikerplanets.netlify.app/assets/og-cover.jpg" />
+  <meta name="twitter:image" content="https://hikerplanets.pages.dev/assets/og-cover.jpg" />
   <meta itemprop="name" content="行者的星球 · 山海皆星辰" />
   <meta itemprop="description" content="把走过的沙漠、雪山、垭口、海岸与旷野搓成了星球，欢迎登陆我的宇宙吹风散步🪐" />
-  <meta itemprop="image" content="https://hikerplanets.netlify.app/assets/wechat-share.jpg" />
+  <meta itemprop="image" content="https://hikerplanets.pages.dev/assets/wechat-share.jpg" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=4.0.0-r1" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=4.0.0-r1" />
-  <link rel="manifest" href="./manifest.webmanifest?v=4.0.0-r1" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=4.2.5-release" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=4.2.5-release" />
+  <link rel="manifest" href="./manifest.webmanifest?v=4.2.5-release" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
@@ -63,7 +63,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=4.0.0-r1" />
+  <link rel="stylesheet" href="./styles.css?v=4.2.5-release" />
   <script
     defer
     src="https://cloud.umami.is/script.js"
@@ -156,13 +156,14 @@
       <button type="button" class="host-role-btn active" data-host-role="mine">🏔️ 清哥入口</button>
       <button type="button" class="host-role-btn kitty-role" data-host-role="kitty">🐾 Kitty 入口</button>
       <button type="button" class="host-role-btn miemie-role" data-host-role="miemie">🐑 咩咩入口</button>
+      <button type="button" class="host-role-btn luca-role" data-host-role="luca">🚴 Luca 入口</button>
     </div>
     <div class="title-composition">
       <div class="title-eyebrow">
         <span class="star-glyph" aria-hidden="true">✦</span>
         <span id="title-eyebrow-text">TRAILS AMONG THE STARS · 山海皆星辰</span>
       </div>
-      <h1 id="title-main-heading" class="title-heading">行者的星球</h1>
+      <h1 id="title-main-heading" class="title-heading">清哥的星球</h1>
       <div class="title-ornament" aria-hidden="true">
         <span class="ornament-line"></span>
         <span class="ornament-star">✦</span>
@@ -177,8 +178,9 @@
     <div class="title-bottom-cta">
       <button id="btn-start-journey" type="button">✦ 点击 · 开始旅程</button>
       <div class="neighbor-title-row">
-        <button id="btn-visit-kitty-title" type="button" class="neighbor-title-btn">🐾 串门 · 拜访 Kitty 的星球</button>
-        <button id="btn-visit-miemie-title" type="button" class="neighbor-title-btn miemie-btn">🐑 串门 · 拜访咩咩的星球</button>
+        <button id="btn-visit-kitty-title" type="button" class="neighbor-title-btn">🐾 串门 · 拜访 Kitty</button>
+        <button id="btn-visit-miemie-title" type="button" class="neighbor-title-btn miemie-btn">🐑 串门 · 拜访咩咩</button>
+        <button id="btn-visit-luca-title" type="button" class="neighbor-title-btn luca-btn">🚴 串门 · 拜访 Luca</button>
       </div>
     </div>
   </section>
@@ -211,17 +213,18 @@
           <button type="button" class="uni-tab active" data-uni="mine">🪐 我的星系</button>
           <button type="button" class="uni-tab kitty-tab" data-uni="kitty">🐾 邻居 Kitty 的星系</button>
           <button type="button" class="uni-tab miemie-tab" data-uni="miemie">🐑 邻居咩咩的星系</button>
+          <button type="button" class="uni-tab luca-tab" data-uni="luca">🚴 邻居 Luca 的星系</button>
           <button type="button" id="btn-open-creator" class="uni-tab creator-tab">✨ 造一颗我的星</button>
         </div>
         <p id="scroll-latin" class="scroll-latin">LE VOYAGE DU RANDONNEUR</p>
         <h1 id="scroll-heading" class="scroll-heading">行 者 的 旅 程</h1>
-        <p id="scroll-subtitle" class="scroll-subtitle">系紧鞋带以后，她去拜访远方的山海星球</p>
+        <p id="scroll-subtitle" class="scroll-subtitle">有些山川太过辽阔，记忆便把走过的每一段路，凝成了一颗只属于行者的星球。</p>
         <div class="scroll-progress-bar">
-          <button id="scroll-total-progress" type="button" class="scroll-meta-pill clickable" title="点击翻阅 24 处星系印记明信片总图集">
-            ✦ 星系印记 0 / 24
+          <button id="scroll-total-progress" type="button" class="scroll-meta-pill clickable" title="点击翻阅全星系印记明信片总图集">
+            ✦ 星系印记 —
           </button>
           <button id="btn-map-bestiary" type="button" class="scroll-meta-pill clickable">
-            🐾 生灵图集 0 / 6
+            🐾 生灵图集 —
           </button>
           <button id="btn-grand-finale" type="button" class="scroll-meta-pill finale-pill hidden">
             🏆 拆阅终章手札
@@ -294,34 +297,39 @@
   <section id="screen-hud" class="screen" aria-label="星球徒步探索界面">
     <!-- Top-Left Glass / Parchment-Tinted Minimal HUD Bar -->
     <div class="hud-top-left">
-      <button id="btn-back-map" type="button">
-        ← 星图卷轴 <kbd>Esc</kbd>
-      </button>
-      <div class="hud-planet-info">
-        <span id="hud-planet-name">腾格里沙漠</span>
-        <span class="hud-sep" aria-hidden="true">·</span>
-        <span id="hud-altitude">海拔 1,300 m</span>
-        <span class="hud-sep" aria-hidden="true">·</span>
-        <span id="hud-steps">0 步</span>
-        <span class="hud-sep" aria-hidden="true">·</span>
-        <span id="hud-bgm">♪ 星砂与远行之歌</span>
+      <div class="hud-left-main">
+        <button id="btn-back-map" type="button">
+          ← 星图卷轴 <kbd>Esc</kbd>
+        </button>
+        <div class="hud-planet-info">
+          <span id="hud-planet-name">腾格里沙漠</span>
+          <span class="hud-sep" aria-hidden="true">·</span>
+          <span id="hud-altitude">海拔 1,300 m</span>
+          <span class="hud-sep" aria-hidden="true">·</span>
+          <span id="hud-steps">0 步</span>
+          <span class="hud-sep" aria-hidden="true">·</span>
+          <span id="hud-bgm">♪ 星砂与远行之歌</span>
+        </div>
       </div>
-      <span id="hud-terrain-tag" class="hidden"></span>
-      <!-- 并肩同行常驻状态胶囊（随时一键挥手道别退出同行！） -->
-      <button id="companion-follow-pill" type="button" class="companion-follow-pill hidden" title="点击挥手道别，让星主返回营地漂流瓶旁">
-        <span id="companion-follow-label">🐾 正与 Kitty 并肩同行</span>
-        <span class="companion-exit-tag">挥手道别 ✕</span>
-      </button>
+      <div class="hud-left-sub">
+        <span id="hud-terrain-tag" class="hidden"></span>
+        <!-- 并肩同行常驻状态胶囊（随时一键挥手道别退出同行！） -->
+        <button id="companion-follow-pill" type="button" class="companion-follow-pill hidden" title="点击挥手道别，让星主返回营地漂流瓶旁">
+          <span id="companion-follow-label">🐾 正与 Kitty 并肩同行</span>
+          <span class="companion-exit-tag">挥手道别 ✕</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Top-Right Waypoint Tracker & Tools (neatly offset left of #btn-global-sound) -->
+    <!-- Top-Right Tools (Row 1) & Waypoint Tracker (Row 2) -->
     <div class="hud-top-right">
-      <div id="hud-waypoints" aria-label="星球路标收集进度"></div>
       <div class="hud-tools">
+        <button id="btn-bike-ride" type="button" class="hidden" title="Luca 星球专属：跨上/停放 3D 破风公路车 [V]">🚴 骑车 <kbd>V</kbd></button>
         <button id="btn-auto-stroll" type="button" title="自动沿星球环线漫步巡游 [R]">🥾 漫巡 <kbd>R</kbd></button>
         <button id="btn-toggle-night" type="button" title="点击切换晨曦 / 暮色 / 星夜 [L]">☀ 晨曦 <kbd>L</kbd></button>
         <button id="btn-photo-mode" type="button">📷 留影 <kbd>P</kbd></button>
       </div>
+      <div id="hud-waypoints" aria-label="星球路标收集进度"></div>
     </div>
 
     <!-- 右侧星旅趣味互动悬浮坞：围炉电台 · 星际望远镜 · 登顶票根 -->
@@ -359,9 +367,8 @@
         <button id="btn-pop-follow" type="button" class="host-pop-btn primary">🤝 邀请并肩同行</button>
         <button id="btn-pop-hotpot" type="button" class="host-pop-btn">🍲 支炉煮火锅</button>
         <button id="btn-pop-interact" type="button" class="host-pop-btn">✨ 双人趣味互动</button>
-        <button id="btn-pop-photo" type="button" class="host-pop-btn">📷 平视双人合影</button>
+        <button id="btn-pop-photo" type="button" class="host-pop-btn">📷 平视双人拍立得</button>
         <button id="btn-pop-finisher" type="button" class="host-pop-btn">🏅 并肩完赛证</button>
-        <button id="btn-pop-bottle" type="button" class="host-pop-btn">🍾 星际漂流瓶</button>
       </div>
     </div>
 
@@ -475,11 +482,12 @@
           <div id="journal-elevation"></div>
         </div>
 
-        <!-- 拍立得照片明信片相框 -->
-        <div class="polaroid-frame" id="journal-polaroid" title="点击放大查看照片">
+        <!-- 拍立得照片明信片相框（自动人像/焦点对齐 + 支持拖动微调与点击放大） -->
+        <div class="polaroid-frame" id="journal-polaroid" title="拖动微调画面 · 点击放大查看原图">
           <div class="polaroid-media">
-            <img id="journal-photo" alt="打卡点实拍明信片" class="hidden" />
+            <img id="journal-photo" alt="打卡点实拍明信片" class="hidden" draggable="false" />
             <canvas id="journal-art-canvas" class="hidden"></canvas>
+            <span class="polaroid-pan-hint" aria-hidden="true">✥ 拖动移图 · 点击放大</span>
           </div>
           <div id="journal-caption"></div>
         </div>
@@ -520,11 +528,11 @@
     <img id="lightbox-img" alt="明信片大图" />
   </div>
 
-  <!-- 全星系 24 处明信片印记总图集弹窗 -->
+  <!-- 全星系明信片印记总图集弹窗 -->
   <div id="modal-atlas" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="atlas-title">
     <article class="bestiary-book atlas-book">
       <div class="mani-eyebrow">✦ STARLIGHT POSTCARD ATLAS · 全星系印记图集</div>
-      <h3 id="atlas-title">山海二十四帧印记</h3>
+      <h3 id="atlas-title">山海 · 星辰印记</h3>
       <div class="atlas-header-row">
         <p id="atlas-subtitle" class="mani-sub">已点亮的印记可随时点击重温正反双页故事，未解锁印记可一键飞往寻访</p>
         <button id="btn-open-reel" type="button" class="reel-launch-btn">🎞️ 放映旅途胶片</button>
@@ -581,10 +589,10 @@
 
   <div id="modal-finale" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="finale-title">
     <article class="finale-letter">
-      <div class="finale-eyebrow">✦ ALL 24 STARLIGHT TRAILS COMPLETED ✦</div>
+      <div class="finale-eyebrow">✦ ALL STARLIGHT TRAILS COMPLETED ✦</div>
       <h3 id="finale-title">致走完所有山海的同路人</h3>
       <div class="finale-body">
-        <p>真没想到，你竟然耐心地走完了这六颗星球上的全部二十四个角落。</p>
+        <p>真没想到，你竟然耐心地走完了这片星系里的全部山海角落。</p>
         <p>从腾格里的夜空烟花、亚丁风雪夜死守的帐篷、扎尕那十一个垭口的白雪，到等了四年的大峰 5025 米石碑、咸田湾的海浪日出，还有伊犁升起的那轮黄月亮——这些原本只属于山野失联时刻的记忆，因为你的驻足，在星空里重新亮起了一遍。</p>
         <p>谢谢你来我的宇宙吹风散步。山海未完，愿我们在下一座没有天花板的旷野重逢✨</p>
       </div>
@@ -622,16 +630,17 @@
   <div id="modal-neighbor-hub" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="neighbor-hub-title">
     <article class="mani-card neighbor-hub-card">
       <div class="mani-header">
-        <div class="mani-eyebrow">✦ STARLIGHT DRIFT BOTTLE · 星际漂流瓶与串门手帐</div>
+        <div class="mani-eyebrow">✦ STARLIGHT DRIFT BOTTLE · 星际漂流瓶</div>
         <h3 id="neighbor-hub-title">🍾 星际漂流瓶 · 猫耳星云</h3>
-        <p id="neighbor-hub-sub" class="mani-sub">把心意折进发光玻璃瓶，顺着银河漂向邻居的星球海岸</p>
+        <p id="neighbor-hub-sub" class="mani-sub">把心意折进发光玻璃瓶，顺着银河漂向星球海岸</p>
       </div>
-      <div class="neighbor-quick-actions">
-        <button id="btn-send-rose" type="button" class="neighbor-act-btn rose-btn">🌹 赠予星辰玫瑰 (<span id="rose-count-num">18</span>)</button>
-        <button id="btn-hub-duo-interact" type="button" class="neighbor-act-btn">✨ 双人互动画面</button>
-        <button id="btn-coop-photo" type="button" class="neighbor-act-btn">📷 平视双人拍立得</button>
-        <button id="btn-hub-resonance" type="button" class="neighbor-act-btn hidden">⚡ 双星同频记忆</button>
-        <button id="btn-warp-neighbor-uni" type="button" class="neighbor-act-btn">🚀 切换邻居星系</button>
+      <div class="bottle-stats-bar">
+        <div class="bottle-stat-pill" title="累计踏足这片星云并留下足迹的旅人">
+          👣 共 <strong id="bottle-visitor-num">14</strong> 人来过
+        </div>
+        <button id="btn-send-rose" type="button" class="neighbor-act-btn rose-btn">
+          🌹 赠予星辰玫瑰 (<span id="rose-count-num">18</span>)
+        </button>
       </div>
       <div id="neighbor-notes-list" class="mani-notes-list"></div>
       <div class="bottle-preset-row" aria-label="快捷星海签语">
@@ -774,7 +783,7 @@
     </article>
   </div>
 
-  <script type="module" src="./js/main.js?v=4.0.0-r1"></script>
+  <script type="module" src="./js/main.js?v=4.2.5-release"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       window.addEventListener("load", () => {

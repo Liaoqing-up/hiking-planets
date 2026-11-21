@@ -11,10 +11,10 @@ import * as THREE from "three";
 import {
   latLonToUnitVec,
   getSurfaceRadius,
-  buildHikerCharacter,
   registerGuestTerrain,
-} from "./planetBuilder3D.js?v=4.0.0-r1";
-import { drawSiteQrStamp, drawPostmarkSeal } from "./qrStamp.js?v=4.0.0-r1";
+} from "./sphereMath.js?v=4.2.5-release";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=4.2.5-release";
+import { drawSiteQrStamp, drawPostmarkSeal } from "./qrStamp.js?v=4.2.5-release";
 
 const UP = new THREE.Vector3(0, 1, 0);
 const SOCIAL_STORAGE_KEY = "hiking_planets_neighbor_social_v4";
@@ -24,7 +24,9 @@ export function loadSocialState() {
     const raw = localStorage.getItem(SOCIAL_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
     return {
-      roses: { kitty: 18, miemie: 18, mine: 16, ...(parsed.roses || {}) },
+      roses: { kitty: 18, miemie: 18, luca: 18, mine: 16, ...(parsed.roses || {}) },
+      visitors: { kitty: 14, miemie: 16, luca: 12, mine: 19, ...(parsed.visitors || {}) },
+      visitorNames: parsed.visitorNames && typeof parsed.visitorNames === "object" ? parsed.visitorNames : {},
       notes: {
         kitty: [
           { from: "清哥", badge: "🏔️ 同款山友", text: "太惊喜啦！原来我们都走过亚丁和措美峰扎尕那，来你的星球追日落八分钟啦！", time: "星历 · 初访" },
@@ -33,6 +35,10 @@ export function loadSocialState() {
         miemie: [
           { from: "清哥", badge: "🎒 重装同频", text: "七人六天五晚自主重装反穿亚丁太酷了！铜鼓荡地心瀑布和龙脊人间塞尔达也绝美！", time: "星历 · 初访" },
           { from: "Kitty", badge: "🐾 星际邻居", text: "来咩星串门啦！麝香洞的地心宇宙穹顶和猫跳峡也太神奇了吧🌹", time: "星历 · 串门" },
+        ],
+        luca: [
+          { from: "清哥", badge: "🚴 追风同频", text: "七天 948 公里环海南岛太热血了！而且我们在同一脉新疆天山留下了山野足迹！", time: "星历 · 初访" },
+          { from: "Kitty", badge: "🏔️ 天山邻居", text: "从北纬18°椰林海风一路骑到天山雪岭木屋营地，少年感拉满🌹", time: "星历 · 串门" },
         ],
         mine: [
           { from: "Kitty", badge: "🐾 猫耳邻居", text: "来串门啦！原来我们在亚丁、扎尕那和天山都吹过同一阵山风，送你一朵星辰玫瑰🌹", time: "星历 · 初访" },
@@ -44,8 +50,10 @@ export function loadSocialState() {
     };
   } catch {
     return {
-      roses: { kitty: 18, miemie: 18, mine: 16 },
-      notes: { kitty: [], miemie: [], mine: [] },
+      roses: { kitty: 18, miemie: 18, luca: 18, mine: 16 },
+      visitors: { kitty: 14, miemie: 16, luca: 12, mine: 19 },
+      visitorNames: {},
+      notes: { kitty: [], miemie: [], luca: [], mine: [] },
       customPlanets: [],
     };
   }
@@ -221,7 +229,9 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
     ? "kitty"
     : resonanceInfo?.partnerId?.startsWith("miemie-")
       ? "miemie"
-      : "mine";
+      : resonanceInfo?.partnerId?.startsWith("luca-")
+        ? "luca"
+        : "mine";
   const residentRole = planetOwner !== activeHostRole ? planetOwner : partnerOwner;
 
   // 选定迎宾站位：homeHostUp 记录初始营地驻守位，hostUp 为星主实时球面坐标（支持并肩同行跟随！）
@@ -240,17 +250,47 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
   let hostCharmOrbit = null;
   let greetedOnce = false;
   let isFollowing = false;
+  let isHostCycling = false;
 
-  // 🍾 所有星球营地旁都漂浮着一只发光 3D「星际漂流瓶」（琉璃瓶身 + 软木塞 + 发光羊皮纸卷 + 微缩红玫瑰 + 星尘涟漪）
+  // 🍾 星际漂流瓶放在出生点右侧首屏可视近景位（与左侧驻守星主隔着主角左右对称分开 >=30°，首屏一眼可见且互不干扰）
   bottleGroup = new THREE.Group();
-  const pbUp = latLonToUnitVec(wp0.lat - 7, wp0.lon - 32);
+  const spawnLat = planet.id === "luca-hainan" ? 15 : planet.id === "luca-tianshan" ? -17 : wp0.lat - 12;
+  const spawnLon = planet.id === "luca-hainan" ? -28 : planet.id === "luca-tianshan" ? -110 : wp0.lon - 14;
+  const avoidDirs = [
+    homeHostUp,
+    resUp,
+    ...(planet.waypoints || []).map((w) => latLonToUnitVec(w.lat, w.lon)),
+  ];
+  if (planet.id === "luca-hainan") avoidDirs.push(latLonToUnitVec(20, -34));
+  if (planet.id === "luca-tianshan") avoidDirs.push(latLonToUnitVec(-20, -118));
+  const bottleCandidates = [
+    [spawnLat - 2, spawnLon + 22],
+    [spawnLat + 5, spawnLon + 24],
+    [spawnLat - 8, spawnLon + 20],
+    [spawnLat - 12, spawnLon + 12],
+    [spawnLat - 14, spawnLon - 4],
+    [spawnLat + 10, spawnLon + 26],
+  ].map(([la, lo]) => latLonToUnitVec(la, lo));
+  let pbUp = bottleCandidates[0];
+  let bestScore = -1;
+  for (const cand of bottleCandidates) {
+    const distHost = cand.distanceTo(homeHostUp);
+    if (distHost < 0.48) continue;
+    const minClear = Math.min(...avoidDirs.map((d) => cand.distanceTo(d)));
+    if (minClear > bestScore) {
+      bestScore = minClear;
+      pbUp = cand;
+    }
+  }
   const pbR = getSurfaceRadius(planet.id, pbUp);
   const bottleTint =
     planetOwner === "kitty"
       ? { ring: "#f9a8d4", glass: "#fbcfe8", emi: "#ec4899" }
       : planetOwner === "miemie"
         ? { ring: "#6ee7b7", glass: "#a7f3d0", emi: "#10b981" }
-        : { ring: "#7dd3fc", glass: "#93c5fd", emi: "#3b82f6" };
+        : planetOwner === "luca"
+          ? { ring: "#38bdf8", glass: "#bae6fd", emi: "#0284c7" }
+          : { ring: "#7dd3fc", glass: "#93c5fd", emi: "#3b82f6" };
   const bottleRipple = new THREE.Mesh(
     new THREE.RingGeometry(0.28, 0.42, 28),
     new THREE.MeshBasicMaterial({
@@ -318,7 +358,20 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
   );
   bottleBeaconGroup.add(beaconStar, beaconHalo);
 
-  bottleGroup.add(bottleRipple, bottleFloatPivot, bottleBeaconGroup);
+  const bottlePillar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.19, 1.05, 14, 1, true),
+    new THREE.MeshBasicMaterial({
+      color: bottleTint.ring,
+      transparent: true,
+      opacity: 0.22,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    })
+  );
+  bottlePillar.position.y = 0.54;
+
+  bottleGroup.add(bottleRipple, bottlePillar, bottleFloatPivot, bottleBeaconGroup);
+  bottleGroup.scale.setScalar(1.18);
   bottleGroup.position.copy(pbUp).multiplyScalar(pbR);
   bottleGroup.quaternion.setFromUnitVectors(UP, pbUp);
   group.add(bottleGroup);
@@ -330,9 +383,11 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
         ? "kitty-host"
         : residentRole === "miemie"
           ? "miemie-host"
-          : planetOwner === "mine"
-            ? planet.id
-            : "yading";
+          : residentRole === "luca"
+            ? "luca-host"
+            : planetOwner === "mine"
+              ? planet.id
+              : "yading";
     hostChar.setOutfit(outfitKey);
     const r = getSurfaceRadius(planet.id, hostUp);
     hostChar.root.position.copy(hostUp).multiplyScalar(r);
@@ -348,7 +403,14 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
     hostGlowRing = new THREE.Mesh(
       new THREE.RingGeometry(0.42, 0.54, 28),
       new THREE.MeshBasicMaterial({
-        color: residentRole === "kitty" ? "#f9a8d4" : residentRole === "miemie" ? "#6ee7b7" : "#fde68a",
+        color:
+          residentRole === "kitty"
+            ? "#f9a8d4"
+            : residentRole === "miemie"
+              ? "#6ee7b7"
+              : residentRole === "luca"
+                ? "#38bdf8"
+                : "#fde68a",
         side: THREE.DoubleSide,
         transparent: true,
         opacity: 0.72,
@@ -358,10 +420,32 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
     hostGlowRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), hostUp);
     group.add(hostGlowRing);
 
-    // ✦ 星主专属 3D 环绕守护微缩图腾（咩咩：蓬松绵羊云+地心青晶 | Kitty：粉晶猫爪星 | 清哥：日照金山晶+金星）
+    // ✦ 星主专属 3D 环绕守护微缩图腾（咩咩：绵羊云 | Kitty：粉晶猫爪 | Luca：辐条单车飞轮 | 清哥：日照金山晶）
     hostCharmOrbit = new THREE.Group();
     hostCharmOrbit.position.set(0, 1.38, 0);
-    if (residentRole === "miemie") {
+    if (residentRole === "luca") {
+      const wheelGrp = new THREE.Group();
+      const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.082, 0.016, 8, 20),
+        new THREE.MeshStandardMaterial({ color: "#38bdf8", emissive: "#0284c7", emissiveIntensity: 0.85, roughness: 0.2 })
+      );
+      wheelGrp.add(rim);
+      for (let k = 0; k < 4; k++) {
+        const spoke = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.004, 0.004, 0.16, 6),
+          new THREE.MeshBasicMaterial({ color: "#e0f2fe" })
+        );
+        spoke.rotation.z = (k / 4) * Math.PI;
+        wheelGrp.add(spoke);
+      }
+      wheelGrp.position.set(0.42, 0.02, 0);
+      const windStar = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.052, 0),
+        new THREE.MeshStandardMaterial({ color: "#fb923c", emissive: "#f97316", emissiveIntensity: 0.9 })
+      );
+      windStar.position.set(-0.42, 0.06, 0);
+      hostCharmOrbit.add(wheelGrp, windStar);
+    } else if (residentRole === "miemie") {
       const puffMat = new THREE.MeshStandardMaterial({ color: "#fffbeb", emissive: "#fef3c7", emissiveIntensity: 0.35, roughness: 0.7 });
       const c1 = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), puffMat);
       const c2 = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), puffMat);
@@ -470,7 +554,9 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
       ? ["#34d399", "#22d3ee"]
       : residentRole === "kitty"
         ? ["#f472b6", "#fde047"]
-        : ["#fbbf24", "#38bdf8"];
+        : residentRole === "luca"
+          ? ["#38bdf8", "#fb923c"]
+          : ["#fbbf24", "#38bdf8"];
   const fxSparks = [];
   for (let i = 0; i < 16; i++) {
     const sp = new THREE.Mesh(
@@ -514,6 +600,7 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
     residentRole,
     hasResonance: Boolean(resonanceInfo),
     get isFollowing() { return isFollowing; },
+    get isHostCycling() { return isHostCycling; },
     homeHostUp,
     hostUp,
     pbUp,
@@ -526,6 +613,10 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
       hostChar.setSitting(false);
       if (hostGlowRing) hostGlowRing.visible = !isFollowing;
       if (!isFollowing) {
+        if (isHostCycling) {
+          isHostCycling = false;
+          hostChar.setCycling(false);
+        }
         hostUp.copy(homeHostUp);
         orientChar(hostUp, new THREE.Vector3(0, 1, 0));
         hostChar.triggerWave();
@@ -588,11 +679,28 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
         "kitty-daqing": ["在云端草甸扎营，伸手就能摘到星星⛺", "深呼吸，全是高山草甸清冽的味道～"],
         "kitty-wusun": ["天山的雪峰与河谷太辽阔了！", "一步一景，走慢一点也没关系～"],
         "kitty-yading": ["三神山就在云层后面看着我们呢🏔️", "高海拔慢点走，我陪你一起登顶！"],
+        "miemie-guizhou": [
+          "黑石林配绿草甸，牛羊都不赶时间🐑",
+          "前面就是人间塞尔达·龙脊天路，还有牛倒岩地心瀑布与麝香洞星穹✨",
+          "整座千年布依古寨都是石头写就的时光典籍🏡",
+        ],
+        "miemie-volcano": [
+          "站在四子王旗大红山下，真的像一秒登陆了火星赤壁🌋",
+          "乌兰哈达的黑色火山锥像不像月球暗面？脚下全是轻盈的火山浮石✨",
+          "今晚把帐篷扎在红崖下，抬头就是塞北没有边界的银河⛺",
+        ],
+        "miemie-hulunbuir": [
+          "阿尔山木栈道里全是松针的清香🌲",
+          "快看呼伦贝尔漫山的金色大圆草垛和骏马牛羊🌾",
+          "一路向北走到满洲里边城，天苍苍野茫茫太自由啦！",
+        ],
         "miemie-tonggudang": ["黑石林配绿草甸，牛羊都不赶时间🐑", "前面牛倒岩洞里有超震撼的地心瀑布！", "大圣之眼的岩羊路线超像闯进游戏世界✨"],
         "miemie-longji": ["欢迎来到人间塞尔达·巨龙脊背🐉", "下面河床的关岭冰臼就像大地之眼！"],
         "miemie-shexiang": ["抬头看！我们在麝香洞邂逅了地心宇宙穹顶🔦", "幽蓝钟乳石像不像凝固的星河？"],
         "miemie-buyi": ["整座千年布依古寨都是石头写就的时光典籍🏡", "去猫跳峡看看古时候野猫怎么一跃过河🐱"],
         "miemie-yading": ["我喜欢没有信号的地方，抵达营地就足够啦⛺", "我有足够的力量背起大包，看见更美的风景🎒", "人生可以有很多答案，而我们还在路上✨"],
+        "luca-hainan": ["欢迎来到我的海岛桃花源🌴 七天 948 公里海风超自由！", "前面就是万宁海岸爬升坡顶，吹着太平洋的风太爽啦🚴", "最后一天从文昌一口气干了 186 公里回海口，痛快！"],
+        "luca-tianshan": ["从热带海岛一路骑进天山雪岭溪谷啦🏔️", "前面云杉林草坡上有原木小木屋，今晚把车停那儿看云⛺"],
         default: ["山风吹过的时候，真开心有人并肩同行✨", "慢点走，每一处垭口都值得回头看看～", "去下一个路标盖章吧，我在你身边！"],
       };
       const pool = LINES[planet.id] || LINES.default;
@@ -610,6 +718,11 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
           "每天一个小目标，今晚抵达营地围着篝火就足够幸福啦⛺",
           "抬头看星河，我们走过的地心与雪山都在发光呢✨",
         ],
+        luca: [
+          "把公路车停在营火旁，海风与雪山晚风都吹进茶杯里啦🍵",
+          "踩了整整一天踏板，坐下来围着篝火烤烤火太治愈了🔥",
+          "不管车轮滚出几百公里，最棒的永远是和朋友在星空下歇脚✨",
+        ],
         mine: [
           "山里的夜风再凉，点起这堆篝火就浑身暖洋洋的🔥",
           "喝口热茶歇歇脚，明天继续去翻下一座垭口🍵",
@@ -625,7 +738,7 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
     setHostSitting(on) {
       if (hostChar) hostChar.setSitting(on);
     },
-    update(dt, elapsed, playerUp, isNight = false, isCampfire = false, playerForward = null, playerSpeed = 0) {
+    update(dt, elapsed, playerUp, isNight = false, isCampfire = false, playerForward = null, playerSpeed = 0, isPlayerCycling = false) {
       let nearHost = false;
       let justGreeted = false;
       if (bottleFloatPivot) {
@@ -657,6 +770,12 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
         hostChar.setHeadlamp(isNight && !isCampfire && !duoSitLock);
         let moveSpeedRatio = 0;
 
+        const shouldCycle = Boolean(isFollowing && isPlayerCycling && !isCampfire && !duoSitLock);
+        if (shouldCycle !== isHostCycling) {
+          isHostCycling = shouldCycle;
+          hostChar.setCycling(shouldCycle);
+        }
+
         if (isFollowing && playerForward) {
           if (playerSpeed > 0.08 && duoSitLock) {
             duoSitLock = false;
@@ -679,14 +798,17 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
             }
             orientChar(hostUp, fireUp.sub(hostUp));
           } else {
+            const sideOff = shouldCycle ? 0.148 : 0.115;
+            const backOff = shouldCycle ? -0.095 : -0.075;
             tmpTargetUp
               .copy(playerUp)
-              .addScaledVector(pRight, 0.115)
-              .addScaledVector(playerForward, -0.075)
+              .addScaledVector(pRight, sideOff)
+              .addScaledVector(playerForward, backOff)
               .normalize();
             const gap = hostUp.distanceTo(tmpTargetUp);
             if (gap > 0.004 && !duoSitLock) {
-              const step = Math.min(1, dt * (gap > 0.25 ? 7.5 : 5.2));
+              const followRate = shouldCycle ? (gap > 0.25 ? 10.5 : 7.8) : gap > 0.25 ? 7.5 : 5.2;
+              const step = Math.min(1, dt * followRate);
               const prevUp = hostUp.clone();
               hostUp.lerp(tmpTargetUp, step).normalize();
               const moved = prevUp.distanceTo(hostUp) / Math.max(dt, 0.001);
@@ -763,7 +885,7 @@ export function generateCoopSnapshotDataUrl(glCanvas, planet, visitorName = "星
   ctx.drawImage(glCanvas, sx, sy, sw, sh, frameX, frameY, frameW, frameH);
   ctx.restore();
 
-  const ROLE_NAMES = { kitty: "Kitty", miemie: "咩咩", mine: "清哥" };
+  const ROLE_NAMES = { kitty: "Kitty", miemie: "咩咩", luca: "Luca", mine: "清哥" };
   const pOwner = planet.owner || "mine";
   const hostName = ROLE_NAMES[pOwner] || planet.ownerName || "清哥";
   const activeName = ROLE_NAMES[activeHostRole] || "清哥";
@@ -771,7 +893,7 @@ export function generateCoopSnapshotDataUrl(glCanvas, planet, visitorName = "星
   const subLine = isHome
     ? `星球主人「${hostName}」 ✦ 与同频邻居山海重逢`
     : `访客「${visitorName || activeName}」 ✦ 到访邻居「${hostName}」的山海营地`;
-  const snapIcon = pOwner === "kitty" ? "🐾" : pOwner === "miemie" ? "🐑" : "🪐";
+  const snapIcon = pOwner === "kitty" ? "🐾" : pOwner === "miemie" ? "🐑" : pOwner === "luca" ? "🚴" : "🪐";
   ctx.fillStyle = "#2b1d0e";
   ctx.font = '400 42px "ZCOOL XiaoWei", "LXGW WenKai Screen", serif';
   ctx.fillText(`${snapIcon} 星际串门同框 · ${planet.name}`, 64, 1156);
@@ -794,7 +916,7 @@ export function generateCoopSnapshotDataUrl(glCanvas, planet, visitorName = "星
     1142,
     144,
     "parchment",
-    pOwner === "kitty" || pOwner === "miemie" ? pOwner : "mine"
+    pOwner === "kitty" || pOwner === "miemie" || pOwner === "luca" ? pOwner : "mine"
   );
   return c.toDataURL("image/png");
 }

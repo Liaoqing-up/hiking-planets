@@ -1,5 +1,5 @@
-import { renderPlanetIllustration } from "./planetArt2D.js";
-import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate } from "./qrStamp.js";
+import { renderPlanetIllustration } from "./planetArt2D.js?v=4.2.5-release";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate } from "./qrStamp.js?v=4.2.5-release";
 
 function loadImg(url) {
   return new Promise((resolve) => {
@@ -50,11 +50,16 @@ export const PLANET_SEAL_TITLE = {
   "kitty-daqing": "云端扎营",
   "kitty-wusun": "天山穿越",
   "kitty-yading": "亚丁奇遇",
+  "miemie-guizhou": "地心魔界",
+  "miemie-volcano": "红崖星火",
+  "miemie-hulunbuir": "北疆牧歌",
   "miemie-tonggudang": "地心探奇",
   "miemie-longji": "龙脊凌云",
   "miemie-shexiang": "星穹寻幽",
   "miemie-buyi": "古寨拾光",
   "miemie-yading": "重装无畏",
+  "luca-hainan": "破风环岛",
+  "luca-tianshan": "车辙天山",
 };
 
 export async function generateSummitTicketDataUrl(
@@ -66,11 +71,11 @@ export async function generateSummitTicketDataUrl(
 ) {
   const pOwner = planet?.owner;
   const effectiveHost =
-    pOwner === "kitty" || pOwner === "miemie"
+    pOwner === "kitty" || pOwner === "miemie" || pOwner === "luca"
       ? pOwner
       : pOwner
         ? "mine"
-        : options.hostRole === "kitty" || options.hostRole === "miemie"
+        : options.hostRole === "kitty" || options.hostRole === "miemie" || options.hostRole === "luca"
           ? options.hostRole
           : "mine";
   const companionName = options.companionName || "";
@@ -322,14 +327,22 @@ export async function generateSummitTicketDataUrl(
   ctx.fillStyle = "#8a6229";
   ctx.font = "600 15.5px Georgia, 'LXGW WenKai Screen', 'PingFang SC', serif";
   const hostSiteTitle =
-    effectiveHost === "kitty" ? "Kitty 的星球" : effectiveHost === "miemie" ? "咩咩的星球" : "行者的星球";
+    effectiveHost === "kitty"
+      ? "Kitty 的星球"
+      : effectiveHost === "miemie"
+        ? "咩咩的星球"
+        : effectiveHost === "luca"
+          ? "Luca 的星球"
+          : "行者的星球";
   const brandLine = companionName
     ? `✦ 并肩同行：与 ${companionName} 共攀  ·  ${hostSiteTitle}`
     : effectiveHost === "kitty"
-      ? "🐾 Kitty 的星球 · 猫耳星云  |  hikerplanets.netlify.app"
+      ? "🐾 Kitty 的星球 · 猫耳星云  |  hikerplanets.pages.dev"
       : effectiveHost === "miemie"
-        ? "🐑 咩咩的星球 · 绵羊星云  |  hikerplanets.netlify.app"
-        : "行者的星球 · hikerplanets.netlify.app";
+        ? "🐑 咩咩的星球 · 绵羊星云  |  hikerplanets.pages.dev"
+        : effectiveHost === "luca"
+          ? "🚴 Luca 的星球 · 追风车辙星云  |  hikerplanets.pages.dev"
+          : "行者的星球 · hikerplanets.pages.dev";
   ctx.fillText(brandLine, tx + 44, notchY + 234);
 
   // 6c. 右侧博物馆级双环雪山星轨圆形邮戳（一星一专属四字印文）+ 正立高反差扫码二维码

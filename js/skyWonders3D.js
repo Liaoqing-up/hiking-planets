@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./planetBuilder3D.js?v=4.0.0-r1";
+import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=4.2.5-release";
 
 function drawPlanetLabelCanvas(canvas, text, progressStr = "", isCleared = false) {
   const ctx = canvas.getContext("2d");
@@ -95,13 +95,13 @@ function buildDetailedMiniPlanet(p) {
   root.add(terrainMesh);
 
   // 2. 晶莹湖海层（自动在凹陷盆地呈现出乌兰湖、牛奶海、麦理浩径海湾、赛里木湖）
-  const waterR = p.id === "maclehose" ? baseR + 0.05 : baseR + 0.015;
+  const waterR = p.id === "maclehose" || p.id === "luca-hainan" ? baseR + 0.05 : baseR + 0.015;
   const waterMesh = new THREE.Mesh(
     new THREE.SphereGeometry(waterR, 24, 18),
     new THREE.MeshBasicMaterial({
       color: p.palette.water || "#3898c8",
       transparent: true,
-      opacity: p.id === "maclehose" ? 0.84 : 0.74,
+      opacity: p.id === "maclehose" || p.id === "luca-hainan" ? 0.84 : 0.74,
     })
   );
   root.add(waterMesh);
@@ -199,6 +199,26 @@ function buildDetailedMiniPlanet(p) {
     );
     yellowMoon.position.set(1.95, 1.35, 0.4);
     crown.add(yellowMoon);
+  } else if (p.id === "luca-hainan") {
+    // 海南环岛骑行星：发光蔚蓝环岛公路光轨 + 海岸小灯塔
+    const loopRing = new THREE.Mesh(
+      new THREE.TorusGeometry(baseR + 0.24, 0.045, 8, 36),
+      new THREE.MeshBasicMaterial({ color: "#38bdf8" })
+    );
+    loopRing.rotation.x = Math.PI * 0.42;
+    const tower = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.14, 0.56, 8),
+      new THREE.MeshBasicMaterial({ color: "#fffdf9" })
+    );
+    tower.position.set(0.14, baseR + 0.34, 0.22);
+    crown.add(loopRing, tower);
+  } else if (p.id === "luca-tianshan") {
+    const snowMat = new THREE.MeshBasicMaterial({ color: "#f8fafc" });
+    const peak = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.88, 6), snowMat);
+    peak.position.set(0, baseR + 0.44, 0);
+    const spruce = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.46, 5), new THREE.MeshBasicMaterial({ color: "#22c55e" }));
+    spruce.position.set(-0.42, baseR + 0.2, 0.24);
+    crown.add(peak, spruce);
   }
   root.add(crown);
 
@@ -234,7 +254,7 @@ export function createSkyWonders(activePlanet, allPlanets) {
   let telescopeActive = false;
   let hoveredPlanetId = null;
 
-  // ==================== 1. 远空邻近 5 颗高精度立体地貌微缩星球 ====================
+  // ==================== 1. 远空邻近高精度立体地貌微缩星球（数量随当前星系动态自适应） ====================
   const others = allPlanets
     .map((p, idx) => ({ p, idx }))
     .filter((item) => item.p.id !== activePlanet.id);
@@ -378,6 +398,7 @@ export function createSkyWonders(activePlanet, allPlanets) {
     "kitty-wusun",
     "kitty-yading",
     "miemie-yading",
+    "luca-tianshan",
   ].includes(activePlanet.id);
   let snowPoints = null;
   const snowCount = 96;
@@ -496,6 +517,7 @@ export function createSkyWonders(activePlanet, allPlanets) {
 
   return {
     group,
+    getOtherPlanetCount: () => distantOrbs.length,
     getClickableMeshes: () => clickableMeshes,
     setHoveredPlanet(planetId) {
       hoveredPlanetId = planetId || null;
@@ -519,14 +541,49 @@ export function createSkyWonders(activePlanet, allPlanets) {
           orb.core.quaternion.slerp(alignQuat, 0.35);
 
           if (isPortrait) {
-            const portraitSlots = [
-              { x: -5.2, y: 29.8 },
-              { x: 6.2, y: 29.8 },
-              { x: 0.6, y: 23.0 },
-              { x: -4.8, y: 16.2 },
-              { x: 6.4, y: 16.2 },
-            ];
-            const slot = portraitSlots[i % portraitSlots.length];
+            let slot;
+            if (count === 1) {
+              slot = { x: 0, y: 23.2 };
+            } else if (count === 2) {
+              slot = i === 0 ? { x: -4.8, y: 23.8 } : { x: 4.8, y: 23.8 };
+            } else if (count === 3) {
+              const s3 = [
+                { x: 0, y: 29.2 },
+                { x: -5.2, y: 19.6 },
+                { x: 5.2, y: 19.6 },
+              ];
+              slot = s3[i];
+            } else if (count === 4) {
+              const s4 = [
+                { x: -5.0, y: 28.6 },
+                { x: 5.4, y: 28.6 },
+                { x: -5.0, y: 18.2 },
+                { x: 5.4, y: 18.2 },
+              ];
+              slot = s4[i];
+            } else if (count === 5) {
+              const s5 = [
+                { x: -5.2, y: 29.8 },
+                { x: 6.2, y: 29.8 },
+                { x: 0.6, y: 23.0 },
+                { x: -4.8, y: 16.2 },
+                { x: 6.4, y: 16.2 },
+              ];
+              slot = s5[i];
+            } else {
+              // 6+ 颗邻星（如 Kitty 7 星宇宙或含自建星）：双列错落星阵，绝不重叠遮挡
+              const rows = Math.ceil(count / 2);
+              const r = Math.floor(i / 2);
+              const col = i % 2;
+              const isLastOdd = i === count - 1 && count % 2 === 1;
+              const ySpan = Math.min(18.0, (rows - 1) * 7.4);
+              const yTop = 23.2 + ySpan * 0.5;
+              const yStep = rows > 1 ? ySpan / (rows - 1) : 0;
+              slot = {
+                x: isLastOdd ? 0 : col === 0 ? -5.4 : 5.8,
+                y: yTop - r * yStep,
+              };
+            }
             orb.observatoryPos
               .copy(hikerPos)
               .addScaledVector(fwdDir, 55)
@@ -534,8 +591,9 @@ export function createSkyWonders(activePlanet, allPlanets) {
               .addScaledVector(upDir, slot.y);
           } else {
             const norm = count > 1 ? (i / (count - 1)) * 2 - 1 : 0;
-            const lateral = norm * 26.0;
-            const archLift = (1 - norm * norm * 0.58) * 8.5;
+            const spread = count === 2 ? 11.5 : count === 3 ? 18.5 : 26.0;
+            const lateral = norm * spread;
+            const archLift = (1 - norm * norm * 0.58) * (count <= 2 ? 5.2 : 8.5);
             orb.observatoryPos
               .copy(hikerPos)
               .addScaledVector(fwdDir, 49)

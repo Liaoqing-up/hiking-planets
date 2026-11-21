@@ -1,7 +1,21 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=4.0.0-r1";
-import { KITTY_PLANETS, NEIGHBOR_PROFILES, RESONANCE_LINKS } from "./kittyUniverse.js?v=4.0.0-r1";
-import { MIEMIE_PLANETS } from "./miemieUniverse.js?v=4.0.0-r1";
+import { PLANETS as MY_PLANETS } from "./data.js?v=4.2.5-release";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=4.2.5-release";
+import {
+  HOST_REGISTRY,
+  RESONANCE_CLUSTERS,
+  TITLE_BIKE_UP,
+  TITLE_BIKE_AXIS,
+  TITLE_BIKE_BASIS,
+  normalizeHostRole,
+  escapeHtml as escapeNoteHtml,
+  queryCoreUniversePlanets,
+  queryUniversePlanets,
+  queryAllPlanets,
+  checkPlanetResonance,
+  isLucaCyclingPlanet,
+  getUniverseProfile,
+} from "./universeRegistry.js?v=4.2.5-release";
 import {
   loadSocialState,
   saveSocialState,
@@ -13,21 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=4.0.0-r1";
-import { sound } from "./audio.js?v=4.0.0-r1";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=4.0.0-r1";
-import {
-  PLANET_RADIUS,
-  latLonToUnitVec,
-  getSurfaceRadius,
-  buildPlanetWorld,
-  buildHikerCharacter,
-} from "./planetBuilder3D.js?v=4.0.0-r1";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=4.0.0-r1";
-import { createSkyWonders } from "./skyWonders3D.js?v=4.0.0-r1";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=4.0.0-r1";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=4.0.0-r1";
-import { buildCampfireRig } from "./campfireRadio.js?v=4.0.0-r1";
+} from "./neighborSocial.js?v=4.2.5-release";
+import { sound } from "./audio.js?v=4.2.5-release";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=4.2.5-release";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=4.2.5-release";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=4.2.5-release";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=4.2.5-release";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=4.2.5-release";
+import { createSkyWonders } from "./skyWonders3D.js?v=4.2.5-release";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=4.2.5-release";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=4.2.5-release";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=4.2.5-release";
+import { buildCampfireRig } from "./campfireRadio.js?v=4.2.5-release";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -36,35 +47,38 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=4.0.0-r1";
-import { createFootprintTrail } from "./footprints3D.js?v=4.0.0-r1";
+} from "./trailSocialExtras.js?v=4.2.5-release";
+import { createFootprintTrail } from "./footprints3D.js?v=4.2.5-release";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=4.0.0-r1";
+} from "./bestiaryAndExtras.js?v=4.2.5-release";
 
 const socialState = loadSocialState();
+// 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
+try {
+  if (!localStorage.getItem("hp_clean_wugong_test_v1") && Array.isArray(socialState.customPlanets)) {
+    const beforeLen = socialState.customPlanets.length;
+    socialState.customPlanets = socialState.customPlanets.filter(
+      (r) => r && !String(r.n || "").includes("武功山")
+    );
+    if (socialState.customPlanets.length !== beforeLen) saveSocialState(socialState);
+    localStorage.setItem("hp_clean_wugong_test_v1", "1");
+  }
+} catch (_) {}
 const guestPlanets = (socialState.customPlanets || []).map((raw) => hydrateGuestPlanet(raw));
 const HOST_ROLE_KEY = "hiking_planets_host_role_v1";
-function getPlanetsForUniverse(uni) {
-  if (uni === "kitty") return [...KITTY_PLANETS];
-  if (uni === "miemie") return [...MIEMIE_PLANETS];
-  return [...MY_PLANETS, ...guestPlanets];
-}
+const getPlanetsForUniverse = (uni) => queryUniversePlanets(uni, guestPlanets);
+const getAllKnownPlanets = () => queryAllPlanets(guestPlanets);
 
 let activeHostRole = "mine";
 try {
-  const savedRole = localStorage.getItem(HOST_ROLE_KEY);
-  if (savedRole === "kitty" || savedRole === "miemie") activeHostRole = savedRole;
+  activeHostRole = normalizeHostRole(localStorage.getItem(HOST_ROLE_KEY));
 } catch (_) {}
 let currentUniverse = activeHostRole;
 let PLANETS = getPlanetsForUniverse(currentUniverse);
-
-function getAllKnownPlanets() {
-  return [...MY_PLANETS, ...KITTY_PLANETS, ...MIEMIE_PLANETS, ...guestPlanets];
-}
 
 const SAVE_KEY = "hiking_planets_save_v1";
 
@@ -181,9 +195,17 @@ let photoLoadSeq = 0;
 const preloadedImages = new Map();
 
 function preloadUrl(url) {
-  if (!url || preloadedImages.has(url)) return preloadedImages.get(url);
+  if (!url) return null;
+  const existing = preloadedImages.get(url);
+  // 若上一次预加载因弱网/切后台失败（complete 但 naturalWidth === 0），驱逐并重新发起
+  if (existing && !(existing.complete && existing.naturalWidth === 0)) {
+    return existing;
+  }
   const img = new Image();
   img.decoding = "async";
+  img.addEventListener("error", () => {
+    if (preloadedImages.get(url) === img) preloadedImages.delete(url);
+  }, { once: true });
   img.src = url;
   preloadedImages.set(url, img);
   return img;
@@ -221,6 +243,7 @@ let activeSkyWonders = null;
 let activeManiCairn = null;
 let activeNeighborRig = null;
 let activeNeighborHostNear = false;
+let activeBottleNear = false;
 let activeResonanceNear = false;
 let neighborModalOpen = false;
 let resonanceModalOpen = false;
@@ -313,25 +336,95 @@ function triggerHaptic(ms = 14) {
 
 let isAutoStroll = false;
 let autoStrollWpIdx = 0;
+let isBikeRiding = false;
+let activeParkedBikeNear = false;
 let reelModalOpen = false;
 let reelFrames = [];
 let reelIndex = 0;
 let reelTimer = null;
 
+// 统一顶层优先弹窗栈（从最顶层到底层依次拦截 Esc / 空白背景点击 / 手机边缘右滑返回）
+const MODAL_STACK = [
+  { id: "modal-ticket", isOpen: () => ticketModalOpen, close: () => closeSummitTicketModal() },
+  {
+    id: "modal-reel",
+    isOpen: () => reelModalOpen,
+    close: () => closeMemoryReel(),
+    onKey: (e) => {
+      if (e.code === "ArrowRight") stepMemoryReel(1);
+      else if (e.code === "ArrowLeft") stepMemoryReel(-1);
+      else if (e.code === "Space") {
+        e.preventDefault();
+        toggleMemoryReelPlay();
+      }
+    },
+  },
+  { id: "modal-plant-flag", isOpen: () => flagModalOpen, close: () => closeFlagModal() },
+  {
+    id: "modal-neighbor-hub",
+    isOpen: () => neighborModalOpen,
+    close: () => closeNeighborHubModal(),
+    toggleKey: "KeyN",
+  },
+  { id: "modal-resonance", isOpen: () => resonanceModalOpen, close: () => closeResonanceModal() },
+  { id: "modal-create-planet", isOpen: () => creatorModalOpen, close: () => closeCreatorModal() },
+  { id: "modal-mani", isOpen: () => maniModalOpen, close: () => closeManiModal() },
+  {
+    id: "modal-atlas",
+    isOpen: () => atlasModalOpen,
+    close: () => closeAtlasModal(),
+    toggleKey: "KeyG",
+  },
+  {
+    id: "modal-bestiary",
+    isOpen: () => bestiaryModalOpen,
+    close: () => closeBestiaryModal(),
+    toggleKey: "KeyB",
+  },
+  { id: "modal-finale", isOpen: () => finaleModalOpen, close: () => closeFinaleModal() },
+  {
+    id: "modal-journal",
+    isOpen: () => journalOpen,
+    close: () => closeJournal(),
+    onKey: (e) => {
+      if (e.code === "Tab") {
+        e.preventDefault();
+        flipJournalPage();
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        if (!stepSiblingPostcard(1)) flipJournalPage();
+      } else if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        if (!stepSiblingPostcard(-1)) flipJournalPage();
+      } else if (e.code === "KeyE" || e.code === "Space" || e.code === "Enter") {
+        e.preventDefault();
+        closeJournal();
+      }
+    },
+  },
+];
+
 function isAnyModalOpen() {
-  return (
-    journalOpen ||
-    maniModalOpen ||
-    ticketModalOpen ||
-    bestiaryModalOpen ||
-    finaleModalOpen ||
-    atlasModalOpen ||
-    reelModalOpen ||
-    neighborModalOpen ||
-    resonanceModalOpen ||
-    creatorModalOpen ||
-    flagModalOpen
-  );
+  return MODAL_STACK.some((m) => m.isOpen());
+}
+
+function closeTopmostLayer() {
+  const lb = document.getElementById("photo-lightbox");
+  if (lb && !lb.classList.contains("hidden")) {
+    lb.classList.add("hidden");
+    return true;
+  }
+  const topModal = MODAL_STACK.find((m) => m.isOpen());
+  if (topModal) {
+    topModal.close();
+    return true;
+  }
+  const hostPop = document.getElementById("host-action-popover");
+  if (hostPop && !hostPop.classList.contains("hidden")) {
+    closeHostPopover();
+    return true;
+  }
+  return false;
 }
 
 let flagModalOpen = false;
@@ -345,13 +438,27 @@ function disposeCurrentWorld() {
   clearGuideArc();
   clickRing.visible = false;
   isAutoStroll = false;
+  duoSitActive = false;
+  if (isPhotoMode) togglePhotoMode(false);
+  if (isTelescopeMode) toggleTelescopeMode(false);
   document.getElementById("btn-auto-stroll")?.classList.remove("active");
   campfireRig.hide();
   hotpotRig.hide();
+  if (isCampfireMode) {
+    isCampfireMode = false;
+    sound.setCampfireMix?.({ active: false, fire: 0, wind: 0, nature: 0, music: 0 });
+  }
+  if (isBikeRiding) {
+    isBikeRiding = false;
+    hiker?.setCycling?.(false);
+    const bikeBtn = document.getElementById("btn-bike-ride");
+    if (bikeBtn) {
+      bikeBtn.classList.remove("active");
+      bikeBtn.innerHTML = '🚴 骑车 <kbd>V</kbd>';
+    }
+  }
   activePlantedFlagObjs = [];
   activePlantedFlagNear = null;
-  isCampfireMode = false;
-  isTelescopeMode = false;
   activeSceneZone = null;
   sound.setSceneZone?.(null);
   activeCreature = null;
@@ -359,6 +466,7 @@ function disposeCurrentWorld() {
   activeManiCairn = null;
   activeNeighborRig = null;
   activeNeighborHostNear = false;
+  activeBottleNear = false;
   activeResonanceNear = false;
   activeFootprints = null;
   document.getElementById("campfire-mixer")?.classList.add("hidden");
@@ -444,7 +552,8 @@ function updateTitleLayout() {
 }
 
 function applyHostRoleUI(role, rebuildScene = false) {
-  activeHostRole = role === "kitty" ? "kitty" : role === "miemie" ? "miemie" : "mine";
+  activeHostRole = normalizeHostRole(role);
+  const hostCfg = HOST_REGISTRY[activeHostRole];
   try {
     localStorage.setItem(HOST_ROLE_KEY, activeHostRole);
   } catch (_) {}
@@ -453,11 +562,9 @@ function applyHostRoleUI(role, rebuildScene = false) {
     b.classList.toggle("active", b.dataset.hostRole === activeHostRole);
   });
 
-  const isKittyHost = activeHostRole === "kitty";
-  const isMiemieHost = activeHostRole === "miemie";
-  const presetNames = new Set(["", "清哥", "Kitty", "咩咩", "山海行者"]);
+  const presetNames = new Set(["", "清哥", "Kitty", "咩咩", "Luca", "山海行者"]);
   if (presetNames.has((saveData.travelerName || "").trim())) {
-    saveData.travelerName = isKittyHost ? "Kitty" : isMiemieHost ? "咩咩" : "清哥";
+    saveData.travelerName = hostCfg.name;
     const tInput = document.getElementById("ticket-traveler-input");
     if (tInput) tInput.value = saveData.travelerName;
     persistSave();
@@ -469,58 +576,41 @@ function applyHostRoleUI(role, rebuildScene = false) {
   const startBtn = document.getElementById("btn-start-journey");
   const neighborBtn = document.getElementById("btn-visit-kitty-title");
   const miemieBtn = document.getElementById("btn-visit-miemie-title");
-  if (eyebrow) {
-    eyebrow.textContent = isKittyHost
-      ? "KITTY AMONG THE STARS · 猫耳星云主场"
-      : isMiemieHost
-        ? "MIEMIE RISING · 绵羊星云主场"
-        : "TRAILS AMONG THE STARS · 山海皆星辰";
-  }
-  if (heading) {
-    heading.textContent = isKittyHost ? "Kitty 的星球" : isMiemieHost ? "咩咩的星球" : "行者的星球";
-  }
-  if (poem) {
-    poem.textContent = isKittyHost
-      ? "心里总有一座小五台，去追日落的最后八分钟，把长白天池、银河与山野小猫都凝成只属于 Kitty 的星球。"
-      : isMiemieHost
-        ? "喜欢没有信号的地方与未知；我有足够的力量背起大大的背包，从地心宇宙走到雪山垭口。"
-        : "有些山川太过辽阔，记忆便把走过的每一段路，凝成了一颗只属于行者的星球。";
-  }
-  if (startBtn) {
-    startBtn.textContent = isKittyHost
-      ? "✦ 开启 Kitty 的 7 颗星球"
-      : isMiemieHost
-        ? "✦ 开启咩咩的 5 颗星球"
-        : "✦ 点击 · 开始旅程";
-  }
+  const lucaBtn = document.getElementById("btn-visit-luca-title");
+  if (eyebrow) eyebrow.textContent = hostCfg.titleEyebrow;
+  if (heading) heading.textContent = hostCfg.titleHeading;
+  if (poem) poem.textContent = hostCfg.titlePoem;
+  if (startBtn) startBtn.textContent = hostCfg.startBtnText;
   if (neighborBtn) {
-    neighborBtn.textContent = isKittyHost ? "🪐 串门 · 清哥的星球" : "🐾 串门 · Kitty 的星球";
+    neighborBtn.textContent = activeHostRole === "kitty" ? "🪐 串门 · 清哥的星球" : "🐾 串门 · 拜访 Kitty";
   }
   if (miemieBtn) {
-    miemieBtn.textContent = isMiemieHost ? "🪐 串门 · 清哥的星球" : "🐑 串门 · 咩咩的星球";
+    miemieBtn.textContent = activeHostRole === "miemie" ? "🪐 串门 · 清哥的星球" : "🐑 串门 · 拜访咩咩";
+  }
+  if (lucaBtn) {
+    lucaBtn.textContent = activeHostRole === "luca" ? "🪐 串门 · 清哥的星球" : "🚴 串门 · 拜访 Luca";
   }
 
-  // 星图顶部切换 Tab 顺序与主次文案随当前登录星主动态反转！
+  // 星图顶部切换 Tab 顺序与主次文案随当前登录星主动态反转
   const switcher = document.getElementById("universe-switcher");
-  const tabMine = switcher?.querySelector('.uni-tab[data-uni="mine"]');
-  const tabKitty = switcher?.querySelector('.uni-tab[data-uni="kitty"]');
-  const tabMiemie = switcher?.querySelector('.uni-tab[data-uni="miemie"]');
   const tabCreator = document.getElementById("btn-open-creator");
-  if (tabMine && tabKitty && tabMiemie && switcher) {
-    tabMine.textContent = activeHostRole === "mine" ? "🪐 我的星系" : "🪐 清哥的星系";
-    tabKitty.textContent = isKittyHost ? "🐾 我的星系 (Kitty)" : "🐾 Kitty 的星系";
-    tabMiemie.textContent = isMiemieHost ? "🐑 我的星系 (咩咩)" : "🐑 咩咩的星系";
-    const order =
-      isKittyHost ? [tabKitty, tabMine, tabMiemie] : isMiemieHost ? [tabMiemie, tabMine, tabKitty] : [tabMine, tabKitty, tabMiemie];
-    order.forEach((t) => switcher.appendChild(t));
+  if (switcher) {
+    const tabsByRole = {};
+    for (const r of ["mine", "kitty", "miemie", "luca"]) {
+      const tabEl = switcher.querySelector(`.uni-tab[data-uni="${r}"]`);
+      if (tabEl) {
+        const rCfg = HOST_REGISTRY[r];
+        tabEl.textContent = activeHostRole === r ? rCfg.tabSelfText : rCfg.tabNeighborText;
+        tabsByRole[r] = tabEl;
+      }
+    }
+    hostCfg.tabOrder.forEach((r) => {
+      if (tabsByRole[r]) switcher.appendChild(tabsByRole[r]);
+    });
     if (tabCreator) switcher.appendChild(tabCreator);
   }
 
-  document.title = isKittyHost
-    ? "Kitty 的星球 · 猫耳星云 | TRAILS AMONG THE STARS"
-    : isMiemieHost
-      ? "咩咩的星球 · 咩星崛起 | TRAILS AMONG THE STARS"
-      : "行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS";
+  document.title = hostCfg.docTitle;
 
   if (rebuildScene) {
     switchUniverse(activeHostRole);
@@ -534,54 +624,38 @@ function setupTitleScene() {
   skyPhase = "day";
   isNight = false;
   applyHostRoleUI(activeHostRole, false);
-  const isKittyHost = activeHostRole === "kitty";
-  const isMiemieHost = activeHostRole === "miemie";
-  hiker.setOutfit(isKittyHost ? "kitty-host" : isMiemieHost ? "miemie-host" : "mine-host");
+  const hostCfg = HOST_REGISTRY[activeHostRole];
+  const isLucaHost = hostCfg.isCyclingCover;
+  hiker.setOutfit(hostCfg.outfit);
+  hiker.setCycling(isLucaHost);
+  hiker.root.scale.setScalar(hostCfg.coverScale);
   hiker.setHeadlamp(false);
   sound.setPlanetBGM("space");
 
-  const coverCfg = isKittyHost
-    ? {
-        id: "title",
-        terrainType: "kitty-changbai",
-        name: "猫耳起点星",
-        palette: {
-          halo: "#f9a8d4",
-          low: "#4a7f5e",
-          mid: "#6fa377",
-          high: "#eef5ff",
-          water: "#1a74d4",
-          particle: "#fbcfe8",
-        },
-        waypoints: [],
-      }
-    : {
-        id: "title",
-        name: "起点星",
-        palette: {
-          halo: "#f2c866",
-          low: "#4a8756",
-          mid: "#78b566",
-          high: "#f6f9ff",
-          particle: "#ffe5a3",
-        },
-        waypoints: [],
-      };
-  currentWorld = buildPlanetWorld(coverCfg);
+  currentWorld = buildPlanetWorld(hostCfg.coverWorld);
   currentWorld.group.userData.baseY = -1.2;
   currentWorld.group.position.set(6.2, -1.2, 0);
   currentWorld.group.visible = true;
   hiker.root.visible = true;
   scene.add(currentWorld.group);
 
-  const standDir = latLonToUnitVec(84, -15);
-  const standFwd = new THREE.Vector3(-0.35, 0, 0.9).normalize();
-  orientHikerOnSphere(currentWorld.group, standDir, standFwd, "title");
+  if (isLucaHost) {
+    if (hiker.root.parent !== scene) scene.add(hiker.root);
+    hiker.root.quaternion.setFromRotationMatrix(TITLE_BIKE_BASIS);
+  } else {
+    const standDir = latLonToUnitVec(84, -15);
+    const standFwd = new THREE.Vector3(-0.35, 0, 0.9).normalize();
+    orientHikerOnSphere(currentWorld.group, standDir, standFwd, "title");
+  }
 
   scene.background.set("#0a1228");
   camera.up.set(0, 1, 0);
   setScreen("title");
   updateTitleLayout();
+  if (isLucaHost) {
+    const r0 = Math.max(getSurfaceRadius("maclehose", TITLE_BIKE_UP), PLANET_RADIUS + 0.235) + 0.055;
+    hiker.root.position.copy(currentWorld.group.position).addScaledVector(TITLE_BIKE_UP, r0);
+  }
 }
 
 // ==================== PARCHMENT MAP SCROLL ====================
@@ -591,29 +665,7 @@ const elMapTitle = document.getElementById("map-title");
 const elMapStats = document.getElementById("map-stats");
 const elMapQuote = document.getElementById("map-quote");
 
-const RESONANCE_CLUSTERS = [
-  {
-    ids: ["zhagana", "kitty-zhagana"],
-    title: "甘南双星同频 · 措美峰与扎尕那",
-    members: { mine: "zhagana", kitty: "kitty-zhagana" },
-  },
-  {
-    ids: ["yili", "kitty-wusun"],
-    title: "天山南北同频 · 伊犁与乌孙古道",
-    members: { mine: "yili", kitty: "kitty-wusun" },
-  },
-  {
-    ids: ["yading", "kitty-yading", "miemie-yading"],
-    title: "川西双星同频 · 稻城亚丁三神山",
-    members: { mine: "yading", kitty: "kitty-yading", miemie: "miemie-yading" },
-  },
-];
-
-function hasResonanceWithActiveHost(planet) {
-  if (!planet) return false;
-  if ((planet.owner || "mine") === activeHostRole) return false;
-  return RESONANCE_CLUSTERS.some((c) => c.ids.includes(planet.id) && Boolean(c.members[activeHostRole]));
-}
+const hasResonanceWithActiveHost = (planet) => checkPlanetResonance(planet, activeHostRole);
 
 const planetNodeEls = [];
 
@@ -633,7 +685,7 @@ function initScrollMapUI() {
         ${hasRes ? '<span class="resonance-badge-dot" title="跨宇宙双星同频">⚡同频</span>' : ""}
         <span class="planet-stamp">0/${p.waypoints.length}</span>
       </div>
-      <div class="planet-node-label">${p.name}</div>
+      <div class="planet-node-label">${escapeNoteHtml(p.name)}</div>
     `;
     const canvas = node.querySelector("canvas");
     renderPlanetIllustration(canvas, p.terrainType || p.id);
@@ -653,43 +705,128 @@ function initScrollMapUI() {
   });
   refreshScrollMapBadges();
   selectMapPlanet(0);
+  requestAnimationFrame(updateConstellationTrail);
+}
+
+function updateConstellationTrail() {
+  const stage = document.querySelector(".scroll-constellation-stage");
+  const svg = stage?.querySelector(".constellation-trail-svg");
+  if (!stage || !svg) return;
+  const stageRect = stage.getBoundingClientRect();
+  const W = stage.clientWidth || stageRect.width;
+  const H = stage.clientHeight || stageRect.height;
+  if (W < 20 || H < 20 || planetNodeEls.length < 2) {
+    svg.style.opacity = planetNodeEls.length < 2 ? "0" : "";
+    return;
+  }
+  svg.style.opacity = "1";
+  svg.setAttribute("viewBox", `0 0 ${W.toFixed(1)} ${H.toFixed(1)}`);
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+  // 读取每颗星球 .planet-visual 球心相对于 stage 的真实坐标（抗 CSS scale 缩放）
+  const scaleX = stageRect.width > 0 ? W / stageRect.width : 1;
+  const scaleY = stageRect.height > 0 ? H / stageRect.height : 1;
+  const pts = planetNodeEls
+    .map((node) => {
+      const vis = node.querySelector(".planet-visual") || node;
+      const r = vis.getBoundingClientRect();
+      return {
+        x: (r.left + r.width / 2 - stageRect.left) * scaleX,
+        y: (r.top + r.height / 2 - stageRect.top) * scaleY,
+      };
+    })
+    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+
+  if (pts.length < 2) return;
+
+  // 按视觉行分组，并采用小王子蛇形星轨（偶数行左→右，奇数行右→左）串联全部星球
+  pts.sort((a, b) => a.y - b.y);
+  const rows = [];
+  for (const p of pts) {
+    const lastRow = rows[rows.length - 1];
+    if (!lastRow || Math.abs(p.y - lastRow[0].y) > 32) {
+      rows.push([p]);
+    } else {
+      lastRow.push(p);
+    }
+  }
+  const ordered = [];
+  rows.forEach((row, rIdx) => {
+    row.sort((a, b) => (rIdx % 2 === 0 ? a.x - b.x : b.x - a.x));
+    row.forEach((p) => ordered.push({ ...p, row: rIdx }));
+  });
+
+  const isCompact = W < 480;
+  const waveAmp = isCompact ? 11 : 18;
+  const turnBow = isCompact ? 20 : 42;
+  let d = `M ${ordered[0].x.toFixed(1)} ${ordered[0].y.toFixed(1)}`;
+  const dots = [];
+
+  for (let i = 0; i < ordered.length - 1; i++) {
+    const a = ordered[i];
+    const b = ordered[i + 1];
+    if (a.row === b.row) {
+      const dx = b.x - a.x;
+      const sign = i % 2 === 0 ? -1 : 1;
+      const c1x = a.x + dx * 0.34;
+      const c1y = a.y + sign * waveAmp;
+      const c2x = a.x + dx * 0.66;
+      const c2y = b.y - sign * waveAmp;
+      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
+      dots.push({
+        x: (a.x + b.x) * 0.5,
+        y: (a.y + b.y) * 0.5,
+        r: isCompact ? 1.9 : 2.3,
+      });
+    } else {
+      // 跨行蛇形回环弧：在右侧或左侧柔和向外舒展连接下一行首星
+      const bowDir = a.row % 2 === 0 ? 1 : -1;
+      const edgeX = bowDir > 0 ? Math.min(W - 6, Math.max(a.x, b.x) + turnBow) : Math.max(6, Math.min(a.x, b.x) - turnBow);
+      const dy = b.y - a.y;
+      const c1y = a.y + dy * 0.22;
+      const c2y = a.y + dy * 0.78;
+      d += ` C ${edgeX.toFixed(1)} ${c1y.toFixed(1)}, ${edgeX.toFixed(1)} ${c2y.toFixed(1)}, ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
+      dots.push({
+        x: 0.125 * a.x + 0.75 * edgeX + 0.125 * b.x,
+        y: (a.y + b.y) * 0.5,
+        r: isCompact ? 2.1 : 2.6,
+      });
+    }
+  }
+
+  svg.innerHTML =
+    `<path class="trail-glow" d="${d}" />` +
+    `<path class="trail-dashed" d="${d}" />` +
+    dots
+      .map((c) => `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${c.r}" class="trail-star-dot" />`)
+      .join("");
+}
+
+if (typeof ResizeObserver !== "undefined") {
+  const stageEl = document.querySelector(".scroll-constellation-stage");
+  if (stageEl) new ResizeObserver(() => updateConstellationTrail()).observe(stageEl);
 }
 
 function switchUniverse(uniId, targetPlanetId = null) {
-  currentUniverse = uniId === "kitty" ? "kitty" : uniId === "miemie" ? "miemie" : "mine";
+  currentUniverse = normalizeHostRole(uniId);
+  const uniCfg = HOST_REGISTRY[currentUniverse];
   PLANETS = getPlanetsForUniverse(currentUniverse);
   document.querySelectorAll("#universe-switcher .uni-tab[data-uni]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.uni === currentUniverse);
   });
-  const prof = NEIGHBOR_PROFILES[currentUniverse] || NEIGHBOR_PROFILES.mine;
+  const prof = getUniverseProfile(currentUniverse);
   const headingEl = document.getElementById("scroll-heading");
   const subEl = document.getElementById("scroll-subtitle");
   const latinEl = document.getElementById("scroll-latin");
+  const isSelfUni = currentUniverse === activeHostRole;
   if (headingEl) {
-    headingEl.textContent =
-      currentUniverse === "kitty"
-        ? activeHostRole === "kitty" ? "Kitty 的山海旅程" : "Kitty 的猫耳星云"
-        : currentUniverse === "miemie"
-          ? activeHostRole === "miemie" ? "咩咩的山海旅程" : "咩咩的绵羊星云"
-          : activeHostRole === "mine" ? "行 者 的 旅 程" : "邻居 · 清哥的星系";
+    headingEl.textContent = isSelfUni ? uniCfg.mapHeadingSelf : uniCfg.mapHeadingNeighbor;
   }
   if (latinEl) {
-    latinEl.textContent =
-      currentUniverse === "kitty"
-        ? "KITTY'S STARRY TRAILS · UNIVERSE K"
-        : currentUniverse === "miemie"
-          ? "MIEMIE RISING · UNIVERSE M"
-          : "LE VOYAGE DU RANDONNEUR · UNIVERSE A";
+    latinEl.textContent = uniCfg.mapLatin;
   }
   if (subEl) {
-    subEl.textContent =
-      currentUniverse === activeHostRole
-        ? prof.motto
-        : currentUniverse === "kitty"
-          ? "欢迎串门！这是好朋友 Kitty 走过的七颗山海星球与偶遇的小生灵"
-          : currentUniverse === "miemie"
-            ? "欢迎串门！这是好朋友咩咩从贵州安顺地心秘境走到亚丁重装反穿的五颗星球"
-            : "欢迎串门！这是好朋友清哥走过的六座山海星球";
+    subEl.textContent = isSelfUni ? prof.motto : uniCfg.mapSubtitleNeighbor;
   }
   initScrollMapUI();
   if (targetPlanetId) {
@@ -710,22 +847,32 @@ function refreshScrollMapBadges() {
     if (stamp) stamp.textContent = done ? `✦ ${sealWord}` : `${disc.size}/${p.waypoints.length}`;
   });
 
-  // 更新全星系总印记进度、生灵图集计数与终章手札解锁状态
+  // 更新全星系总印记进度、原生生灵图集计数（排除自建客座星）与终章手札解锁状态
   const totalWp = PLANETS.reduce((s, p) => s + p.waypoints.length, 0);
   const doneWp = PLANETS.reduce((s, p) => s + getDiscoveredSet(p.id).size, 0);
-  const planetIdsSet = new Set(PLANETS.map((p) => p.id));
-  const creatureCount = (saveData.creatures || []).filter((cid) => planetIdsSet.has(cid)).length;
+  const uniCreatures = CREATURE_CATALOG.filter((c) =>
+    currentUniverse === "kitty"
+      ? c.owner === "kitty"
+      : currentUniverse === "miemie"
+        ? c.owner === "miemie"
+        : currentUniverse === "luca"
+          ? c.owner === "luca"
+          : !c.owner
+  );
+  const uniCreatureIdSet = new Set(uniCreatures.map((c) => c.planetId));
+  const creatureTotal = uniCreatures.length;
+  const creatureCount = (saveData.creatures || []).filter((cid) => uniCreatureIdSet.has(cid)).length;
   const totalEl = document.getElementById("scroll-total-progress");
   if (totalEl) {
     totalEl.textContent = `✦ 星系印记 ${doneWp} / ${totalWp}`;
     totalEl.title = `点击翻阅 ${totalWp} 处星系印记明信片总图集`;
   }
   const mapBestiaryBtn = document.getElementById("btn-map-bestiary");
-  if (mapBestiaryBtn) mapBestiaryBtn.textContent = `🐾 生灵图集 ${creatureCount} / ${PLANETS.length}`;
+  if (mapBestiaryBtn) mapBestiaryBtn.textContent = `🐾 生灵图集 ${creatureCount} / ${creatureTotal}`;
   const hudBestiaryBtn = document.getElementById("btn-hud-bestiary");
   if (hudBestiaryBtn) {
     hudBestiaryBtn.textContent =
-      creatureCount >= PLANETS.length ? "🐾 生灵 ✦" : `🐾 生灵 ${creatureCount}/${PLANETS.length}`;
+      creatureCount >= creatureTotal ? "🐾 生灵 ✦" : `🐾 生灵 ${creatureCount}/${creatureTotal}`;
   }
   const finaleBtn = document.getElementById("btn-grand-finale");
   if (finaleBtn) finaleBtn.classList.toggle("hidden", doneWp < totalWp);
@@ -752,11 +899,28 @@ function selectMapPlanet(idx) {
   elMapChapter.textContent = `${p.chapter} · ${p.region}`;
   elMapTitle.textContent = `${p.name} · ${p.code}`;
   elMapStats.innerHTML = `
-    <span class="stat-pill">${distLabel}</span>
-    <span class="stat-pill">最高海拔 ${p.stats.altitude}</span>
-    <span class="stat-pill">行程 ${p.stats.days}</span>
+    <span class="stat-pill">${escapeNoteHtml(distLabel)}</span>
+    <span class="stat-pill">最高海拔 ${escapeNoteHtml(p.stats.altitude)}</span>
+    <span class="stat-pill">行程 ${escapeNoteHtml(p.stats.days)}</span>
     <span class="stat-pill">足迹印记 ${disc.size} / ${p.waypoints.length}</span>
+    ${p.owner === "guest" ? '<button type="button" id="btn-delete-guest-planet" class="stat-pill" style="cursor:pointer;border-color:rgba(248,113,113,0.55);color:#fecaca;background:rgba(127,29,29,0.35);">🗑️ 移除此自建星</button>' : ""}
   `;
+  if (p.owner === "guest") {
+    document.getElementById("btn-delete-guest-planet")?.addEventListener("click", () => {
+      const gIdx = guestPlanets.findIndex((g) => g.id === p.id);
+      if (gIdx >= 0) guestPlanets.splice(gIdx, 1);
+      if (Array.isArray(socialState.customPlanets) && p.guestRaw) {
+        socialState.customPlanets = socialState.customPlanets.filter(
+          (r) => !(r.n === p.guestRaw.n && r.o === p.guestRaw.o)
+        );
+        saveSocialState(socialState);
+      }
+      PLANETS = getPlanetsForUniverse(currentUniverse);
+      initScrollMapUI();
+      selectMapPlanet(0);
+      showWonderToast(`已从本地缓存移除自建星球「${p.name}」`);
+    });
+  }
   elMapQuote.textContent = `“${p.quote}”`;
   const resBtn = document.getElementById("btn-map-resonance");
   if (resBtn) {
@@ -780,6 +944,26 @@ function trackEvent(eventName, eventData) {
 }
 
 function openStarMap() {
+  closeHostPopover?.();
+  hideCompanionBubble?.();
+  if (isPhotoMode) togglePhotoMode(false);
+  if (isTelescopeMode) toggleTelescopeMode(false);
+  if (isCampfireMode) toggleCampfireMode(false);
+  if (isBikeRiding) {
+    isBikeRiding = false;
+    hiker.setCycling(false);
+    currentWorld?.setParkedBikeMounted?.(false);
+    const bikeBtn = document.getElementById("btn-bike-ride");
+    if (bikeBtn) {
+      bikeBtn.classList.remove("active");
+      bikeBtn.innerHTML = '🚴 骑车 <kbd>V</kbd>';
+    }
+  }
+  duoSitActive = false;
+  hiker.setSitting(false);
+  campfireRig.hide();
+  hotpotRig.hide();
+  document.getElementById("companion-follow-pill")?.classList.add("hidden");
   if (currentWorld) currentWorld.group.visible = false;
   hiker.root.visible = false;
   scene.background.set("#0a1228");
@@ -787,6 +971,7 @@ function openStarMap() {
   selectMapPlanet(selectedPlanetIdx);
   sound.setPlanetBGM("space");
   setScreen("map");
+  requestAnimationFrame(() => updateConstellationTrail());
   trackEvent("展开星图");
 }
 
@@ -804,15 +989,17 @@ function enterPlanet(idx) {
   activePlanet = p;
   disposeCurrentWorld();
   const planetOwner = p.owner || "mine";
-  // 三位星主去别人星球串门时均保持各自招牌穿搭；在自己星球则换上对应路线的冲锋衣与帽饰
+  // 四位星主去别人星球串门时均保持各自招牌穿搭；在自己星球则换上对应路线的冲锋衣/骑行服与帽饰
   const hostOutfit =
     activeHostRole === "kitty" && planetOwner !== "kitty"
       ? "kitty-host"
       : activeHostRole === "miemie" && planetOwner !== "miemie"
         ? "miemie-host"
-        : activeHostRole === "mine" && planetOwner !== "mine"
-          ? "mine-host"
-          : p.id;
+        : activeHostRole === "luca" && planetOwner !== "luca"
+          ? "luca-host"
+          : activeHostRole === "mine" && planetOwner !== "mine"
+            ? "mine-host"
+            : p.id;
   hiker.setOutfit(hostOutfit);
   // 「银河与日落八分钟」默认开启紫金暮色；「麝香洞·地心宇宙」默认进入幽蓝地心星夜并点亮探洞头灯！
   if (p.id === "kitty-sunset") {
@@ -876,11 +1063,36 @@ function enterPlanet(idx) {
   refreshTicketButtons();
   refreshScrollMapBadges();
 
-  // 初始落点靠近第一个路标附近，方便快速开启徒步
+  // 初始落点靠近第一个路标或星球公路车停靠点附近；骑行功能为 Luca 星球专属
+  const canRideBike = isLucaCyclingPlanet(p);
+  isBikeRiding = false;
+  activeParkedBikeNear = false;
+  hiker.root.scale.setScalar(1.0);
+  hiker.setCycling(false);
+  currentWorld.setParkedBikeMounted?.(false);
+  const bikeBtn = document.getElementById("btn-bike-ride");
+  if (bikeBtn) {
+    bikeBtn.classList.toggle("hidden", !canRideBike);
+    bikeBtn.classList.remove("active");
+    bikeBtn.innerHTML = '🚴 骑车 <kbd>V</kbd>';
+  }
   const startWp = p.waypoints[0];
-  playerUp.copy(latLonToUnitVec(startWp.lat - 12, startWp.lon - 14));
+  if (p.id === "luca-hainan") {
+    playerUp.copy(latLonToUnitVec(15, -28));
+  } else if (p.id === "luca-tianshan") {
+    playerUp.copy(latLonToUnitVec(-17, -110));
+  } else {
+    playerUp.copy(latLonToUnitVec(startWp.lat - 12, startWp.lon - 14));
+  }
   playerForward.set(0, 1, 0).sub(playerUp.clone().multiplyScalar(playerUp.y)).normalize();
   orientHikerOnSphere(scene, playerUp, playerForward, p.id);
+  if (p.id === "luca-hainan" || p.id === "luca-tianshan") {
+    setTimeout(() => {
+      if (mode === "planet" && activePlanet?.id === p.id && !isAnyModalOpen() && !isBikeRiding) {
+        showWonderToast("🚴 前方停着破风公路车！点击地面单车或右上角「骑车」即可跨上车沿公路巡航", 4200);
+      }
+    }, 950);
+  }
 
   camYaw = 0;
   camPitch = 0.56;
@@ -951,8 +1163,10 @@ function renderHudWaypoints() {
     hostBtn.type = "button";
     hostBtn.id = "btn-wp-find-host";
     const resRole = activeNeighborRig.residentRole;
-    const resLabel = resRole === "kitty" ? "Kitty" : resRole === "miemie" ? "咩咩" : "星主";
-    const resIcon = resRole === "kitty" ? "🐾" : resRole === "miemie" ? "🐑" : "🏔️";
+    const resLabel =
+      resRole === "kitty" ? "Kitty" : resRole === "miemie" ? "咩咩" : resRole === "luca" ? "Luca" : "星主";
+    const resIcon =
+      resRole === "kitty" ? "🐾" : resRole === "miemie" ? "🐑" : resRole === "luca" ? "🚴" : "🏔️";
     const following = activeNeighborRig.isFollowing;
     hostBtn.className = `wp-pill wp-chip wp-host-nav ${following ? "following" : ""}`;
     hostBtn.textContent = following ? `🤝 与${resLabel}同行中` : `${resIcon} 导航 · 找${resLabel}`;
@@ -963,6 +1177,46 @@ function renderHudWaypoints() {
       sound.playHover();
     });
     elHudWaypoints.appendChild(hostBtn);
+  }
+}
+
+function toggleBikeRide(force) {
+  if (mode !== "planet" || !activePlanet || !hiker) return;
+  if (!isLucaCyclingPlanet(activePlanet)) return;
+  isBikeRiding = typeof force === "boolean" ? force : !isBikeRiding;
+  if (isBikeRiding && isCampfireMode) toggleCampfireMode(false);
+  if (isBikeRiding && duoSitActive) {
+    duoSitActive = false;
+    hiker.setSitting(false);
+    activeNeighborRig?.clearDuoSit?.();
+  }
+  hiker.setCycling(isBikeRiding);
+  currentWorld?.setParkedBikeMounted?.(isBikeRiding);
+  const bikeBtn = document.getElementById("btn-bike-ride");
+  if (bikeBtn) {
+    bikeBtn.classList.toggle("active", isBikeRiding);
+    bikeBtn.innerHTML = isBikeRiding ? '🚴 下车 <kbd>V</kbd>' : '🚴 骑车 <kbd>V</kbd>';
+  }
+  syncCompanionUI();
+  const hasPartner = Boolean(activeNeighborRig?.isFollowing);
+  const partner = hasPartner ? getResidentPartnerName() : "";
+  sound.init();
+  if (isBikeRiding) {
+    sound.playBikeBell();
+    showWonderToast(
+      hasPartner
+        ? `🚴 叮铃～已与 ${partner} 双双跨上破风公路车并肩巡航！再次按 [V] 停放`
+        : "🚴 叮铃～已跨上破风公路车！巡航速度提升 · 再次点击下车或按 [V] 停放",
+      3200
+    );
+  } else {
+    sound.playHover();
+    showWonderToast(
+      hasPartner
+        ? `🥾 已与 ${partner} 停好公路车，切换为并肩徒步漫游状态`
+        : "🥾 已停好公路车，切换为徒步漫游状态",
+      2400
+    );
   }
 }
 
@@ -1123,7 +1377,7 @@ async function refreshTicketPreviewImage() {
   let modalSub = "将走过的山海与星辰装进专属典藏卡片";
   if (currentTicketContext.type === "finisher" && activePlanet) {
     const hostLabel = getResidentPartnerName();
-    dataUrl = generateDuoFinisherCertDataUrl(activePlanet, hostLabel, traveler, saveData.steps || 88);
+    dataUrl = await generateDuoFinisherCertDataUrl(activePlanet, hostLabel, traveler, saveData.steps || 128);
     fileName = `并肩完赛荣誉证-${activePlanet.name}-${hostLabel}x${traveler}.png`;
     modalTitle = `🏅 《${activePlanet.name}》双人并肩完赛证`;
     modalSub = `✦ ${hostLabel} × ${traveler} 全路标并肩打卡达成 · 长按或下载珍藏`;
@@ -1135,7 +1389,13 @@ async function refreshTicketPreviewImage() {
       companionName: compName,
     });
     const brandPrefix =
-      activeHostRole === "kitty" ? "Kitty的星球" : activeHostRole === "miemie" ? "咩咩的星球" : "行者的星球";
+      activeHostRole === "kitty"
+        ? "Kitty的星球"
+        : activeHostRole === "miemie"
+          ? "咩咩的星球"
+          : activeHostRole === "luca"
+            ? "Luca的星球"
+            : "行者的星球";
     fileName = `${brandPrefix}-${activePlanet.name}-登顶纪念票根.png`;
     modalTitle = `${activePlanet.name} · 纪念票根`;
     modalSub = compName
@@ -1143,23 +1403,29 @@ async function refreshTicketPreviewImage() {
       : `已点亮 ${discSet.size} / ${activePlanet.waypoints.length} 处山海印记 · 支持烫金印签`;
   } else if (currentTicketContext.type === "passport") {
     const passUni = currentUniverse || activeHostRole;
-    const passPlanets =
-      passUni === "kitty" ? KITTY_PLANETS : passUni === "miemie" ? MIEMIE_PLANETS : CORE_MINE_PLANETS;
+    const passPlanets = queryCoreUniversePlanets(passUni);
+    const starNumMap = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+    const starWord =
+      passPlanets.length === 2 ? "双" : starNumMap[passPlanets.length] || String(passPlanets.length);
     const totalPassWp = passPlanets.reduce((s, p) => s + p.waypoints.length, 0);
     dataUrl = generateGrandPassportDataUrl(passPlanets, saveData, traveler, passUni);
     fileName = `${
       passUni === "kitty"
-        ? "Kitty的星球-猫耳星云七星护照"
+        ? `Kitty的星球-猫耳星云${starWord}星护照`
         : passUni === "miemie"
-          ? "咩咩的星球-绵羊星云五星护照"
-          : "行者的星球-全星系大满贯荣誉护照"
+          ? `咩咩的星球-绵羊星云${starWord}星护照`
+          : passUni === "luca"
+            ? `Luca的星球-追风车辙${starWord}星护照`
+            : "行者的星球-全星系大满贯荣誉护照"
     }.png`;
     modalTitle =
       passUni === "kitty"
-        ? "🐾 猫耳星云 · 七星全满贯护照"
+        ? `🐾 猫耳星云 · ${starWord}星全满贯护照`
         : passUni === "miemie"
-          ? "🐑 绵羊星云 · 五星全满贯护照"
-          : "全星系大满贯荣誉护照";
+          ? `🐑 绵羊星云 · ${starWord}星全满贯护照`
+          : passUni === "luca"
+            ? `🚴 追风车辙 · ${starWord}星破风荣誉护照`
+            : "全星系大满贯荣誉护照";
     modalSub = `${totalPassWp} / ${totalPassWp} 处山海印记全境穿越达成典藏`;
   } else if (currentTicketContext.type === "wallpaper" && currentTicketContext.snapCanvas) {
     dataUrl = capturePhotoWallpaper(
@@ -1170,7 +1436,13 @@ async function refreshTicketPreviewImage() {
       activeHostRole
     );
     const wpBrand =
-      activeHostRole === "kitty" ? "Kitty的星球" : activeHostRole === "miemie" ? "咩咩的星球" : "行者的星球";
+      activeHostRole === "kitty"
+        ? "Kitty的星球"
+        : activeHostRole === "miemie"
+          ? "咩咩的星球"
+          : activeHostRole === "luca"
+            ? "Luca的星球"
+            : "行者的星球";
     fileName = `${wpBrand}-${currentTicketContext.planetName}-留影壁纸.png`;
     modalTitle = `${currentTicketContext.planetName} · 留影壁纸`;
     modalSub = "拍立得星海锁屏纪念壁纸 · 可印上旅人署名";
@@ -1244,7 +1516,9 @@ function openBestiaryModal() {
       ? c.owner === "kitty"
       : currentUniverse === "miemie"
         ? c.owner === "miemie"
-        : !c.owner
+        : currentUniverse === "luca"
+          ? c.owner === "luca"
+          : !c.owner
   );
   grid.innerHTML = "";
   uniCatalog.forEach((item) => {
@@ -1315,7 +1589,9 @@ function renderAtlasGridUI() {
         ? `猫耳星云 · ${totalWp} 帧山海印记`
         : currentUniverse === "miemie"
           ? `绵羊星云 · ${totalWp} 帧山海印记`
-          : `山海 · ${totalWp} 帧星辰印记`;
+          : currentUniverse === "luca"
+            ? `追风车辙 · ${totalWp} 帧骑行印记`
+            : `山海 · ${totalWp} 帧星辰印记`;
   }
 
   tabsEl.innerHTML = "";
@@ -1358,6 +1634,8 @@ function renderAtlasGridUI() {
         img.loading = "lazy";
         img.src = wp.photo;
         img.alt = wp.name;
+        applySmartPhotoPosition(img, wp.photo);
+        img.addEventListener("load", () => applySmartPhotoPosition(img, wp.photo), { once: true });
         thumb.appendChild(img);
       } else {
         thumb.classList.add("is-uncharted");
@@ -1427,7 +1705,7 @@ function openAtlasModal() {
   document.getElementById("modal-atlas")?.classList.remove("hidden");
   sound.init();
   sound.playHover();
-  trackEvent("打开24印记总图集");
+  trackEvent("打开星系印记总图集", { universe: currentUniverse });
 }
 
 function closeAtlasModal() {
@@ -1614,15 +1892,20 @@ function openFinaleModal() {
   const modal = document.getElementById("modal-finale");
   if (modal) {
     const totalWp = PLANETS.reduce((s, p) => s + p.waypoints.length, 0);
+    const starNumMap = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+    const starWord =
+      PLANETS.length === 2 ? "双" : starNumMap[PLANETS.length] || String(PLANETS.length);
     const eyeEl = modal.querySelector(".finale-eyebrow");
     const bodyEl = modal.querySelector(".finale-body");
     const passBtn = document.getElementById("btn-generate-passport");
     if (eyeEl) eyeEl.textContent = `✦ ALL ${totalWp} STARLIGHT TRAILS COMPLETED ✦`;
     if (bodyEl) {
       if (currentUniverse === "kitty") {
-        bodyEl.innerHTML = `<p>真没想到，你竟然耐心地走完了猫耳星云七颗星球上的全部 ${totalWp} 个角落。</p><p>从小五台的金莲花与山野小猫、追日落的最后八分钟、长白天池的风散云开，到扎尕那云雾、大青山露营、重装翻越乌孙古道与亚丁栈道上的小松鼠——每一段奔赴山海的滚烫热爱，都在这片星空里闪闪发光。</p><p>谢谢你来 Kitty 的宇宙吹风散步。愿我们永远保有去见那座山的勇气✨</p>`;
+        bodyEl.innerHTML = `<p>真没想到，你竟然耐心地走完了猫耳星云 ${PLANETS.length} 颗星球上的全部 ${totalWp} 个角落。</p><p>从小五台的金莲花与山野小猫、追日落的最后八分钟、长白天池的风散云开，到扎尕那云雾、大青山露营、重装翻越乌孙古道与亚丁栈道上的小松鼠——每一段奔赴山海的滚烫热爱，都在这片星空里闪闪发光。</p><p>谢谢你来 Kitty 的宇宙吹风散步。愿我们永远保有去见那座山的勇气✨</p>`;
       } else if (currentUniverse === "miemie") {
-        bodyEl.innerHTML = `<p>真没想到，你竟然耐心地走完了绵羊星云五颗星球上的全部 ${totalWp} 个角落。</p><p>从铜鼓荡黑石草甸与牛倒岩地心瀑布、龙脊天路的人间塞尔达、麝香洞幽蓝地心宇宙、千年布依古寨与猫跳峡，到七人六天五晚自主重装反穿亚丁的无信号营地——原来我们都有足够的力量，背起大大的背包走过未知。</p><p>谢谢你来咩咩的宇宙探秘吹风。路线不止一条，而我们都在路上✨</p>`;
+        bodyEl.innerHTML = `<p>真没想到，你竟然耐心地走完了绵羊星云 ${PLANETS.length} 颗星球上的全部 ${totalWp} 个角落。</p><p>从安顺喀斯特的龙脊天路与地心溶洞星穹、四子王旗大红山火星赤壁与乌兰哈达黑色火山口、阿尔山林海与呼伦贝尔金草垛，到七人六天五晚自主重装反穿亚丁的无信号营地——原来我们都有足够的力量，背起大大的背包走过未知。</p><p>谢谢你来咩咩的宇宙探秘吹风。路线不止一条，而我们都在路上✨</p>`;
+      } else if (currentUniverse === "luca") {
+        bodyEl.innerHTML = `<p>真没想到，你竟然一路破风走完了 Luca 骑行星云 ${PLANETS.length} 颗星球上的全部 ${totalWp} 个角落。</p><p>从海口新海港 Starting 零公里路牌出发，沿着椰林海浪画完 947.81 公里的环岛满月，再把单车推上天山云杉林与雪峰木屋草坡——每一道车辙都写满了迎风转动的自由。</p><p>谢谢你来 Luca 的海岛桃花源与雪岭吹风。愿我们永远在路上，追上每一阵风✨</p>`;
       } else {
         bodyEl.innerHTML = `<p>真没想到，你竟然耐心地走完了这 ${PLANETS.length} 颗星球上的全部 ${totalWp} 个角落。</p><p>从腾格里的夜空烟花、亚丁风雪夜死守的帐篷、扎尕那十一个垭口的白雪，到等了四年的大峰 5025 米石碑、咸田湾的海浪日出，还有伊犁升起的那轮黄月亮——这些原本只属于山野失联时刻的记忆，因为你的驻足，在星空里重新亮起了一遍。</p><p>谢谢你来我的宇宙吹风散步。山海未完，愿我们在下一座没有天花板的旷野重逢✨</p>`;
       }
@@ -1630,10 +1913,12 @@ function openFinaleModal() {
     if (passBtn) {
       passBtn.textContent =
         currentUniverse === "kitty"
-          ? "🏆 签发猫耳星云七星护照"
+          ? `🏆 签发猫耳星云${starWord}星护照`
           : currentUniverse === "miemie"
-            ? "🏆 签发绵羊星云五星护照"
-            : "🏆 签发全星系大满贯护照";
+            ? `🏆 签发绵羊星云${starWord}星护照`
+            : currentUniverse === "luca"
+              ? `🏆 签发追风车辙${starWord}星护照`
+              : "🏆 签发全星系大满贯护照";
     }
     modal.classList.remove("hidden");
   }
@@ -1657,6 +1942,7 @@ function openGrandPassport() {
 }
 
 // ==================== JOURNAL POSTCARD DISCOVERY ====================
+let currentDisplayedPhotoUrl = "";
 function renderJournalTextPage() {
   if (!currentJournalWp) return;
   const poemEl = document.getElementById("journal-poem");
@@ -1691,30 +1977,64 @@ function renderJournalTextPage() {
   const seq = ++photoLoadSeq;
 
   if (targetPhoto) {
+    currentDisplayedPhotoUrl = targetPhoto;
     artCanvas.classList.add("hidden");
     const cached = preloadUrl(targetPhoto);
     if (cached && cached.complete && cached.naturalWidth > 0) {
       if (mediaBox) mediaBox.classList.remove("loading");
       photoEl.src = targetPhoto;
+      applySmartPhotoPosition(photoEl, targetPhoto, mediaBox);
+      photoEl.addEventListener("load", () => applySmartPhotoPosition(photoEl, targetPhoto, mediaBox), { once: true });
       photoEl.classList.remove("hidden");
     } else {
-      // 尚未下载完时立即隐藏上一张旧图并显示显影态，彻底杜绝残留上一次照片
+      // 尚未下载完时立即隐藏上一张旧图并显示显影态，直接由 photoEl 高优请求并带失败重试/水彩兜底
       photoEl.classList.add("hidden");
-      photoEl.removeAttribute("src");
       if (mediaBox) mediaBox.classList.add("loading");
-      cached.addEventListener(
-        "load",
-        () => {
-          if (seq !== photoLoadSeq) return;
-          if (mediaBox) mediaBox.classList.remove("loading");
-          photoEl.src = targetPhoto;
-          photoEl.classList.remove("hidden");
-        },
-        { once: true }
-      );
+      applySmartPhotoPosition(photoEl, targetPhoto, mediaBox);
+      let retried = false;
+      const fallbackPlanet = currentJournalPlanet || activePlanet;
+      const fallbackWp = currentJournalWp;
+      const onLoaded = () => {
+        if (seq !== photoLoadSeq) return;
+        cleanup();
+        if (mediaBox) mediaBox.classList.remove("loading");
+        applySmartPhotoPosition(photoEl, targetPhoto, mediaBox);
+        photoEl.classList.remove("hidden");
+      };
+      const onFailed = () => {
+        if (seq !== photoLoadSeq) return;
+        preloadedImages.delete(targetPhoto);
+        if (!retried) {
+          retried = true;
+          const sep = targetPhoto.includes("?") ? "&" : "?";
+          photoEl.src = `${targetPhoto}${sep}_retry=${Date.now()}`;
+          return;
+        }
+        cleanup();
+        if (mediaBox) {
+          mediaBox.classList.remove("loading");
+          mediaBox.classList.remove("is-portrait-photo");
+        }
+        if (fallbackPlanet && fallbackWp) {
+          renderPostcardScene(artCanvas, fallbackWp, fallbackPlanet);
+          artCanvas.classList.remove("hidden");
+        }
+      };
+      const cleanup = () => {
+        photoEl.removeEventListener("load", onLoaded);
+        photoEl.removeEventListener("error", onFailed);
+      };
+      photoEl.addEventListener("load", onLoaded);
+      photoEl.addEventListener("error", onFailed);
+      photoEl.fetchPriority = "high";
+      photoEl.src = targetPhoto;
     }
   } else if (currentJournalPlanet || activePlanet) {
-    if (mediaBox) mediaBox.classList.remove("loading");
+    currentDisplayedPhotoUrl = "";
+    if (mediaBox) {
+      mediaBox.classList.remove("loading");
+      mediaBox.classList.remove("is-portrait-photo");
+    }
     renderPostcardScene(artCanvas, currentJournalWp, currentJournalPlanet || activePlanet);
     artCanvas.classList.remove("hidden");
     photoEl.classList.add("hidden");
@@ -1944,6 +2264,18 @@ const CAMPFIRE_STORIES = {
     "秋色里的彩林与雪山在夜幕下安静睡去，白天栈道上的小松鼠一定也藏好了松果。",
     "高海拔的星空清澈透明，每一颗星都在替三神山守护赶路的人。",
   ],
+  "miemie-guizhou": [
+    "地上是铜鼓荡黑石草甸与人间塞尔达龙脊天路，地下是牛倒岩暗瀑与麝香洞的钟乳石星穹。",
+    "走过关岭第四纪冰臼的大地之眼，再在千年布依石头古寨的篝火旁听猫跳峡的水声，黔中山水处处是奇遇。",
+  ],
+  "miemie-volcano": [
+    "白日里左手是大红山赤红如火的火星断崖，右手是乌兰哈达乌黑孤傲的万年炼丹炉火山锥。",
+    "在红崖荒原扎下帐篷烤火仰望，没有一丝城市霓虹，整条塞北银河都低垂在火山口之上。",
+  ],
+  "miemie-hulunbuir": [
+    "穿过阿尔山火山熔岩上的兴安落叶松林，眼前豁然展开呼伦贝尔滚向天际的无垠绿浪。",
+    "牧人把整个夏天的阳光卷成金色大圆草垛，一路向北抵达满洲里边城，风里全是自由的味道。",
+  ],
   "miemie-tonggudang": [
     "黑石林与绿草甸在夜风里安静下来，白天漫山闲步的牛马羊也回栏歇息了。",
     "洞外是铜鼓荡的青绿牧歌，洞内是牛倒岩的地心飞瀑，贵州的山水藏着太多惊喜。",
@@ -1963,6 +2295,14 @@ const CAMPFIRE_STORIES = {
   "miemie-yading": [
     "我喜欢没有信号的地方，每天一个小目标——今晚平安抵达营地、围着火堆就足够了。",
     "卸下大大的重装背包才发现，原来自己有足够的力量走过未知，而我们还在路上。",
+  ],
+  "luca-hainan": [
+    "七天骑完 947.81 公里环岛闭环，夜里伴着南海潮声烤火，小腿酸胀心里却全是海风的甜味。",
+    "摘下骑行头盔吹着椰风，这片心中的海岛桃花源，随时欢迎好朋友来串门兜风！",
+  ],
+  "luca-tianshan": [
+    "把单车停在云杉小木屋旁，抬头就是天山雪峰与漫天星河，骑行人的浪漫不过如此。",
+    "白日里车轮滚过雪岭草甸，夜晚围着篝火煮一壶热茶，风吹过松林像冬不拉在轻弹。",
   ],
 };
 let campStoryIdx = 0;
@@ -1986,6 +2326,17 @@ function toggleCampfireMode(force) {
   if (mode !== "planet" || !activePlanet) return;
   isCampfireMode = typeof force === "boolean" ? force : !isCampfireMode;
   if (isCampfireMode && isTelescopeMode) toggleTelescopeMode(false);
+  if (isCampfireMode && isBikeRiding) {
+    isBikeRiding = false;
+    hiker.setCycling(false);
+    currentWorld?.setParkedBikeMounted?.(false);
+    const bikeBtn = document.getElementById("btn-bike-ride");
+    if (bikeBtn) {
+      bikeBtn.classList.remove("active");
+      bikeBtn.innerHTML = '🚴 骑车 <kbd>V</kbd>';
+    }
+    syncCompanionUI();
+  }
   sound.init();
   hiker.setSitting(isCampfireMode);
   document.getElementById("btn-campfire-mode")?.classList.toggle("active", isCampfireMode);
@@ -2031,14 +2382,21 @@ function toggleTelescopeMode(force) {
   if (isTelescopeMode && isCampfireMode) toggleCampfireMode(false);
   document.getElementById("btn-telescope-mode")?.classList.toggle("active", isTelescopeMode);
   if (isTelescopeMode) {
-    camPitch = 0.02; // 仰望远方天际星海，将其余全部 5 颗星球拱形排布于正前方夜空
+    camPitch = 0.02; // 仰望远方天际星海，将当前星系其余全部星球拱形排布于正前方夜空
     const basis = computeCameraViewBasis();
     activeSkyWonders?.setTelescopeActive(true, {
       hikerPos: hiker.root.position.clone(),
       ...basis,
       isPortrait: window.innerWidth < window.innerHeight,
     });
-    showWonderToast("🔭 星际望远镜已开启 · 其余 5 颗山海星球已浮现夜空，点击即可直飞！");
+    const otherCount =
+      activeSkyWonders?.getOtherPlanetCount?.() ??
+      Math.max(0, PLANETS.filter((p) => p.id !== activePlanet.id).length);
+    const toastMsg =
+      otherCount > 0
+        ? `🔭 星际望远镜已开启 · 其余 ${otherCount} 颗星球已浮现夜空，点击即可直飞！`
+        : "🔭 星际望远镜已开启 · 仰望璀璨银河，静候流星划过天际！";
+    showWonderToast(toastMsg);
     trackEvent("开启星际望远镜", { planet: activePlanet.name });
   } else {
     activeSkyWonders?.setTelescopeActive(false);
@@ -2055,6 +2413,21 @@ function closeJournal() {
 // ==================== INPUT CONTROLS ====================
 const keys = {};
 window.addEventListener("keydown", (e) => {
+  if (e.isComposing) return;
+  const tag = e.target?.tagName;
+  const isTypingField =
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    Boolean(e.target?.isContentEditable);
+  if (isTypingField) {
+    if (e.code === "Escape") {
+      e.target.blur?.();
+      closeTopmostLayer();
+    }
+    return;
+  }
+
   keys[e.code] = true;
 
   if (e.code === "KeyM") {
@@ -2062,7 +2435,7 @@ window.addEventListener("keydown", (e) => {
     document.getElementById("btn-global-sound").textContent = on ? "♪ 星音" : "♪ 静音";
   }
 
-  // 原图放大灯箱最优先拦截 Esc / Space，避免把底下的明信片一起关掉
+  // 严格按图层从最顶层到底层依次拦截键盘事件（Esc 永远只关闭当前最上层弹窗/浮层，绝不穿透到底层场景）
   const lbEl = document.getElementById("photo-lightbox");
   if (lbEl && !lbEl.classList.contains("hidden")) {
     if (e.code === "Escape" || e.code === "Space") {
@@ -2071,47 +2444,13 @@ window.addEventListener("keydown", (e) => {
     }
     return;
   }
-
-  // 全局跨界面模态框优先响应键盘关闭（星图与星球内统一生效）
-  if (reelModalOpen) {
-    if (e.code === "Escape") closeMemoryReel();
-    else if (e.code === "ArrowRight") stepMemoryReel(1);
-    else if (e.code === "ArrowLeft") stepMemoryReel(-1);
-    else if (e.code === "Space") {
+  const topModal = MODAL_STACK.find((m) => m.isOpen());
+  if (topModal) {
+    if (e.code === "Escape" || (topModal.toggleKey && e.code === topModal.toggleKey)) {
       e.preventDefault();
-      toggleMemoryReelPlay();
-    }
-    return;
-  }
-  if (atlasModalOpen) {
-    if (e.code === "Escape" || e.code === "KeyG") closeAtlasModal();
-    return;
-  }
-  if (bestiaryModalOpen) {
-    if (e.code === "Escape" || e.code === "KeyB") closeBestiaryModal();
-    return;
-  }
-  if (finaleModalOpen) {
-    if (e.code === "Escape") closeFinaleModal();
-    return;
-  }
-  if (ticketModalOpen) {
-    if (e.code === "Escape" || e.code === "Space") closeSummitTicketModal();
-    return;
-  }
-  if (journalOpen) {
-    if (e.code === "Tab") {
-      e.preventDefault();
-      flipJournalPage();
-    } else if (e.code === "ArrowRight") {
-      e.preventDefault();
-      if (!stepSiblingPostcard(1)) flipJournalPage();
-    } else if (e.code === "ArrowLeft") {
-      e.preventDefault();
-      if (!stepSiblingPostcard(-1)) flipJournalPage();
-    } else if (e.code === "KeyE" || e.code === "Space" || e.code === "Enter" || e.code === "Escape") {
-      e.preventDefault();
-      closeJournal();
+      topModal.close();
+    } else if (topModal.onKey) {
+      topModal.onKey(e);
     }
     return;
   }
@@ -2130,12 +2469,10 @@ window.addEventListener("keydown", (e) => {
     else if (e.code === "Enter" || e.code === "Space") enterPlanet(selectedPlanetIdx);
     else if (e.code === "Escape") setupTitleScene();
   } else if (mode === "planet") {
-    if (flagModalOpen) {
-      if (e.code === "Escape") closeFlagModal();
-      return;
-    }
-    if (maniModalOpen) {
-      if (e.code === "Escape") closeManiModal();
+    const hostPop = document.getElementById("host-action-popover");
+    const hostPopOpen = hostPop && !hostPop.classList.contains("hidden");
+    if ((e.code === "Escape" || e.code === "KeyE") && hostPopOpen) {
+      closeHostPopover();
       return;
     }
     if (e.code === "KeyE" && activeWaypointNear) {
@@ -2144,10 +2481,16 @@ window.addEventListener("keydown", (e) => {
       openManiModal();
     } else if (e.code === "KeyE" && activePlantedFlagNear) {
       openFlagModal(activePlantedFlagNear.data);
-    } else if (e.code === "KeyE" && activeNeighborHostNear) {
+    } else if (e.code === "KeyE" && activeBottleNear) {
       openNeighborHubModal();
+    } else if (e.code === "KeyE" && (activeNeighborHostNear || activeNeighborRig?.isFollowing)) {
+      openHostPopover();
+    } else if (e.code === "KeyE" && activeParkedBikeNear && !isBikeRiding) {
+      toggleBikeRide(true);
     } else if (e.code === "KeyE" && activeResonanceNear) {
       openResonanceModal(activePlanet?.id);
+    } else if (e.code === "KeyV") {
+      if (isLucaCyclingPlanet(activePlanet)) toggleBikeRide();
     } else if (e.code === "KeyF") {
       openFlagModal(null);
     } else if (e.code === "KeyN") {
@@ -2168,6 +2511,8 @@ window.addEventListener("keydown", (e) => {
       togglePhotoMode();
     } else if (e.code === "Escape") {
       if (isPhotoMode) togglePhotoMode(false);
+      else if (isTelescopeMode) toggleTelescopeMode();
+      else if (isCampfireMode) toggleCampfireMode();
       else openStarMap();
     }
   }
@@ -2179,6 +2524,7 @@ window.addEventListener("keyup", (e) => {
 
 // 鼠标拖拽旋转视角 · 手机双指捏合缩放视角 · 左下角星芒触控微摇杆 · 点击星球表面寻路
 let isPointerDown = false;
+let canvasPointerId = null;
 let pointerMoved = 0;
 let lastPX = 0;
 let lastPY = 0;
@@ -2253,15 +2599,18 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
     const pts = Array.from(activePointers.values());
     pinchLastDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
     isPointerDown = false;
+    canvasPointerId = null;
     return;
   }
   isPointerDown = true;
+  canvasPointerId = e.pointerId;
   pointerMoved = 0;
   lastPX = e.clientX;
   lastPY = e.clientY;
 });
 
 window.addEventListener("pointermove", (e) => {
+  if (e.pointerId === joyPointerId) return;
   if (activePointers.has(e.pointerId)) {
     activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   }
@@ -2277,7 +2626,7 @@ window.addEventListener("pointermove", (e) => {
     pointerMoved = 999;
     return;
   }
-  if (!isPointerDown || mode !== "planet") {
+  if (!isPointerDown || e.pointerId !== canvasPointerId || mode !== "planet") {
     // 电脑端悬停感知：鼠标移到夜空邻近星球或玛尼堆上时自动变为小手并让星球微光呼吸放大
     if (e.pointerType === "mouse" && mode === "planet" && !isAnyModalOpen()) {
       ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -2308,6 +2657,11 @@ window.addEventListener("pointermove", (e) => {
           clickable = true;
         }
       }
+      if (!clickable && !isBikeRiding && currentWorld?.parkedBikeGroup?.visible) {
+        if (raycaster.intersectObject(currentWorld.parkedBikeGroup, true).length > 0) {
+          clickable = true;
+        }
+      }
       renderer.domElement.style.cursor = clickable ? "pointer" : "";
     }
     return;
@@ -2325,16 +2679,24 @@ window.addEventListener("pointermove", (e) => {
 });
 
 window.addEventListener("pointercancel", (e) => {
+  if (e.pointerId === joyPointerId) return;
   activePointers.delete(e.pointerId);
   if (activePointers.size < 2) pinchLastDist = 0;
+  if (e.pointerId === canvasPointerId) {
+    isPointerDown = false;
+    canvasPointerId = null;
+  }
 });
 
 window.addEventListener("pointerup", (e) => {
+  if (e.pointerId === joyPointerId) return;
   activePointers.delete(e.pointerId);
   if (activePointers.size < 2) pinchLastDist = 0;
-  if (!isPointerDown) return;
+  if (!isPointerDown || e.pointerId !== canvasPointerId) return;
   isPointerDown = false;
-  if (mode === "planet" && !isAnyModalOpen() && pointerMoved < 6 && currentWorld?.terrainMesh) {
+  canvasPointerId = null;
+  const tapSlop = e.pointerType === "touch" ? 14 : 6;
+  if (mode === "planet" && !isAnyModalOpen() && pointerMoved < tapSlop && currentWorld?.terrainMesh) {
     ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
     ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(ndc, camera);
@@ -2416,8 +2778,21 @@ window.addEventListener("pointerup", (e) => {
         return;
       }
     }
+    if (
+      !isBikeRiding &&
+      currentWorld?.parkedBikeGroup?.visible &&
+      raycaster.intersectObject(currentWorld.parkedBikeGroup, true).length > 0
+    ) {
+      toggleBikeRide(true);
+      return;
+    }
     if (hiker?.root && raycaster.intersectObject(hiker.root, true).length > 0) {
-      if (activeNeighborRig?.hostChar && playerUp.distanceTo(activeNeighborRig.hostUp) < 0.34) {
+      if (isBikeRiding) {
+        sound.init();
+        sound.playBikeBell();
+        hiker.triggerWave();
+        showWonderToast("🔔 叮铃铃～破风骑行中！点击右上角「下车」或按 [V] 可停放单车", 2600);
+      } else if (activeNeighborRig?.hostChar && playerUp.distanceTo(activeNeighborRig.hostUp) < 0.34) {
         triggerDuoInteractionScene();
       } else {
         hiker.triggerEmote("cheer", 2.0);
@@ -2510,6 +2885,7 @@ document.getElementById("btn-back-map").addEventListener("click", () => {
   openStarMap();
 });
 
+document.getElementById("btn-bike-ride")?.addEventListener("click", () => toggleBikeRide());
 document.getElementById("btn-auto-stroll")?.addEventListener("click", () => toggleAutoStroll());
 document.getElementById("btn-toggle-night").addEventListener("click", () => {
   cycleSkyPhase();
@@ -2529,8 +2905,10 @@ document.getElementById("photo-exit-hint").addEventListener("click", () => {
 elPromptInteract.addEventListener("click", () => {
   if (activeWaypointNear) openWaypointJournal(activeWaypointNear);
   else if (activeManiNear) openManiModal();
+  else if (activeParkedBikeNear && !isBikeRiding) toggleBikeRide(true);
   else if (activePlantedFlagNear) openFlagModal(activePlantedFlagNear.data);
-  else if (activeNeighborHostNear) openNeighborHubModal();
+  else if (activeNeighborHostNear) openHostPopover();
+  else if (activeBottleNear) openNeighborHubModal();
   else if (activeResonanceNear) openResonanceModal(activePlanet?.id);
 });
 
@@ -2638,12 +3016,15 @@ if (elJournalTextCard) {
 const elJournalPostcard = document.querySelector(".journal-postcard");
 let swipeStartX = 0;
 let swipeStartY = 0;
+let swipeStartedOnPhoto = false;
 let swipeJustHandled = false;
+let panJustDragged = false;
 if (elJournalPostcard) {
   elJournalPostcard.addEventListener(
     "touchstart",
     (e) => {
       if (!e.touches || e.touches.length !== 1) return;
+      swipeStartedOnPhoto = Boolean(e.target?.closest?.("#journal-polaroid"));
       swipeStartX = e.touches[0].clientX;
       swipeStartY = e.touches[0].clientY;
     },
@@ -2652,7 +3033,7 @@ if (elJournalPostcard) {
   elJournalPostcard.addEventListener(
     "touchend",
     (e) => {
-      if (!journalOpen || !e.changedTouches || e.changedTouches.length !== 1) return;
+      if (swipeStartedOnPhoto || !journalOpen || !e.changedTouches || e.changedTouches.length !== 1) return;
       const dx = e.changedTouches[0].clientX - swipeStartX;
       const dy = e.changedTouches[0].clientY - swipeStartY;
       if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.35) {
@@ -2665,19 +3046,85 @@ if (elJournalPostcard) {
   );
 }
 
-// 点击拍立得明信片放大查看原图（若刚触发左右滑动翻页则不误弹灯箱）
+// 拍立得相框支持按住拖动平移框内画面（记忆构图），轻点则放大查看完整原图
 const elPolaroid = document.getElementById("journal-polaroid");
 const elLightbox = document.getElementById("photo-lightbox");
 const elLightboxImg = document.getElementById("lightbox-img");
-  if (elPolaroid && elLightbox && elLightboxImg) {
+if (elPolaroid && elLightbox && elLightboxImg) {
+  const mediaBox = elPolaroid.querySelector(".polaroid-media");
+  const photoEl = document.getElementById("journal-photo");
+  let panState = null;
+
+  if (mediaBox && photoEl) {
+    mediaBox.addEventListener("pointerdown", (e) => {
+      if (e.button !== undefined && e.button !== 0) return;
+      if (photoEl.classList.contains("hidden") || !photoEl.naturalWidth) return;
+      const rect = mediaBox.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const boxRatio = rect.width / rect.height;
+      const imgRatio = photoEl.naturalWidth / photoEl.naturalHeight;
+      const overX = imgRatio > boxRatio ? rect.width * (imgRatio / boxRatio - 1) : 0;
+      const overY = imgRatio < boxRatio ? rect.height * (boxRatio / imgRatio - 1) : 0;
+      panState = {
+        id: e.pointerId,
+        sx: e.clientX,
+        sy: e.clientY,
+        p0x: parseFloat(photoEl.dataset.panX || "50"),
+        p0y: parseFloat(photoEl.dataset.panY || "50"),
+        overX,
+        overY,
+        moved: false,
+      };
+      try { mediaBox.setPointerCapture(e.pointerId); } catch {}
+    });
+
+    mediaBox.addEventListener("pointermove", (e) => {
+      if (!panState || e.pointerId !== panState.id) return;
+      const dx = e.clientX - panState.sx;
+      const dy = e.clientY - panState.sy;
+      if (!panState.moved && Math.hypot(dx, dy) > 5) {
+        panState.moved = true;
+        mediaBox.classList.add("is-panning");
+      }
+      if (!panState.moved) return;
+      const nx = panState.overX > 2
+        ? Math.max(0, Math.min(100, panState.p0x - (dx / panState.overX) * 100))
+        : 50;
+      const ny = panState.overY > 2
+        ? Math.max(0, Math.min(100, panState.p0y - (dy / panState.overY) * 100))
+        : 50;
+      photoEl.style.objectPosition = `${nx.toFixed(1)}% ${ny.toFixed(1)}%`;
+      photoEl.dataset.panX = nx.toFixed(1);
+      photoEl.dataset.panY = ny.toFixed(1);
+    });
+
+    const endPan = (e) => {
+      if (!panState || (e.pointerId !== undefined && e.pointerId !== panState.id)) return;
+      mediaBox.classList.remove("is-panning");
+      if (panState.moved) {
+        panJustDragged = true;
+        setTimeout(() => { panJustDragged = false; }, 220);
+        if (currentDisplayedPhotoUrl) {
+          savePhotoPan(
+            currentDisplayedPhotoUrl,
+            parseFloat(photoEl.dataset.panX || "50"),
+            parseFloat(photoEl.dataset.panY || "50")
+          );
+        }
+      }
+      panState = null;
+    };
+    mediaBox.addEventListener("pointerup", endPan);
+    mediaBox.addEventListener("pointercancel", endPan);
+  }
+
   elPolaroid.addEventListener("click", () => {
-    if (swipeJustHandled) return;
+    if (swipeJustHandled || panJustDragged) return;
     ensureHistoryGuard();
-    const photoEl = document.getElementById("journal-photo");
     const artCanvas = document.getElementById("journal-art-canvas");
-    if (!photoEl.classList.contains("hidden") && photoEl.src) {
+    if (photoEl && !photoEl.classList.contains("hidden") && photoEl.src) {
       elLightboxImg.src = photoEl.src;
-    } else {
+    } else if (artCanvas) {
       elLightboxImg.src = artCanvas.toDataURL("image/jpeg", 0.9);
     }
     elLightbox.classList.remove("hidden");
@@ -2772,7 +3219,10 @@ function updatePlanetExploration(dt, elapsed) {
     if (wpObj.data.soundZone && ang < 0.28) {
       detectedSoundZone = wpObj.data.soundZone;
     }
-    if (activePlanet.id === "miemie-tonggudang" && wpObj.data.id === "mm-tgd-3" && ang < 0.27) {
+    if (
+      (activePlanet.id === "miemie-guizhou" && (wpObj.data.id === "mm-gz-2" || wpObj.data.id === "mm-gz-6") && ang < 0.27) ||
+      (activePlanet.id === "miemie-tonggudang" && wpObj.data.id === "mm-tgd-3" && ang < 0.27)
+    ) {
       detectedSoundZone = "cave_echo";
     }
   }
@@ -2824,7 +3274,8 @@ function updatePlanetExploration(dt, elapsed) {
 
   const isRunning = keys["ShiftLeft"] || keys["ShiftRight"] || joyMagnitude > 0.85;
   const joyScale = joyMagnitude > 0.08 && !keys["KeyW"] && !keys["ArrowUp"] ? THREE.MathUtils.lerp(0.55, 1.0, joyMagnitude) : 1.0;
-  const baseSpeed = moveDir.lengthSq() > 0 ? (isRunning ? 5.6 : 3.6) * joyScale : 0;
+  const bikeBoost = isBikeRiding ? 1.68 : 1.0;
+  const baseSpeed = moveDir.lengthSq() > 0 ? (isRunning ? 5.6 : 3.6) * joyScale * bikeBoost : 0;
   const speed = baseSpeed * currentSpeedFactor;
 
   if (speed > 0) {
@@ -2840,7 +3291,8 @@ function updatePlanetExploration(dt, elapsed) {
       stepAccum = 0;
       saveData.steps = (saveData.steps || 0) + 2;
       elHudSteps.textContent = `${saveData.steps} 步`;
-      sound.playStep(activePlanet.palette.particleType);
+      if (isBikeRiding) sound.playBikeFreehub();
+      else sound.playStep(activePlanet.palette.particleType);
     }
   }
 
@@ -2863,7 +3315,7 @@ function updatePlanetExploration(dt, elapsed) {
 
   // 更新 V3.3 星球奇遇实体（小生灵驯养结伴跟随与围炉打盹 · 动态脚印 · 天气奇遇与流星雨 · 玛尼堆 · 营地篝火）
   if (activeFootprints) {
-    activeFootprints.update(dt, playerUp, playerForward, speed > 0.15 && !isCampfireMode);
+    activeFootprints.update(dt, playerUp, playerForward, speed > 0.15 && !isCampfireMode, isBikeRiding);
   }
   if (activeCreature) {
     activeCreature.update(
@@ -2913,15 +3365,17 @@ function updatePlanetExploration(dt, elapsed) {
   }
   // 牛倒岩·地心瀑布洞窟自动头灯感应（草甸白昼步入溶洞口自动点亮双人头灯，出洞恢复）
   let inCaveZone = false;
-  if (activePlanet?.id === "miemie-tonggudang" && currentWorld) {
-    const caveWp = currentWorld.waypointObjs.find((w) => w.data.id === "mm-tgd-3");
-    if (caveWp && playerUp.angleTo(caveWp.unitDir) < 0.27) inCaveZone = true;
+  if ((activePlanet?.id === "miemie-guizhou" || activePlanet?.id === "miemie-tonggudang") && currentWorld) {
+    const caveWps = currentWorld.waypointObjs.filter((w) =>
+      w.data.id === "mm-gz-2" || w.data.id === "mm-gz-6" || w.data.id === "mm-tgd-3"
+    );
+    if (caveWps.some((cw) => playerUp.angleTo(cw.unitDir) < 0.27)) inCaveZone = true;
   }
   if (inCaveZone !== Boolean(window.__lastInCaveZone)) {
     window.__lastInCaveZone = inCaveZone;
     hiker.setHeadlamp((skyPhase === "night" || inCaveZone) && mode === "planet");
     if (inCaveZone && skyPhase !== "night") {
-      showWonderToast("🔦 已步入牛倒岩地心瀑布洞窟 · 探洞头灯自动点亮", 3400);
+      showWonderToast("🔦 已步入喀斯特地心溶洞秘境 · 探洞头灯自动点亮", 3400);
     }
   }
 
@@ -2933,9 +3387,11 @@ function updatePlanetExploration(dt, elapsed) {
       isNight || inCaveZone,
       isCampfireMode,
       playerForward,
-      speed
+      speed,
+      isBikeRiding
     );
-    activeNeighborHostNear = nb.nearHost || nb.nearBottle;
+    activeNeighborHostNear = Boolean(nb.nearHost && !activeNeighborRig.isFollowing);
+    activeBottleNear = Boolean(nb.nearBottle);
     activeResonanceNear = nb.nearResonance;
     updateCompanionSpeechTick(dt, speed);
     if (firstLandGuideActive && speed > 0.12) dismissFirstLandGuide();
@@ -2954,7 +3410,13 @@ function updatePlanetExploration(dt, elapsed) {
     if (nb.justGreeted && activePlanet) {
       const pOwner = activePlanet.owner || "mine";
       const visitorLabel =
-        activeHostRole === "kitty" ? "Kitty" : activeHostRole === "miemie" ? "咩咩" : "清哥";
+        activeHostRole === "kitty"
+          ? "Kitty"
+          : activeHostRole === "miemie"
+            ? "咩咩"
+            : activeHostRole === "luca"
+              ? "Luca"
+              : "清哥";
       const resPartner = getResidentPartnerName();
       const greetMsg =
         pOwner !== activeHostRole
@@ -2963,7 +3425,9 @@ function updatePlanetExploration(dt, elapsed) {
               ? `🐾 Kitty 朝 ${visitorLabel} 开心挥手：欢迎来「${activePlanet.name}」串门！`
               : pOwner === "miemie"
                 ? `🐑 咩咩朝 ${visitorLabel} 开心挥手：欢迎来「${activePlanet.name}」串门探秘！`
-                : `🏔️ 清哥朝 ${visitorLabel} 开心挥手：欢迎来「${activePlanet.name}」串门吹风！`)
+                : pOwner === "luca"
+                  ? `🚴 Luca 扶着头盔朝 ${visitorLabel} 爽朗挥手：欢迎来「${activePlanet.name}」兜风串门！`
+                  : `🏔️ 清哥朝 ${visitorLabel} 开心挥手：欢迎来「${activePlanet.name}」串门吹风！`)
           : `⚡ 同频偶遇！邻居 ${resPartner} 也在同一片山脉向你挥手致意～`;
       showWonderToast(greetMsg, 4600);
     }
@@ -3005,6 +3469,12 @@ function updatePlanetExploration(dt, elapsed) {
     activeManiNear = !nearest && maniAng < 0.19;
   }
 
+  const bikeAng =
+    !isBikeRiding && currentWorld.parkedBikeGroup?.visible && currentWorld.parkedBikeUnitDir
+      ? playerUp.angleTo(currentWorld.parkedBikeUnitDir)
+      : 999;
+  activeParkedBikeNear = bikeAng < 0.23;
+
   const isMobileShort = window.innerWidth <= 820;
   if (activeWaypointNear && !isAnyModalOpen() && !isCampfireMode) {
     const wpLabel = isMobileShort
@@ -3019,24 +3489,34 @@ function updatePlanetExploration(dt, elapsed) {
       ? "🪨 点击垭口玛尼堆留痕"
       : "🪨 按 [E] 或点击 · 垭口星光玛尼堆留痕";
     elPromptInteract.classList.remove("hidden");
+  } else if (activeParkedBikeNear && !isAnyModalOpen() && !isCampfireMode) {
+    elPromptText.textContent = isMobileShort
+      ? "🚴 点击单车 · 跨上破风公路车"
+      : "🚴 按 [E] 或点击单车 · 跨上破风公路车";
+    elPromptInteract.classList.remove("hidden");
   } else if (activePlantedFlagNear && !isAnyModalOpen() && !isCampfireMode) {
     elPromptText.textContent = isMobileShort
       ? `🚩 查看「${activePlantedFlagNear.data.author}」的串门旗`
       : `🚩 按 [E] 或点击 · 查看「${activePlantedFlagNear.data.author}」插下的串门旗`;
     elPromptInteract.classList.remove("hidden");
   } else if (activeNeighborHostNear && !isAnyModalOpen() && !isCampfireMode) {
+    const partnerName = getResidentPartnerName();
+    const hostIcon =
+      partnerName === "Kitty" ? "🐾" : partnerName === "咩咩" ? "🐑" : partnerName === "Luca" ? "🚴" : "🏔️";
+    elPromptText.textContent = isMobileShort
+      ? `${hostIcon} 点击与 ${partnerName} 互动同行`
+      : `${hostIcon} 按 [E] 或点击 · 与 ${partnerName} 互动（并肩同行 / 煮火锅 / 合影）`;
+    elPromptInteract.classList.remove("hidden");
+  } else if (activeBottleNear && !isAnyModalOpen() && !isCampfireMode) {
     const pOwner = activePlanet?.owner || "mine";
     const visitingOther = pOwner !== activeHostRole;
-    const hostLabel =
-      pOwner === "kitty" ? "Kitty" : pOwner === "miemie" ? "咩咩" : activePlanet?.ownerName || "清哥";
-    const hostIcon = pOwner === "kitty" ? "🐾" : pOwner === "miemie" ? "🐑" : "🏔️";
     elPromptText.textContent = visitingOther
       ? isMobileShort
-        ? `${hostIcon} 点击与 ${hostLabel} 串门合影`
-        : `${hostIcon} 按 [E] 或点击 · 与星球主人 ${hostLabel} 合影 & 漂流瓶`
+        ? "🍾 点击打开星际漂流瓶留言"
+        : "🍾 按 [E] 或点击 · 打开星际漂流瓶写信 & 送玫瑰"
       : isMobileShort
-        ? "📮 点击查看星际邮筒与同频手帐"
-        : "📮 按 [E] 或点击 · 打开我的星际邮筒与串门手帐";
+        ? "🍾 点击查看我的星际漂流瓶"
+        : "🍾 按 [E] 或点击 · 打开我的星际漂流瓶与串门手帐";
     elPromptInteract.classList.remove("hidden");
   } else if (activeResonanceNear && !isAnyModalOpen() && !isCampfireMode) {
     elPromptText.textContent = isMobileShort
@@ -3114,10 +3594,21 @@ function animate() {
   }
 
   if (mode === "title" && currentWorld) {
-    currentWorld.group.rotation.y = elapsed * 0.12;
     const baseY = currentWorld.group.userData.baseY ?? -1.2;
     currentWorld.group.position.y = baseY + Math.sin(elapsed * 0.9) * 0.25;
-    hiker.update(dt, elapsed, 0.15);
+    if (activeHostRole === "luca") {
+      // Luca 扉页专属：星球与环星公路在车轮下逆向滚动，少年跨着破风公路车持续踩踏巡航！
+      currentWorld.group.quaternion.setFromAxisAngle(TITLE_BIKE_AXIS, -elapsed * 0.22);
+      const invQ = currentWorld.group.quaternion.clone().invert();
+      const localDir = TITLE_BIKE_UP.clone().applyQuaternion(invQ);
+      const rSurf = Math.max(getSurfaceRadius("maclehose", localDir), PLANET_RADIUS + 0.235) + 0.055;
+      hiker.root.position.copy(currentWorld.group.position).addScaledVector(TITLE_BIKE_UP, rSurf);
+      hiker.root.quaternion.setFromRotationMatrix(TITLE_BIKE_BASIS);
+      hiker.update(dt, elapsed, 0.88);
+    } else {
+      currentWorld.group.rotation.set(0, elapsed * 0.12, 0);
+      hiker.update(dt, elapsed, 0.15);
+    }
   } else if (mode === "map" && currentWorld) {
     currentWorld.group.rotation.y = elapsed * 0.06;
   } else if (mode === "planet") {
@@ -3188,65 +3679,19 @@ window.__game = {
   PLANETS,
 };
 
-// 点击 6 大弹窗外侧深色半透明星空空白背景即可优雅收起弹窗
-[
-  ["modal-journal", closeJournal],
-  ["modal-atlas", closeAtlasModal],
-  ["modal-reel", closeMemoryReel],
-  ["modal-bestiary", closeBestiaryModal],
-  ["modal-ticket", closeSummitTicketModal],
-  ["modal-mani", closeManiModal],
-  ["modal-finale", closeFinaleModal],
-].forEach(([modalId, closeFn]) => {
-  const backdrop = document.getElementById(modalId);
-  if (!backdrop) return;
-  backdrop.addEventListener("click", (e) => {
-    if (e.target === backdrop) closeFn();
+// 点击全部 11 大弹窗外侧深色半透明星空空白背景即可优雅收起弹窗
+for (const m of MODAL_STACK) {
+  const backdrop = document.getElementById(m.id);
+  backdrop?.addEventListener("click", (e) => {
+    if (e.target === backdrop) m.close();
   });
-});
+}
 
-// 接管微信 / 手机浏览器「左边缘右滑返回手势」防误退：逐级关闭大图→弹窗→退回星图→退回扉页
+// 接管微信 / 手机浏览器「左边缘右滑返回手势」防误退：逐级关闭大图→弹窗→气泡→子模式→退回星图→退回扉页
 window.addEventListener("popstate", () => {
   hasHistoryGuard = false;
-  const lb = document.getElementById("photo-lightbox");
-  if (lb && !lb.classList.contains("hidden")) {
-    lb.classList.add("hidden");
-    ensureHistoryGuard();
-    return;
-  }
-  if (ticketModalOpen) {
-    closeSummitTicketModal();
+  if (closeTopmostLayer()) {
     if (isAnyModalOpen() || mode !== "title") ensureHistoryGuard();
-    return;
-  }
-  if (journalOpen) {
-    closeJournal();
-    if (isAnyModalOpen() || mode !== "title") ensureHistoryGuard();
-    return;
-  }
-  if (reelModalOpen) {
-    closeMemoryReel();
-    if (mode !== "title") ensureHistoryGuard();
-    return;
-  }
-  if (atlasModalOpen) {
-    closeAtlasModal();
-    if (mode !== "title") ensureHistoryGuard();
-    return;
-  }
-  if (bestiaryModalOpen) {
-    closeBestiaryModal();
-    if (mode !== "title") ensureHistoryGuard();
-    return;
-  }
-  if (maniModalOpen) {
-    closeManiModal();
-    if (mode !== "title") ensureHistoryGuard();
-    return;
-  }
-  if (finaleModalOpen) {
-    closeFinaleModal();
-    if (mode !== "title") ensureHistoryGuard();
     return;
   }
   if (isPhotoMode) {
@@ -3281,9 +3726,7 @@ let duoCamRestoreTimer = null;
 
 function getResidentPartnerName() {
   if (!activeNeighborRig) return "星球伙伴";
-  if (activeNeighborRig.residentRole === "kitty") return "Kitty";
-  if (activeNeighborRig.residentRole === "miemie") return "咩咩";
-  return "清哥";
+  return (HOST_REGISTRY[activeNeighborRig.residentRole] || HOST_REGISTRY.mine).name;
 }
 
 function navigateToHostAndOpenMenu(pillBtn = null) {
@@ -3321,17 +3764,22 @@ function handleHostCharacterClick() {
 function syncCompanionUI() {
   const following = Boolean(activeNeighborRig?.isFollowing);
   const partner = getResidentPartnerName();
-  const rRole = activeNeighborRig?.residentRole;
-  const rIcon = rRole === "kitty" ? "🐾" : rRole === "miemie" ? "🐑" : "🏔️";
+  const rIcon = (HOST_REGISTRY[activeNeighborRig?.residentRole] || HOST_REGISTRY.mine).badgeIcon;
   const pill = document.getElementById("companion-follow-pill");
   const label = document.getElementById("companion-follow-label");
   if (pill) pill.classList.toggle("hidden", !following);
-  if (label) label.textContent = `${rIcon} 正与 ${partner} 并肩同行`;
+  if (label) {
+    label.textContent = isBikeRiding
+      ? `🚴 正与 ${partner} 并肩骑行`
+      : `${rIcon} 正与 ${partner} 并肩同行`;
+  }
   const popFollowBtn = document.getElementById("btn-pop-follow");
   if (popFollowBtn) {
     popFollowBtn.textContent = following
       ? `👋 结束同行 · 送 ${partner} 回营地`
-      : `🤝 邀请 ${partner} 并肩同行`;
+      : isBikeRiding
+        ? `🚴 邀请 ${partner} 并肩骑行`
+        : `🤝 邀请 ${partner} 并肩同行`;
   }
   renderHudWaypoints();
 }
@@ -3340,7 +3788,7 @@ function openHostPopover() {
   if (!activeNeighborRig?.hostChar) return;
   const partner = getResidentPartnerName();
   const rRole = activeNeighborRig.residentRole;
-  const rIcon = rRole === "kitty" ? "🐾" : rRole === "miemie" ? "🐑" : "🏔️";
+  const rIcon = (HOST_REGISTRY[rRole] || HOST_REGISTRY.mine).badgeIcon;
   const titleEl = document.getElementById("host-pop-title");
   if (titleEl) titleEl.textContent = `${rIcon} 星球伙伴 · ${partner}`;
   const interactBtn = document.getElementById("btn-pop-interact");
@@ -3350,7 +3798,9 @@ function openHostPopover() {
         ? "🐑 咩星萤光互动"
         : rRole === "kitty"
           ? "🐾 猫爪星芒互动"
-          : "🏔️ 山海星火互动";
+          : rRole === "luca"
+            ? "🚴 破风车轮互动"
+            : "🏔️ 山海星火互动";
   }
   syncCompanionUI();
   document.getElementById("host-action-popover")?.classList.remove("hidden");
@@ -3373,13 +3823,19 @@ function toggleCompanionFollow(force) {
   sound.init();
   sound.playSelectPlanet?.();
   if (next) {
-    hiker.triggerEmote("cheer", 1.5);
-    showCompanionBubble(activeNeighborRig.pickCompanionLine?.() || "出发吧！我陪你一起走完这座山✨", 3600);
-    showWonderToast(`🤝 ${partner} 开心地背好行囊加入了队伍！点顶部胶囊可随时挥手道别～`, 3800);
+    if (isBikeRiding) {
+      sound.playBikeBell?.();
+      showCompanionBubble("叮铃～跨上公路车跟上你啦！一起破风巡航吧🚴✨", 3600);
+      showWonderToast(`🚴 ${partner} 利落地跨上破风公路车加入了车队！点顶部胶囊可随时挥手道别～`, 3800);
+    } else {
+      hiker.triggerEmote("cheer", 1.5);
+      showCompanionBubble(activeNeighborRig.pickCompanionLine?.() || "出发吧！我陪你一起走完这座山✨", 3600);
+      showWonderToast(`🤝 ${partner} 开心地背好行囊加入了队伍！点顶部胶囊可随时挥手道别～`, 3800);
+    }
   } else {
     hideCompanionBubble();
     hiker.triggerWave();
-    showWonderToast(`👋 与 ${partner} 挥手道别，TA 已回到营地星际漂流瓶旁守候～`, 3200);
+    showWonderToast(`👋 与 ${partner} 挥手道别，TA 已回到营地旁守候～`, 3200);
   }
 }
 
@@ -3409,6 +3865,7 @@ function triggerDuoInteractionScene() {
 
   const faceToPlayer = playerUp.clone().sub(hostUp).normalize();
   if (cur.mode === "sit") {
+    if (isBikeRiding) toggleBikeRide(false);
     const viewFwd = new THREE.Vector3().crossVectors(tangent, midUp).normalize();
     playerForward.copy(viewFwd);
     orientHikerOnSphere(scene, playerUp, playerForward, activePlanet.id);
@@ -3450,6 +3907,12 @@ function triggerDuoInteractionScene() {
       spin: "趁日落最后八分钟，一起跳支星光舞吧💫",
       sit: "并排坐着等第一颗流星划过天际吧🌠",
     },
+    luca: {
+      cheer: "破风冲线🚴！走，前面海风和雪岭都超爽！",
+      rose: "环岛椰林的阳光玫瑰送给你🌹，随时来兜风！",
+      spin: "踏频拉满，迎着海风转个帅气的圈✨！",
+      sit: "把单车停好，坐草坡上吹吹海风歇歇腿吧⛺",
+    },
     mine: {
       cheer: "山海重逢🏔️！走，翻过前面那座垭口！",
       rose: "把沙漠与雪山的星光玫瑰送给你🌹！",
@@ -3467,6 +3930,7 @@ function triggerHotpotFeast() {
   if (!activeNeighborRig?.hostChar || !activePlanet) return;
   closeHostPopover();
   closeNeighborHubModal();
+  if (isBikeRiding) toggleBikeRide(false);
   if (isCampfireMode) toggleCampfireMode(false);
   const partner = getResidentPartnerName();
   const hostUp = activeNeighborRig.hostUp;
@@ -3491,6 +3955,7 @@ function triggerHotpotFeast() {
   const HOTPOT_LINES = {
     miemie: "海拔四千米的红汤小火锅咕嘟咕嘟🍲，重装背上来的肥牛就是香！干杯🍻！",
     kitty: "哇～山顶热乎乎的番茄小火锅配星空也太幸福了吧🍲！干杯✨！",
+    luca: "骑完百公里爬坡，来一锅热气腾腾的糟粕醋海鲜小火锅太回血啦🍲！干杯🍻！",
     mine: "支起高山气罐炉头🍲！风雪再大，一口热汤下肚浑身都是劲，碰一个🍻！",
   };
   showCompanionBubble(HOTPOT_LINES[activeNeighborRig.residentRole] || HOTPOT_LINES.mine, 4600);
@@ -3577,8 +4042,9 @@ function updateCompanionSpeechTick(dt, playerSpeed) {
       if (worldHead.z < 1) {
         const sx = (worldHead.x * 0.5 + 0.5) * window.innerWidth;
         const sy = (-worldHead.y * 0.5 + 0.5) * window.innerHeight;
-        el.style.left = `${THREE.MathUtils.clamp(sx, 128, window.innerWidth - 128)}px`;
-        el.style.top = `${THREE.MathUtils.clamp(sy - 12, 68, window.innerHeight - 140)}px`;
+        const minBubbleTop = window.innerWidth <= 820 ? 152 : 68;
+        el.style.left = `${THREE.MathUtils.clamp(sx, 124, window.innerWidth - 124)}px`;
+        el.style.top = `${THREE.MathUtils.clamp(sy - 12, minBubbleTop, window.innerHeight - 140)}px`;
       }
     }
   }
@@ -3650,7 +4116,7 @@ function warpToPlanetGlobal(targetPlanetId) {
   triggerHaptic(22);
 
   setTimeout(() => {
-    const targetUni = target.owner === "kitty" ? "kitty" : target.owner === "miemie" ? "miemie" : "mine";
+    const targetUni = normalizeHostRole(target.owner);
     if (currentUniverse !== targetUni) switchUniverse(targetUni, target.id);
     const idx = PLANETS.findIndex((x) => x.id === target.id);
     if (idx >= 0) enterPlanet(idx);
@@ -3668,31 +4134,60 @@ function warpToPlanetGlobal(targetPlanetId) {
 }
 
 function getNeighborBucketKey() {
-  if (!activePlanet) return currentUniverse === "kitty" || currentUniverse === "miemie" ? currentUniverse : "mine";
-  if (activePlanet.owner === "kitty" || activePlanet.owner === "miemie") return activePlanet.owner;
+  if (!activePlanet) return normalizeHostRole(currentUniverse);
   if (activePlanet.owner === "guest") return activePlanet.id;
-  return "mine";
+  return normalizeHostRole(activePlanet.owner);
+}
+
+function recordBottleVisitor(bucketKey, rawName) {
+  if (!bucketKey) return;
+  if (!socialState.visitors) socialState.visitors = { kitty: 14, miemie: 16, luca: 12, mine: 19 };
+  if (!socialState.visitorNames || typeof socialState.visitorNames !== "object") {
+    socialState.visitorNames = {};
+  }
+  const cleanName = String(rawName || "").trim();
+  if (!cleanName) return;
+  if (!Array.isArray(socialState.visitorNames[bucketKey])) {
+    const seeded = (socialState.notes[bucketKey] || []).map((n) => String(n.from || "").trim()).filter(Boolean);
+    socialState.visitorNames[bucketKey] = Array.from(new Set(seeded));
+  }
+  if (!socialState.visitorNames[bucketKey].includes(cleanName)) {
+    socialState.visitorNames[bucketKey].push(cleanName);
+    socialState.visitors[bucketKey] = (socialState.visitors[bucketKey] ?? 8) + 1;
+    saveSocialState(socialState);
+  }
+}
+
+function getBottleVisitorCount(bucketKey) {
+  const base = socialState.visitors?.[bucketKey] ?? 8;
+  const knownLen = Array.isArray(socialState.visitorNames?.[bucketKey])
+    ? socialState.visitorNames[bucketKey].length
+    : 0;
+  return Math.max(base, knownLen, (socialState.notes?.[bucketKey] || []).length + 1);
 }
 
 function renderNeighborNotesUI() {
   const key = getNeighborBucketKey();
   const listEl = document.getElementById("neighbor-notes-list");
   const roseEl = document.getElementById("rose-count-num");
+  const visitorEl = document.getElementById("bottle-visitor-num");
   if (roseEl) roseEl.textContent = String(socialState.roses[key] ?? 12);
+  if (visitorEl) visitorEl.textContent = String(getBottleVisitorCount(key));
   if (!listEl) return;
   const arr = socialState.notes[key] || [];
   listEl.innerHTML = arr
     .slice(0, 8)
-    .map(
-      (n) => `
-      <div class="mani-note-item">
-        <span class="mani-note-stone">${n.badge || "📮"}</span>
+    .map((n) => {
+      const icon = String(n.badge || "🍾").trim().split(/\s+/)[0] || "🍾";
+      return `
+      <div class="mani-note-item bottle-note-item">
+        <span class="mani-note-stone">${escapeNoteHtml(icon)}</span>
         <div class="mani-note-content">
-          <div class="mani-note-text">“${n.text}”</div>
-          <div class="mani-note-meta">— ${n.from} · ${n.time || "星际串门"}</div>
+          <div class="mani-note-text"><strong class="bottle-note-author">${escapeNoteHtml(n.from || "旅人")}：</strong>${escapeNoteHtml(n.text)}</div>
         </div>
-      </div>`
-    )
+        <span class="bottle-note-time">${escapeNoteHtml(n.time || "星际串门")}</span>
+      </div>`;
+    })
     .join("");
 }
 
@@ -3701,37 +4196,24 @@ function openNeighborHubModal() {
   const p = activePlanet || PLANETS[selectedPlanetIdx];
   const pOwner = p?.owner || currentUniverse;
   const isHome = pOwner === activeHostRole;
-  const hostName = pOwner === "kitty" ? "Kitty" : pOwner === "miemie" ? "咩咩" : p?.ownerName || "清哥";
+  const hostName = HOST_REGISTRY[pOwner]?.name || p?.ownerName || "清哥";
+  const selfVisitorName =
+    activeHostRole === "mine" ? saveData.travelerName || "清哥" : HOST_REGISTRY[activeHostRole].name;
+  if (!isHome) recordBottleVisitor(getNeighborBucketKey(), selfVisitorName);
+
   document.getElementById("neighbor-hub-title").textContent = isHome
     ? `🍾 我的星际漂流瓶 · 「${p?.name || "主场星云"}」`
     : pOwner === "guest"
       ? `🍾 客座漂流瓶 · ${hostName} 的「${p.name}」`
       : `🍾 星际漂流瓶 · 邻居 ${hostName} 的「${p?.name || "星云"}」`;
   document.getElementById("neighbor-hub-sub").textContent = isHome
-    ? "打捞顺着银河漂流而来的好友纸条与星辰玫瑰，或放流一只漂流瓶去邻居家串门吧！"
-    : p?.hostSpotGreeting || `写张星海纸条塞进漂流瓶，或拉上 ${hostName} 拍张平视双人拍立得吧！`;
+    ? "打捞顺着银河漂流而来的好友信笺与星辰玫瑰，记录每一位踏足星球的旅人"
+    : `赠予 ${hostName} 一朵小王子的星辰玫瑰，或写一张纸条塞进漂流瓶放流星海吧！`;
 
-  const duoBtn = document.getElementById("btn-hub-duo-interact");
-  if (duoBtn) duoBtn.classList.toggle("hidden", !activeNeighborRig?.hostChar);
-
-  const resBtn = document.getElementById("btn-hub-resonance");
-  if (resBtn) resBtn.classList.toggle("hidden", !hasResonanceWithActiveHost(p));
-  const warpBtn = document.getElementById("btn-warp-neighbor-uni");
-  if (warpBtn) {
-    warpBtn.textContent =
-      currentUniverse === activeHostRole
-        ? activeHostRole === "mine"
-          ? "🐑 串门去邻居星系"
-          : "🪐 串门去清哥的星系"
-        : activeHostRole === "kitty"
-          ? "🐾 返回我的猫耳星云"
-          : activeHostRole === "miemie"
-            ? "🐑 返回我的绵羊星云"
-            : "🪐 返回我的主星系";
-  }
   markBottleReadNow();
   renderNeighborNotesUI();
   neighborModalOpen = true;
+  ensureHistoryGuard();
   document.getElementById("modal-neighbor-hub")?.classList.remove("hidden");
   sound.init();
   sound.playHover();
@@ -3742,20 +4224,14 @@ function closeNeighborHubModal() {
   document.getElementById("modal-neighbor-hub")?.classList.add("hidden");
 }
 
-const RES_ROLE_META = {
-  mine: { name: "清哥", icon: "🪐", colCls: "", tagCls: "" },
-  kitty: { name: "Kitty", icon: "🐾", colCls: "kitty-col", tagCls: "kitty-tag" },
-  miemie: { name: "咩咩", icon: "🐑", colCls: "miemie-col", tagCls: "miemie-tag" },
-};
-
 function buildResonanceNote(leftRole, rightRole, clusterIds, isSelfLeft) {
-  const prefix = isSelfLeft ? "你" : RES_ROLE_META[leftRole].name;
-  const other = RES_ROLE_META[rightRole].name;
+  const prefix = isSelfLeft ? "你" : (HOST_REGISTRY[leftRole] || HOST_REGISTRY.mine).name;
+  const other = (HOST_REGISTRY[rightRole] || HOST_REGISTRY.kitty).name;
   if (clusterIds.includes("zhagana")) {
     return `${prefix}与邻居 ${other} 曾先后翻越措美峰 4600 米的风雪垭口，也在扎尕那的云雾石城里看过同一片绿浪。`;
   }
   if (clusterIds.includes("yili")) {
-    return `${prefix}与邻居 ${other} 一南一北奔赴同一脉天山——一边是伊犁河谷与大海道的旷野繁星，一边是重装翻越乌孙古道达坂的滚烫青春。`;
+    return `${prefix}与邻居 ${other} 先后奔赴同一脉天山——伊犁旷野繁星、乌孙古道重装达坂与雪岭单车牧歌，在天山山脉遥相呼应。`;
   }
   return `同一片稻城亚丁三神山，见证了${prefix}与邻居 ${other} 各自的滚烫足迹——路线不止一条，选择不止一个，而你们都在路上。`;
 }
@@ -3784,13 +4260,11 @@ function openResonanceModal(planetId, preferredPartnerRole = null) {
   const rightP = all.find((x) => x.id === cluster.members[rightRole]);
   if (!leftP || !rightP) return;
 
-  const lMeta = RES_ROLE_META[leftRole] || RES_ROLE_META.mine;
-  const rMeta = RES_ROLE_META[rightRole] || RES_ROLE_META.kitty;
+  const rMeta = HOST_REGISTRY[rightRole] || HOST_REGISTRY.kitty;
 
   const isTrinity = preferredPartnerRole === "trinity" && memberRoles.length >= 3;
   const thirdRole = otherRoles.find((r) => r !== rightRole) || otherRoles[1];
   const thirdP = thirdRole ? all.find((x) => x.id === cluster.members[thirdRole]) : null;
-  const tMeta = RES_ROLE_META[thirdRole] || RES_ROLE_META.miemie;
 
   const modalEl = document.getElementById("modal-resonance");
   const bookEl = modalEl?.querySelector(".resonance-book");
@@ -3804,11 +4278,16 @@ function openResonanceModal(planetId, preferredPartnerRole = null) {
       : "✦ TWIN-STAR TRAIL RESONANCE · 跨宇宙双星同频 ✦";
   }
 
+  const isTianshanCluster = cluster.ids.includes("yili");
   document.getElementById("resonance-title").textContent = isTrinity
-    ? "🌌 三星连珠 · 同一座亚丁的三种青春"
+    ? isTianshanCluster
+      ? "🌌 三星连珠 · 同一脉天山的三种奔赴"
+      : "🌌 三星连珠 · 同一座亚丁的三种青春"
     : `⚡ ${cluster.title}`;
   document.getElementById("resonance-sub").textContent = isTrinity
-    ? "全宇宙 18 颗星球里，唯独稻城亚丁同时印下了清哥（大环线死守风雪帐篷）、Kitty（栈道松鼠与牛奶海晴空）、咩咩（六天五晚无信号重装反穿）三个人的脚印——同一座央迈勇，三种走法，在星海重逢。"
+    ? isTianshanCluster
+      ? "辽阔的新疆天山山脉同时收留了清哥（赛里木湖至琼库什台旷野徒步）、Kitty（重装翻越乌孙古道阿克布拉克达坂）、Luca（云杉雪岭木屋单车骑行）三个人的身影——徒步、重装与骑行，在同一片雪峰下同频。"
+      : `全宇宙 ${all.length} 颗星球里，稻城亚丁同时印下了清哥（大环线死守风雪帐篷）、Kitty（栈道松鼠与牛奶海晴空）、咩咩（六天五晚无信号重装反穿）三个人的脚印——同一座央迈勇，三种走法，在星海重逢。`
     : buildResonanceNote(leftRole, rightRole, cluster.ids, selfInCluster);
 
   const tabsEl = document.getElementById("resonance-partner-tabs");
@@ -3824,7 +4303,7 @@ function openResonanceModal(planetId, preferredPartnerRole = null) {
       const triBtn = document.createElement("button");
       triBtn.type = "button";
       triBtn.className = `uni-tab trinity-tab ${isTrinity ? "active" : ""}`;
-      triBtn.textContent = "🌌 三星连珠 · 三人亚丁特辑";
+      triBtn.textContent = isTianshanCluster ? "🌌 三星连珠 · 天山三人特辑" : "🌌 三星连珠 · 三人亚丁特辑";
       triBtn.onclick = () => openResonanceModal(pid, "trinity");
       tabsEl.append(pairBtn, triBtn);
     } else {
@@ -3834,14 +4313,14 @@ function openResonanceModal(planetId, preferredPartnerRole = null) {
 
   const fillCol = (side, pObj, roleKey, isSelfCard) => {
     if (!pObj) return;
-    const m = RES_ROLE_META[roleKey] || RES_ROLE_META.mine;
+    const m = HOST_REGISTRY[roleKey] || HOST_REGISTRY.mine;
     const col = document.getElementById(`res-col-${side}`);
     const tag = document.getElementById(`res-tag-${side}`);
     const jmp = document.getElementById(`res-jump-${side}`);
-    if (col) col.className = `res-col ${m.colCls}`.trim();
+    if (col) col.className = `res-col ${m.resColCls}`.trim();
     if (tag) {
-      tag.className = `res-owner-tag ${m.tagCls}`.trim();
-      tag.textContent = isSelfCard ? `${m.icon} 我的亚丁记忆（${m.name}）` : `${m.icon} 邻居 · ${m.name} 的星球记忆`;
+      tag.className = `res-owner-tag ${m.resTagCls}`.trim();
+      tag.textContent = isSelfCard ? `${m.icon} 我的星球记忆（${m.name}）` : `${m.icon} 邻居 · ${m.name} 的星球记忆`;
     }
     document.getElementById(`res-img-${side}`).src = pObj.waypoints[0]?.photo || "";
     document.getElementById(`res-name-${side}`).textContent = `${pObj.name} · ${pObj.stats.altitude}`;
@@ -3873,7 +4352,7 @@ function openResonanceModal(planetId, preferredPartnerRole = null) {
     warpTwinBtn.classList.toggle("hidden", isTrinity);
     const jumpTarget = pid === rightP.id ? leftP : rightP;
     const jumpRole = jumpTarget.owner || "mine";
-    const jumpMeta = RES_ROLE_META[jumpRole] || RES_ROLE_META.mine;
+    const jumpMeta = HOST_REGISTRY[jumpRole] || HOST_REGISTRY.mine;
     warpTwinBtn.textContent =
       jumpRole === activeHostRole
         ? `🚀 返回我的「${jumpTarget.name}」`
@@ -3883,6 +4362,7 @@ function openResonanceModal(planetId, preferredPartnerRole = null) {
 
   closeNeighborHubModal();
   resonanceModalOpen = true;
+  ensureHistoryGuard();
   modalEl?.classList.remove("hidden");
   sound.init();
   if (isTrinity) sound.playDiscoverWaypoint?.(true);
@@ -3900,6 +4380,7 @@ let latestCreatedShareUrl = "";
 
 function openCreatorModal() {
   creatorModalOpen = true;
+  ensureHistoryGuard();
   document.getElementById("creator-share-result")?.classList.add("hidden");
   document.getElementById("modal-create-planet")?.classList.remove("hidden");
   sound.init();
@@ -3911,43 +4392,33 @@ function closeCreatorModal() {
   document.getElementById("modal-create-planet")?.classList.add("hidden");
 }
 
-// 扉页双星主身份切换舱 + 串门副按钮自适应
+// 扉页四星主身份切换舱 + 串门副按钮自适应
 document.querySelectorAll("#host-role-switcher .host-role-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    const r = btn.dataset.hostRole;
-    const nextRole = r === "kitty" ? "kitty" : r === "miemie" ? "miemie" : "mine";
+    const nextRole = normalizeHostRole(btn.dataset.hostRole);
     if (nextRole === activeHostRole) return;
     sound.init();
     sound.playSelectPlanet();
     applyHostRoleUI(nextRole, true);
-    showWonderToast(
-      nextRole === "kitty"
-        ? "🐾 已切换至「Kitty 星主主场」· 7 颗猫耳星云已就绪！"
-        : nextRole === "miemie"
-          ? "🐑 已切换至「咩咩星主主场」· 5 颗绵羊星云已就绪！"
-          : "🏔️ 已切换至「清哥主场」· 6 颗山海星球已就绪！",
-      3200
-    );
+    showWonderToast(HOST_REGISTRY[nextRole].switchToast, 3200);
   });
 });
 
-document.getElementById("btn-visit-kitty-title")?.addEventListener("click", () => {
-  sound.init();
-  sound.playSelectPlanet();
-  const neighborUni = activeHostRole === "kitty" ? "mine" : "kitty";
-  switchUniverse(neighborUni);
-  openStarMap();
-  trackEvent("扉页串门拜访邻居星系", { neighborUni });
-});
-
-document.getElementById("btn-visit-miemie-title")?.addEventListener("click", () => {
-  sound.init();
-  sound.playSelectPlanet();
-  const neighborUni = activeHostRole === "miemie" ? "mine" : "miemie";
-  switchUniverse(neighborUni);
-  openStarMap();
-  trackEvent("扉页串门拜访邻居星系", { neighborUni });
-});
+// 扉页串门副按钮组（数据驱动绑定）
+for (const [btnId, targetRole] of [
+  ["btn-visit-kitty-title", "kitty"],
+  ["btn-visit-miemie-title", "miemie"],
+  ["btn-visit-luca-title", "luca"],
+]) {
+  document.getElementById(btnId)?.addEventListener("click", () => {
+    sound.init();
+    sound.playSelectPlanet();
+    const neighborUni = activeHostRole === targetRole ? "mine" : targetRole;
+    switchUniverse(neighborUni);
+    openStarMap();
+    trackEvent("扉页串门拜访邻居星系", { neighborUni });
+  });
+}
 
 document.querySelectorAll("#universe-switcher .uni-tab[data-uni]").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -3981,14 +4452,7 @@ document.getElementById("btn-warp-neighbor-uni")?.addEventListener("click", () =
         : "mine";
   const veil = document.getElementById("warp-veil");
   const label = document.getElementById("warp-label");
-  if (label) {
-    label.textContent =
-      nextUni === "kitty"
-        ? "✦ 星轨穿梭 · 正在飞往「Kitty 的猫耳星云」…"
-        : nextUni === "miemie"
-          ? "✦ 星轨穿梭 · 正在飞往「咩咩的绵羊星云」…"
-          : "✦ 星轨穿梭 · 正在飞往「清哥主星系」…";
-  }
+  if (label) label.textContent = HOST_REGISTRY[nextUni].warpLabel;
   if (veil) {
     veil.classList.remove("hidden");
     requestAnimationFrame(() => veil.classList.add("active"));
@@ -4027,18 +4491,25 @@ document.getElementById("neighbor-note-form")?.addEventListener("submit", (e) =>
   const text = (textEl?.value || "").trim();
   if (!text) return;
   const defaultName =
-    activeHostRole === "kitty" ? "Kitty" : activeHostRole === "miemie" ? "咩咩" : saveData.travelerName || "清哥";
+    activeHostRole === "kitty"
+      ? "Kitty"
+      : activeHostRole === "miemie"
+        ? "咩咩"
+        : activeHostRole === "luca"
+          ? "Luca"
+          : saveData.travelerName || "清哥";
   const from = (authorEl?.value || "").trim() || defaultName;
   const key = getNeighborBucketKey();
   if (!Array.isArray(socialState.notes[key])) socialState.notes[key] = [];
   socialState.notes[key].unshift({ from, badge: "🍾 漂流瓶信笺", text, time: "刚刚放流" });
+  recordBottleVisitor(key, from);
   saveSocialState(socialState);
   if (textEl) textEl.value = "";
   renderNeighborNotesUI();
   activeNeighborRig?.triggerHostWave();
 
   // 生成零后端跨手机「星海漂流瓶链接」
-  const targetOwner = key === "kitty" || key === "miemie" ? key : "mine";
+  const targetOwner = key === "kitty" || key === "miemie" || key === "luca" ? key : "mine";
   const lToken = encodeReplyLetter({ toOwner: targetOwner, from, text, roses: 1 });
   const baseUrl = window.location.origin + window.location.pathname;
   latestReplyShareUrl = `${baseUrl}?host=${targetOwner}&letter=${lToken}`;
@@ -4075,12 +4546,14 @@ function captureCoopPolaroid() {
     const rightTan = new THREE.Vector3().crossVectors(hUp, arb).normalize();
     const camFwd = new THREE.Vector3().crossVectors(rightTan, hUp).normalize();
 
-    playerUp.copy(hUp).addScaledVector(rightTan, 0.055).normalize();
+    const duoGap = isBikeRiding ? 0.096 : 0.055;
+    const snapDist = isBikeRiding ? 4.35 : 3.85;
+    playerUp.copy(hUp).addScaledVector(rightTan, duoGap).normalize();
     playerForward.copy(camFwd);
     orientHikerOnSphere(scene, playerUp, playerForward, activePlanet.id);
     activeNeighborRig.orientChar(hUp, camFwd);
-    hiker.poseWaveSnapshot?.();
-    activeNeighborRig.hostChar.poseWaveSnapshot?.();
+    if (!isBikeRiding) hiker.poseWaveSnapshot?.();
+    if (!activeNeighborRig.isHostCycling) activeNeighborRig.hostChar.poseWaveSnapshot?.();
 
     const midUp = hUp.clone().add(playerUp).normalize();
     const midR = getSurfaceRadius(activePlanet.id, midUp);
@@ -4089,15 +4562,14 @@ function captureCoopPolaroid() {
     camera.position
       .copy(groundMid)
       .addScaledVector(midUp, 0.92)
-      .addScaledVector(camFwd, 3.85);
+      .addScaledVector(camFwd, snapDist);
     camera.lookAt(groundMid.clone().addScaledVector(midUp, 1.05));
   } else {
     hiker.poseWaveSnapshot?.();
   }
 
   renderer.render(scene, camera);
-  const visitor =
-    saveData.travelerName || (activeHostRole === "kitty" ? "Kitty" : activeHostRole === "miemie" ? "咩咩" : "清哥");
+  const visitor = saveData.travelerName || HOST_REGISTRY[activeHostRole].name;
   const url = generateCoopSnapshotDataUrl(renderer.domElement, activePlanet, visitor, activeHostRole);
 
   // 抓拍完毕毫秒级无损还原正常游戏相机，不干扰后续操作
@@ -4147,6 +4619,7 @@ function openFlagModal(existingFlag = null) {
   closeHostPopover();
   viewingFlagItem = existingFlag;
   flagModalOpen = true;
+  ensureHistoryGuard();
   const viewBox = document.getElementById("flag-view-box");
   const formEl = document.getElementById("flag-plant-form");
   const copyBtn = document.getElementById("btn-copy-existing-flag");
@@ -4287,7 +4760,7 @@ document.getElementById("btn-poster-new-planet")?.addEventListener("click", () =
 function bootFromUrlParams() {
   const sp = new URLSearchParams(window.location.search);
   const hostParam = (sp.get("host") || sp.get("role") || "").toLowerCase();
-  if (hostParam === "kitty" || hostParam === "miemie" || hostParam === "mine") {
+  if (hostParam === "kitty" || hostParam === "miemie" || hostParam === "luca" || hostParam === "mine") {
     applyHostRoleUI(hostParam, false);
     currentUniverse = activeHostRole;
     PLANETS = getPlanetsForUniverse(currentUniverse);
@@ -4300,7 +4773,7 @@ function bootFromUrlParams() {
   if (letterToken) {
     const incoming = decodeReplyLetter(letterToken);
     if (incoming && incoming.m) {
-      const bucket = incoming.to === "kitty" || incoming.to === "miemie" ? incoming.to : "mine";
+      const bucket = normalizeHostRole(incoming.to);
       if (!Array.isArray(socialState.notes[bucket])) socialState.notes[bucket] = [];
       const exists = socialState.notes[bucket].some((n) => n.from === incoming.f && n.text === incoming.m);
       if (!exists) {
@@ -4311,6 +4784,7 @@ function bootFromUrlParams() {
           time: "顺银河漂达",
         });
         socialState.roses[bucket] = (socialState.roses[bucket] ?? 12) + (Number(incoming.r) || 1);
+        recordBottleVisitor(bucket, incoming.f);
         saveSocialState(socialState);
       }
       setTimeout(() => {
@@ -4324,9 +4798,8 @@ function bootFromUrlParams() {
     if (incomingFlag) {
       const savedFlag = savePlantedFlag(incomingFlag);
       const pid = savedFlag.planetId;
-      if (pid.startsWith("kitty-")) switchUniverse("kitty", pid);
-      else if (pid.startsWith("miemie-")) switchUniverse("miemie", pid);
-      else switchUniverse("mine", pid);
+      const prefixUni = ["kitty", "miemie", "luca"].find((u) => pid.startsWith(`${u}-`)) || "mine";
+      switchUniverse(prefixUni, pid);
       const fIdx = PLANETS.findIndex((x) => x.id === pid);
       if (fIdx >= 0) {
         enterPlanet(fIdx);
@@ -4359,33 +4832,27 @@ function bootFromUrlParams() {
   const uniParam = (sp.get("universe") || sp.get("neighbor") || "").toLowerCase();
   const qPlanet = (sp.get("planet") || "").toLowerCase();
   const hashKey = window.location.hash.replace(/^#\/?/, "").trim().toLowerCase();
-  const targetKey = qPlanet || hashKey;
+  let targetKey = qPlanet || hashKey;
 
-  if (uniParam === "kitty" || targetKey === "kitty") {
-    switchUniverse("kitty");
-    openStarMap();
-    return;
-  }
-  if (uniParam === "miemie" || targetKey === "miemie") {
-    switchUniverse("miemie");
-    openStarMap();
-    return;
-  }
-  if (uniParam === "mine" || targetKey === "mine") {
-    switchUniverse("mine");
-    openStarMap();
-    return;
+  for (const u of ["kitty", "miemie", "luca", "mine"]) {
+    if (uniParam === u || targetKey === u) {
+      switchUniverse(u);
+      openStarMap();
+      return;
+    }
   }
 
   if (targetKey) {
-    if (targetKey.startsWith("kitty-")) {
-      switchUniverse("kitty", targetKey);
-    } else if (targetKey.startsWith("miemie-")) {
-      switchUniverse("miemie", targetKey);
+    if (["miemie-tonggudang", "miemie-longji", "miemie-shexiang", "miemie-buyi"].includes(targetKey)) {
+      targetKey = "miemie-guizhou";
+    }
+    const matchedPrefix = ["kitty", "miemie", "luca"].find((u) => targetKey.startsWith(`${u}-`));
+    if (matchedPrefix) {
+      switchUniverse(matchedPrefix, targetKey);
     } else if ([...MY_PLANETS, ...guestPlanets].some((p) => p.id === targetKey)) {
       switchUniverse("mine", targetKey);
     } else {
-      initScrollMapUI();
+      switchUniverse(activeHostRole);
     }
     const pIdx = PLANETS.findIndex((p) => p.id === targetKey);
     if (pIdx >= 0) {
@@ -4393,7 +4860,7 @@ function bootFromUrlParams() {
       return;
     }
   } else {
-    initScrollMapUI();
+    switchUniverse(activeHostRole);
   }
   setupTitleScene();
 }

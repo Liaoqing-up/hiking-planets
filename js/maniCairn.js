@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { latLonToUnitVec, getSurfaceRadius } from "./planetBuilder3D.js?v=4.0.0-r1";
+import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=4.2.5-release";
 
 const SEED_NOTES = {
   tengger: [

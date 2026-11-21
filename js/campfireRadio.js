@@ -151,6 +151,7 @@ export function buildCampfireRig() {
     mine: { fly: "#f59e0b", emi: "#b45309", roll: "#38bdf8" },
     kitty: { fly: "#f472b6", emi: "#be185d", roll: "#fde047" },
     miemie: { fly: "#10b981", emi: "#047857", roll: "#fbbf24" },
+    luca: { fly: "#0ea5e9", emi: "#0369a1", roll: "#f97316" },
   };
 
   return {

@@ -18,6 +18,21 @@
   margin: 0;
   padding: 0;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+textarea,
+select {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+#ticket-preview-img,
+#lightbox-img {
+  -webkit-touch-callout: default;
+  user-select: auto;
+  -webkit-user-select: auto;
 }
 
 html, body {
@@ -47,6 +62,8 @@ html, body {
   display: block;
   width: 100%;
   height: 100%;
+  touch-action: none;
+  -webkit-touch-callout: none;
 }
 
 .starry-vignette {
@@ -91,7 +108,7 @@ kbd {
 /* Global Sound Button */
 #btn-global-sound {
   position: fixed;
-  top: 20px;
+  top: 18px;
   right: 22px;
   z-index: 40;
   padding: 7px 14px;
@@ -493,6 +510,7 @@ kbd {
 
 #btn-enter-planet {
   padding: 8px 28px;
+  text-indent: 0.2em;
   font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.2em;
@@ -526,9 +544,37 @@ kbd {
   top: 18px;
   left: 20px;
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: calc(100vw - 565px);
+  pointer-events: none;
+  z-index: 22;
+}
+
+.hud-left-main {
+  display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  max-width: 100%;
   pointer-events: auto;
+}
+
+.hud-left-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.hud-left-sub:empty {
+  display: none;
+}
+
+#btn-back-map {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 #btn-back-map,
@@ -555,26 +601,56 @@ kbd {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 #hud-planet-name {
   color: var(--gold-bright);
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#hud-altitude,
+#hud-steps {
+  flex-shrink: 0;
+}
+
+#hud-bgm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
 }
 
 .hud-sep {
   opacity: 0.45;
+  flex-shrink: 0;
 }
 
 .hud-top-right {
   position: fixed;
   top: 18px;
-  right: 112px;
+  right: 22px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
+  pointer-events: none;
+  z-index: 22;
+}
+
+.hud-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 90px;
   pointer-events: auto;
+}
+
+.hud-tools button {
+  white-space: nowrap;
 }
 
 #hud-waypoints {
@@ -582,12 +658,15 @@ kbd {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 6px;
+  max-width: min(880px, calc(100vw - 410px));
+  pointer-events: auto;
 }
 
 .wp-pill {
   padding: 5px 11px;
   font-size: 12px;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .wp-pill.discovered {
@@ -601,9 +680,23 @@ kbd {
   border-color: #fff0b8;
 }
 
-.hud-tools {
-  display: flex;
-  gap: 8px;
+@media (max-width: 1260px) and (min-width: 821px) {
+  #btn-back-map kbd,
+  .hud-tools button kbd {
+    display: none;
+  }
+  .hud-top-left {
+    max-width: calc(100vw - 445px);
+  }
+  .hud-left-sub {
+    max-width: 280px;
+  }
+  #hud-bgm {
+    max-width: 115px;
+  }
+  #hud-waypoints {
+    max-width: calc(100vw - 320px);
+  }
 }
 
 .hud-bottom-center {
@@ -755,6 +848,40 @@ kbd {
   overflow: hidden;
   border-radius: 2px;
   background: #1c253d;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  transition: aspect-ratio 0.22s ease;
+}
+
+.polaroid-media.is-portrait-photo {
+  aspect-ratio: 1.24 / 1;
+}
+
+.polaroid-media.is-panning {
+  cursor: grabbing;
+}
+
+.polaroid-pan-hint {
+  position: absolute;
+  right: 7px;
+  bottom: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(12, 18, 34, 0.56);
+  backdrop-filter: blur(4px);
+  color: rgba(252, 245, 228, 0.88);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  opacity: 0.78;
+  transition: opacity 0.22s ease;
+}
+
+.polaroid-media.is-panning .polaroid-pan-hint,
+.polaroid-media.loading .polaroid-pan-hint {
+  opacity: 0;
 }
 
 .polaroid-media.loading::after {
@@ -978,7 +1105,19 @@ body.photo-mode #btn-global-sound {
   pointer-events: none;
 }
 
-body:has(#campfire-mixer:not(.hidden)) #mobile-joystick {
+body:has(#campfire-mixer:not(.hidden)) #mobile-joystick,
+body:has(#campfire-mixer:not(.hidden)) .hud-bottom-center,
+body:has(#campfire-mixer:not(.hidden)) #companion-follow-pill,
+body:has(#campfire-mixer:not(.hidden)) #hud-terrain-tag,
+body:has(#campfire-mixer:not(.hidden)) #hud-side-dock,
+body:has(#campfire-mixer:not(.hidden)) #first-land-guide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body:has(#host-action-popover:not(.hidden)) #hud-side-dock,
+body:has(#host-action-popover:not(.hidden)) #first-land-guide,
+body:has(#host-action-popover:not(.hidden)) .hud-bottom-center {
   opacity: 0;
   pointer-events: none;
 }
@@ -1066,7 +1205,7 @@ body:has(#campfire-mixer:not(.hidden)) #mobile-joystick {
 
 #wonder-toast {
   position: fixed;
-  top: 92px;
+  top: 102px;
   left: 50%;
   transform: translateX(-50%);
   padding: 8px 20px;
@@ -1869,10 +2008,10 @@ a[href*="netlify.com?utm_source"] {
   }
 
   #btn-global-sound {
-    top: 12px;
-    right: 12px;
-    padding: 5px 11px;
-    font-size: 12px;
+    top: 10px;
+    right: 10px;
+    padding: 4px 7px;
+    font-size: 10.5px;
   }
 
   /* 1. 手机竖屏扉页：标题居上半屏，3D星球居下半屏，互不遮挡 */
@@ -1914,47 +2053,78 @@ a[href*="netlify.com?utm_source"] {
     letter-spacing: 0.18em;
   }
 
-  /* 2. 手机竖屏羊皮纸星图卷轴：零重叠流式滚动排版 */
+  /* 2. 手机竖屏羊皮纸星图卷轴：零重叠紧凑排版，首屏直见「前去徒步」 */
   #screen-map {
-    padding: 50px 10px 48px;
+    padding: 40px 8px 36px;
     align-items: stretch;
   }
   .parchment-scroll {
     width: 100%;
     max-height: 100%;
-    padding: 16px 14px 18px;
+    padding: 11px 12px 13px;
     overflow-y: auto;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 5px;
+  }
+  .universe-switcher {
+    border-radius: 14px;
+    gap: 4px;
+    padding: 3px 6px;
+    margin-bottom: 2px;
+    max-width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+  .universe-switcher::-webkit-scrollbar {
+    display: none;
+  }
+  .uni-tab {
+    padding: 3px 8px;
+    font-size: 11px;
+    flex-shrink: 0;
   }
   .parchment-stars {
     display: none;
   }
   .scroll-latin {
-    font-size: 9px;
-    letter-spacing: 0.2em;
-  }
-  .scroll-heading {
-    font-size: 21px;
+    font-size: 8.5px;
     letter-spacing: 0.16em;
   }
+  .scroll-heading {
+    font-size: 18px;
+    letter-spacing: 0.12em;
+    margin: 2px 0;
+  }
   .scroll-subtitle {
-    font-size: 11.5px;
+    font-size: 11px;
+    line-height: 1.35;
   }
   .constellation-trail-svg {
-    display: none;
+    display: block;
+    z-index: 1;
+  }
+  .constellation-trail-svg .trail-glow {
+    stroke: rgba(212, 162, 76, 0.3);
+    stroke-width: 4.5;
+  }
+  .constellation-trail-svg .trail-dashed {
+    stroke: rgba(82, 98, 132, 0.62);
+    stroke-width: 1.65;
+    stroke-dasharray: 3 6;
   }
   #scroll-planet-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px 6px;
+    gap: 5px 5px;
     width: 100%;
   }
   .planet-node {
     padding: 2px;
   }
   .planet-visual {
-    width: 78px;
-    height: 78px;
+    width: 64px;
+    height: 64px;
   }
   .planet-stamp {
     font-size: 9px;
@@ -1995,13 +2165,20 @@ a[href*="netlify.com?utm_source"] {
     top: 10px;
     left: 10px;
     right: 10px;
+    max-width: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .hud-left-main {
+    width: 100%;
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
   }
   #btn-back-map {
-    padding: 5px 11px;
-    font-size: 12px;
+    padding: 4px 8px;
+    font-size: 10.5px;
     white-space: nowrap;
   }
   .hud-planet-info {
@@ -2021,6 +2198,7 @@ a[href*="netlify.com?utm_source"] {
   }
   #hud-bgm {
     font-size: 11px;
+    max-width: none;
   }
   #mobile-joystick {
     left: 12px;
@@ -2064,19 +2242,20 @@ a[href*="netlify.com?utm_source"] {
     order: 1;
     pointer-events: auto;
     align-self: flex-end;
-    margin-right: 68px;
-    gap: 5px;
+    margin-right: 60px;
+    gap: 3px;
   }
   .hud-tools button {
-    padding: 5px 9px;
-    font-size: 11px;
+    padding: 4px 5.5px;
+    font-size: 10.5px;
     white-space: nowrap;
   }
   #hud-waypoints {
     order: 2;
     pointer-events: auto;
-    margin-top: 44px;
+    margin-top: 40px;
     width: 100%;
+    max-width: none;
     flex-wrap: nowrap;
     overflow-x: auto;
     justify-content: flex-start;
@@ -2164,9 +2343,51 @@ a[href*="netlify.com?utm_source"] {
     gap: 9px;
   }
   #photo-mode-bar {
-    right: 12px;
-    left: 12px;
+    right: 10px;
+    left: 10px;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
     justify-content: center;
+    gap: 6px;
+  }
+  #photo-mode-bar button {
+    padding: 7px 10px;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+  input[type="text"],
+  input:not([type]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+  #mobile-joystick {
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+  .hud-bottom-center {
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+  #btn-back-title {
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  #campfire-mixer {
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .first-land-guide {
+    max-width: 92vw;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.4;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    font-size: 11.5px;
+    padding: 6px 12px;
+  }
+  .hud-tools {
+    max-width: calc(100vw - 148px);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .hud-tools::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -2323,6 +2544,13 @@ a[href*="netlify.com?utm_source"] {
   border-color: rgba(248, 217, 130, 0.9);
   color: #fff3c4;
   box-shadow: 0 0 14px rgba(240, 199, 104, 0.35);
+}
+
+#btn-bike-ride.active {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.72), rgba(56, 189, 248, 0.38));
+  border-color: rgba(125, 211, 252, 0.92);
+  color: #f0f9ff;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.42);
 }
 
 .campfire-presets {
@@ -2540,6 +2768,29 @@ a[href*="netlify.com?utm_source"] {
   background: rgba(255, 250, 238, 0.65);
 }
 
+@media (max-width: 820px) {
+  .universe-switcher {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 4px;
+    padding: 3px 5px;
+    margin-bottom: 3px;
+  }
+  .universe-switcher::-webkit-scrollbar {
+    display: none;
+  }
+  .uni-tab {
+    padding: 3px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
 .uni-tab.active {
   background: linear-gradient(135deg, #3b2814, #5c3d1e);
   color: #fef3c7;
@@ -2556,6 +2807,11 @@ a[href*="netlify.com?utm_source"] {
   color: #ecfdf5;
 }
 
+.uni-tab.luca-tab.active {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #f0f9ff;
+}
+
 .neighbor-title-row {
   display: flex;
   flex-wrap: wrap;
@@ -2566,6 +2822,11 @@ a[href*="netlify.com?utm_source"] {
 .neighbor-title-btn.miemie-btn {
   border-color: rgba(110, 231, 183, 0.45);
   color: #d1fae5;
+}
+
+.neighbor-title-btn.luca-btn {
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #e0f2fe;
 }
 
 .uni-tab.creator-tab {
@@ -2592,7 +2853,24 @@ a[href*="netlify.com?utm_source"] {
   pointer-events: none;
 }
 
+.scroll-meta-pill.finale-pill.hidden,
+#btn-bike-ride.hidden,
+#companion-follow-pill.hidden,
+#resonance-partner-tabs.hidden,
+#res-jump-left.hidden,
+#res-jump-right.hidden,
+#res-col-third.hidden,
+#btn-warp-twin-planet.hidden,
+#btn-copy-reply-letter.hidden,
+#creator-share-result.hidden,
+#flag-view-box.hidden,
+#flag-plant-form.hidden,
+#btn-copy-existing-flag.hidden {
+  display: none !important;
+}
+
 .footer-action-group {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -2609,7 +2887,27 @@ a[href*="netlify.com?utm_source"] {
   font-family: var(--font-serif);
   font-size: 13px;
   cursor: pointer;
+  white-space: nowrap;
   transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.resonance-pill-btn.hidden {
+  display: none !important;
+}
+
+@media (min-width: 720px) {
+  .footer-action-group {
+    width: 100%;
+  }
+  .footer-action-group .resonance-pill-btn {
+    position: absolute;
+    left: calc(50% + 92px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .footer-action-group .resonance-pill-btn:hover {
+    transform: translateY(calc(-50% - 1px));
+  }
 }
 
 .resonance-pill-btn:hover {
@@ -2627,11 +2925,58 @@ a[href*="netlify.com?utm_source"] {
   width: min(92vw, 540px);
 }
 
-.neighbor-quick-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+.bottle-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 12px;
+}
+
+.bottle-stat-pill {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(168, 121, 62, 0.42);
+  background: rgba(255, 250, 238, 0.88);
+  color: #4a3118;
+  font-family: var(--font-serif);
+  font-size: 12.5px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.bottle-stat-pill strong {
+  color: #8c2d19;
+  font-size: 14px;
+  margin: 0 2px;
+}
+
+.bottle-stats-bar .rose-btn {
+  flex: 1.15;
+  white-space: nowrap;
+}
+
+.bottle-note-item {
+  align-items: flex-start;
+}
+
+.bottle-note-item .mani-note-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.bottle-note-author {
+  color: #8c2d19;
+  font-weight: 700;
+}
+
+.bottle-note-time {
+  flex-shrink: 0;
+  color: #8c6327;
+  font-size: 11px;
+  white-space: nowrap;
+  margin-top: 2px;
 }
 
 .neighbor-act-btn {
@@ -2710,6 +3055,11 @@ a[href*="netlify.com?utm_source"] {
   border-color: rgba(27, 122, 88, 0.42);
 }
 
+.res-col.luca-col {
+  background: rgba(240, 249, 255, 0.9);
+  border-color: rgba(2, 132, 199, 0.42);
+}
+
 .res-owner-tag {
   display: inline-block;
   font-size: 11.5px;
@@ -2728,6 +3078,11 @@ a[href*="netlify.com?utm_source"] {
 .res-owner-tag.miemie-tag {
   background: rgba(27, 122, 88, 0.16);
   color: #145a41;
+}
+
+.res-owner-tag.luca-tag {
+  background: rgba(2, 132, 199, 0.16);
+  color: #0369a1;
 }
 
 .res-col img {
@@ -2918,21 +3273,41 @@ a[href*="netlify.com?utm_source"] {
   min-width: 148px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 820px) {
   .host-role-switcher {
-    top: max(12px, env(safe-area-inset-top, 10px));
-    left: 12px;
+    top: max(10px, env(safe-area-inset-top, 10px));
+    left: 10px;
     transform: none;
-    padding: 3px;
+    max-width: calc(100vw - 72px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 2px;
     gap: 2px;
   }
+  #btn-global-sound {
+    top: max(10px, env(safe-area-inset-top, 10px));
+  }
+  .host-role-switcher::-webkit-scrollbar {
+    display: none;
+  }
   .host-role-btn {
-    font-size: 11px;
-    padding: 5px 8px;
+    font-size: 10.5px;
+    padding: 4px 6px;
+    letter-spacing: 0.01em;
+  }
+  #scroll-planet-grid.grid-many-planets {
+    gap: 5px 4px;
   }
   #scroll-planet-grid.grid-many-planets .planet-node {
-    width: calc(50% - 8px);
-    min-width: 120px;
+    width: calc(25% - 4px);
+    min-width: 0;
+  }
+  #scroll-planet-grid.grid-many-planets .planet-visual {
+    width: 54px;
+    height: 54px;
+  }
+  #scroll-planet-grid.grid-many-planets .planet-node-label {
+    font-size: 10.5px;
   }
 }
 
@@ -2970,7 +3345,7 @@ a[href*="netlify.com?utm_source"] {
 /* V4.2 并肩同行胶囊 & 星主点击互动气泡卡 & 寻路找星主胶囊 */
 .companion-follow-pill {
   pointer-events: auto;
-  margin-top: 6px;
+  margin-top: 0;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -3132,19 +3507,25 @@ a[href*="netlify.com?utm_source"] {
   margin: 8px 0 6px;
 }
 .bottle-preset-chip {
-  padding: 4px 10px;
+  padding: 5px 11px;
   border-radius: 999px;
-  border: 1px solid rgba(244, 114, 182, 0.42);
-  background: rgba(244, 114, 182, 0.13);
-  color: #fbcfe8;
+  border: 1px solid rgba(166, 118, 56, 0.48);
+  background: rgba(255, 251, 242, 0.92);
+  color: #432810;
   font-family: inherit;
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(92, 61, 24, 0.08);
   transition: all 0.16s ease;
 }
-.bottle-preset-chip:hover {
-  background: rgba(244, 114, 182, 0.3);
-  color: #fff;
+.bottle-preset-chip:hover,
+.bottle-preset-chip:focus-visible {
+  background: linear-gradient(135deg, #9f1239, #be185d);
+  border-color: #9f1239;
+  color: #fffdf9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(159, 18, 57, 0.24);
 }
 #btn-neighbor-hub.has-unread-bottle {
   position: relative;

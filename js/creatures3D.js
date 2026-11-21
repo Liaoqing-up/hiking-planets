@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { latLonToUnitVec, getSurfaceRadius } from "./planetBuilder3D.js?v=4.0.0-r1";
+import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=4.2.5-release";
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -75,7 +75,7 @@ export const CREATURE_CATALOG = [
     planetName: "那座山 · 小五台",
     name: "山野小橘猫",
     emoji: "🐱",
-    realPhoto: "./assets/kitty/k-31.jpg?v=4.0.0-r1",
+    realPhoto: "./assets/kitty/k-31.jpg?v=4.2.5-release",
     greeting: "西台山石上的小橘猫喵呜一声，翘着长尾巴蹭了蹭你的裤脚",
     note: "源自 Kitty 在山石间偶遇的真实喵星人——它替小五台的高山草甸保管着晒过太阳的温柔。",
   },
@@ -130,45 +130,36 @@ export const CREATURE_CATALOG = [
     planetName: "稻城亚丁",
     name: "栈道小松鼠",
     emoji: "🐿️",
-    realPhoto: "./assets/kitty/k-30.jpg?v=4.0.0-r1",
+    realPhoto: "./assets/kitty/k-30.jpg?v=4.2.5-release",
     greeting: "蓬松大尾巴的小松鼠双手捧着松果，好奇地凑到镜头前营业！",
     note: "源自 Kitty 在亚丁木栈道栏杆上真实抓拍到的贪吃小松鼠——心都要被它萌化啦！",
   },
   {
-    planetId: "miemie-tonggudang",
+    planetId: "miemie-guizhou",
     owner: "miemie",
-    planetName: "铜鼓荡与地心奇境",
-    name: "黑石草甸小绵羊",
+    planetName: "贵州安顺 · 喀斯特魔界",
+    name: "铜鼓荡草甸小绵羊",
     emoji: "🐑",
-    greeting: "铜鼓荡黑石林旁的小绵羊咩咩叫了一声，踩着绿草甸跑来蹭你",
-    note: "源自咩咩在贵州安顺铜鼓荡遇见的漫山闲步牧群——在黑石与绿草间从不赶时间。",
+    greeting: "铜鼓荡黑石林旁的小绵羊咩咩叫了一声，陪你一起探秘龙脊天路与地心溶洞！",
+    note: "源自咩咩在贵州安顺铜鼓荡遇见的漫山闲步牧群——守望着黑石草甸、暗河瀑布与地心星穹。",
   },
   {
-    planetId: "miemie-longji",
+    planetId: "miemie-volcano",
     owner: "miemie",
-    planetName: "龙脊天路",
-    name: "塞尔达旷野小马",
+    planetName: "乌兰哈达与大红山 · 异星火山",
+    name: "火星红崖小赤狐",
+    emoji: "🦊",
+    greeting: "蓬松火红尾巴的小赤狐跳过黑曜石火山灰，领你奔向大红山的火星断崖！",
+    note: "穿梭在四子王旗大红山赤壁与乌兰哈达黑色炼丹炉火山之间的塞北星际小精灵。",
+  },
+  {
+    planetId: "miemie-hulunbuir",
+    owner: "miemie",
+    planetName: "呼伦贝尔与阿尔山 · 北疆牧歌",
+    name: "呼伦贝尔金草垛小马驹",
     emoji: "🐴",
-    greeting: "龙脊山谷的小马驹扬起前蹄，想载你一起驰骋人间塞尔达！",
-    note: "守望刀劈斧砍喀斯特龙脊与关岭冰臼大地之眼的追风小马。",
-  },
-  {
-    planetId: "miemie-shexiang",
-    owner: "miemie",
-    planetName: "麝香洞 · 地心宇宙",
-    name: "地心星穹萤光兔",
-    emoji: "🐇",
-    greeting: "耳朵泛着幽蓝微光的地心小兔蹦了蹦，为你照亮宇宙穹顶",
-    note: "栖息在麝香洞幽邃星河穹顶下的小精灵，替探洞者守护百万年的钟乳微光。",
-  },
-  {
-    planetId: "miemie-buyi",
-    owner: "miemie",
-    planetName: "布依古寨与猫跳峡",
-    name: "猫跳峡飞石小猫",
-    emoji: "🐱",
-    greeting: "灵巧的山野小猫踩着礁石轻盈一跃，喵呜一声落在青石巷口！",
-    note: "源自猫跳峡‘古时野猫踩礁石一跃过河’的美丽传说，爱在千年布依石瓦上晒太阳。",
+    greeting: "栗色小马驹从金色大圆草垛后面探出脑袋，想载你跑遍无边绿浪！",
+    note: "守望阿尔山火山森林与呼伦贝尔莫日格勒草原的追风小马驹。",
   },
   {
     planetId: "miemie-yading",
@@ -178,6 +169,24 @@ export const CREATURE_CATALOG = [
     emoji: "🐃",
     greeting: "敦实的小牦牛摇着铜铃，陪你在没有信号的雪山营地生火发呆",
     note: "六天五晚重装反穿路上的温暖守望者：每天一个小目标，抵达营地就足够啦。",
+  },
+  {
+    planetId: "luca-hainan",
+    owner: "luca",
+    planetName: "海南环岛 · 海岛桃花源",
+    name: "椰风破浪抱抱鲨",
+    emoji: "🦈",
+    greeting: "海湾抱抱鲨拍着鳍浪追上你的车轮，陪你迎着北纬18°海风破风巡航！",
+    note: "沿着海南环岛旅游公路追风 948 公里的海岛吉祥物，最爱在棋子湾与万宁的浪花里打滚。",
+  },
+  {
+    planetId: "luca-tianshan",
+    owner: "luca",
+    planetName: "新疆天山 · 雪岭牧歌骑行",
+    name: "天山车辙云朵小羊",
+    emoji: "🐑",
+    greeting: "软乎乎的云朵小羊蹭了蹭你的单车前轮，邀你在松林木屋草坡歇脚看云！",
+    note: "漫步在天山覆雪溪谷与森林牧场的小精灵，见证从热带海岛骑向西域雪岭的滚烫车辙。",
   },
 ];
 
@@ -340,10 +349,10 @@ function buildCreatureMesh(planetId) {
     tailPivot.add(tail);
     standPivot.add(headPivot, tailPivot);
     bodyPivot.add(standPivot);
-  } else if (planetId === "siguniang" || planetId === "kitty-zhagana") {
-    // 《小王子》暖橙雪线小狐狸 / 措美峰冰湖纯白小雪狐
+  } else if (planetId === "siguniang" || planetId === "kitty-zhagana" || planetId === "miemie-volcano") {
+    // 《小王子》暖橙雪线小狐狸 / 措美峰纯白雪狐 / 大红山赤红火星狐
     const isSnowFox = planetId === "kitty-zhagana";
-    const orange = toon(isSnowFox ? "#dbeafe" : "#ea7434");
+    const orange = toon(isSnowFox ? "#dbeafe" : planetId === "miemie-volcano" ? "#e11d48" : "#ea7434");
     const cream = toon("#fff7eb");
     const dark = toon(isSnowFox ? "#334155" : "#2c201e");
     makeLegs("#2c201e", 0.19, 0.028, 0.075, 0.11);
@@ -378,7 +387,7 @@ function buildCreatureMesh(planetId) {
     tailTip.position.set(0, 0.12, -0.22);
     tailPivot.add(tailMain, tailTip);
     bodyPivot.add(headPivot, tailPivot);
-  } else if (planetId === "yili" || planetId === "kitty-daqing" || planetId === "miemie-tonggudang") {
+  } else if (planetId === "yili" || planetId === "kitty-daqing" || planetId === "miemie-guizhou" || planetId === "miemie-tonggudang" || planetId === "luca-tianshan") {
     // 蓬松云朵小羊羔
     const wool = toon("#fcfaf2");
     const faceMat = toon("#382f2c");
@@ -408,7 +417,7 @@ function buildCreatureMesh(planetId) {
     tailPivot.position.set(0, 0.3, -0.2);
     tailPivot.add(new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), wool));
     bodyPivot.add(headPivot, tailPivot);
-  } else if (planetId === "maclehose") {
+  } else if (planetId === "maclehose" || planetId === "luca-hainan") {
     // 复刻宜家 Blåhaj 毛绒小蓝鲨：雾霾海灰蓝胖鱼身 + 奶白圆肚皮 + 珊瑚粉嘴巴与软布小白牙 + 4道鳃纹 + 大背鳍/双胸鳍/剪刀尾鳍
     const sharkBlue = toon("#5c839b");
     const bellyCream = toon("#f5f0e8");
@@ -652,7 +661,7 @@ function buildCreatureMesh(planetId) {
     tailPivot.position.set(0, 0.23, -0.17);
     tailPivot.add(new THREE.Mesh(new THREE.SphereGeometry(0.052, 10, 8), whiteFur));
     bodyPivot.add(headPivot, tailPivot);
-  } else if (planetId === "kitty-wusun" || planetId === "miemie-longji") {
+  } else if (planetId === "kitty-wusun" || planetId === "miemie-hulunbuir" || planetId === "miemie-longji") {
     // 🐴 天山小马驹
     const horseCoat = toon("#9a5b37");
     const maneMat = toon("#3b2316");
@@ -751,13 +760,13 @@ function buildCreatureMesh(planetId) {
           arm.mesh.rotation.x = 0.6 * effReact + walkSwing * (1 - effReact) - 0.35 * napBlend;
           arm.mesh.rotation.z = -arm.side * 0.55 * effReact;
         }
-      } else if (planetId === "yili") {
+      } else if (planetId === "yili" || planetId === "luca-tianshan") {
         // 小羊羔欢快双连跳
         const hop = Math.max(0, Math.sin(elapsed * 6.5)) * 0.11 * effReact;
         activeY += hop;
         headPivot.rotation.x = 0.16 * napBlend;
         headPivot.rotation.z = Math.sin(elapsed * 4.0) * 0.18 * effReact;
-      } else if (planetId === "maclehose") {
+      } else if (planetId === "maclehose" || planetId === "luca-hainan") {
         // 宜家小蓝鲨欢快扑棱胸鳍 + 软弹贴地游动摇摆
         const hop = Math.abs(Math.sin(elapsed * 6.0)) * (0.035 * w + 0.075 * effReact);
         activeY += hop;

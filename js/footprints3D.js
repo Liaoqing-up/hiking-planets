@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./planetBuilder3D.js?v=4.0.0-r1";
+import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=4.2.5-release";
 
 const POOL_SIZE = 34;
 const RIPPLE_POOL_SIZE = 14;
@@ -68,14 +68,16 @@ export function createFootprintTrail(planetConfig) {
   const tmpRight = new THREE.Vector3();
   const tmpBasis = new THREE.Matrix4();
 
-  function spawnStep(upDir, forwardDir) {
+  function spawnStep(upDir, forwardDir, isCycling = false) {
     tmpRight.crossVectors(forwardDir, upDir).normalize();
+    const sideShift = isCycling ? 0 : leftRight * 0.0068;
+    const backShift = isCycling ? -0.018 : -0.004;
     const footDir = upDir
       .clone()
-      .addScaledVector(tmpRight, leftRight * 0.0068)
-      .addScaledVector(forwardDir, -0.004)
+      .addScaledVector(tmpRight, sideShift)
+      .addScaledVector(forwardDir, backShift)
       .normalize();
-    leftRight *= -1;
+    if (!isCycling) leftRight *= -1;
 
     const rawR = getSurfaceRadius(pid, footDir);
     const tangFwd = forwardDir
@@ -99,15 +101,16 @@ export function createFootprintTrail(planetConfig) {
       return;
     }
 
-    // 2. 陆地 / 高海拔雪坡靴印区分着色
+    // 2. 陆地 / 高海拔雪坡靴印与公路车辙印区分缩放与着色
     const slot = pool[cursor];
     cursor = (cursor + 1) % POOL_SIZE;
     slot.mesh.position.copy(footDir).multiplyScalar(rawR + 0.016);
     slot.mesh.quaternion.setFromRotationMatrix(tmpBasis);
+    slot.mesh.scale.set(isCycling ? 0.36 : 1, isCycling ? 1.85 : 1, 1);
 
     const onSnow = isSnowCapable && rawR >= PLANET_RADIUS + 0.78;
     slot.mat.color.copy(onSnow ? snowTint : baseTint);
-    slot.baseOpacity = onSnow ? 0.62 : 0.44;
+    slot.baseOpacity = isCycling ? 0.52 : onSnow ? 0.62 : 0.44;
     slot.age = 0;
     slot.active = true;
     slot.mesh.visible = true;
@@ -116,7 +119,7 @@ export function createFootprintTrail(planetConfig) {
 
   return {
     group,
-    update(dt, upDir, forwardDir, isMoving) {
+    update(dt, upDir, forwardDir, isMoving, isCycling = false) {
       if (isMoving && upDir && forwardDir) {
         if (lastUp.lengthSq() === 0) {
           lastUp.copy(upDir);
@@ -124,9 +127,10 @@ export function createFootprintTrail(planetConfig) {
           const dAng = lastUp.angleTo(upDir);
           distAccum += dAng * 12.0;
           lastUp.copy(upDir);
-          if (distAccum >= 0.34) {
+          const stepThresh = isCycling ? 0.24 : 0.34;
+          if (distAccum >= stepThresh) {
             distAccum = 0;
-            spawnStep(upDir, forwardDir);
+            spawnStep(upDir, forwardDir, isCycling);
           }
         }
       }

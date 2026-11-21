@@ -159,6 +159,48 @@ const THEMES = {
     melody: [207.65, 261.63, 311.13, 415.3, 466.16, 415.3, 311.13, 261.63, 277.18, 349.23, 415.3, 311.13],
     bass: [103.83, 130.81, 138.59, 155.56],
   },
+  "miemie-guizhou": {
+    // 贵州安顺喀斯特魔界：Fmaj9 塞尔达旷野竖琴与地心水琴泛音
+    tempoMs: 620,
+    waveMain: "sine",
+    waveSub: "triangle",
+    harmonicRatio: 2,
+    harmonicGain: 0.17,
+    attack: 0.016,
+    decay: 2.85,
+    windFreq: 280,
+    windVol: 0.064,
+    melody: [349.23, 440.0, 523.25, 659.25, 783.99, 659.25, 523.25, 587.33, 523.25, 440.0, 392.0, 349.23],
+    bass: [174.61, 130.81, 146.83, 196.0],
+  },
+  "miemie-volcano": {
+    // 乌兰哈达与大红山：D小调星际深空合成弦与火山朔漠低风
+    tempoMs: 660,
+    waveMain: "sine",
+    waveSub: "triangle",
+    harmonicRatio: 3,
+    harmonicGain: 0.16,
+    attack: 0.024,
+    decay: 3.05,
+    windFreq: 210,
+    windVol: 0.072,
+    melody: [293.66, 349.23, 440.0, 523.25, 587.33, 523.25, 440.0, 392.0, 349.23, 440.0, 659.25, 587.33],
+    bass: [146.83, 116.54, 130.81, 110.0],
+  },
+  "miemie-hulunbuir": {
+    // 呼伦贝尔与阿尔山：G大调五声马头琴悠扬长音与草原暖风
+    tempoMs: 540,
+    waveMain: "triangle",
+    waveSub: "sine",
+    harmonicRatio: 2,
+    harmonicGain: 0.14,
+    attack: 0.02,
+    decay: 2.45,
+    windFreq: 310,
+    windVol: 0.062,
+    melody: [392.0, 440.0, 493.88, 587.33, 659.25, 587.33, 493.88, 440.0, 392.0, 587.33, 783.99, 659.25],
+    bass: [196.0, 146.83, 164.81, 130.81],
+  },
   "miemie-shexiang": {
     // 麝香洞地心宇宙：Dm9 幽邃地心溶洞水滴星琴与空谷泛音
     tempoMs: 680,
@@ -229,6 +271,35 @@ const THEMES = {
     windVol: 0.082,
     melody: [329.63, 392.0, 493.88, 587.33, 659.25, 587.33, 493.88, 440.0, 392.0, 493.88, 587.33, 329.63],
     bass: [164.81, 130.81, 146.83, 123.47],
+  },
+  "luca-hainan": {
+    // 海南环岛骑行星：G 大调阳光椰风海浪八音盒，轻快踏频律动
+    tempoMs: 430,
+    waveMain: "triangle",
+    waveSub: "sine",
+    harmonicRatio: 2.0,
+    harmonicGain: 0.14,
+    attack: 0.012,
+    decay: 1.75,
+    windFreq: 490,
+    windVol: 0.068,
+    seaWave: true,
+    melody: [392.0, 493.88, 587.33, 659.25, 783.99, 659.25, 587.33, 493.88, 523.25, 587.33, 659.25, 783.99],
+    bass: [196.0, 164.81, 130.81, 146.83],
+  },
+  "luca-tianshan": {
+    // 新疆天山骑行星：D 宫调西域冬不拉风清澈泛音牧歌，辽阔雪岭晚风
+    tempoMs: 560,
+    waveMain: "triangle",
+    waveSub: "sine",
+    harmonicRatio: 1.5,
+    harmonicGain: 0.13,
+    attack: 0.018,
+    decay: 2.35,
+    windFreq: 420,
+    windVol: 0.072,
+    melody: [293.66, 329.63, 369.99, 440.0, 587.33, 493.88, 440.0, 369.99, 440.0, 493.88, 587.33, 440.0],
+    bass: [146.83, 110.0, 123.47, 146.83],
   },
 };
 
@@ -752,6 +823,39 @@ class SoundEngine {
     [0.24, 0.42, 0.62].forEach((d, i) => {
       this.playTone(260 + i * 55, { duration: 0.14, volume: 0.03, delay: d, waveMain: "sine", attack: 0.01 });
     });
+  }
+
+  playBikeBell() {
+    if (!this.initialized || !this.enabled || !this.ctx) return;
+    // 清脆双响黄铜公路车铃「叮铃—叮铃！」
+    [0, 0.11].forEach((d, idx) => {
+      const f = idx === 0 ? 2637.02 : 3135.96;
+      this.playTone(f, {
+        duration: 0.65,
+        volume: 0.042,
+        delay: d,
+        harmonicRatio: 2.42,
+        harmonicGain: 0.34,
+        attack: 0.003,
+      });
+    });
+  }
+
+  playBikeFreehub() {
+    if (!this.initialized || !this.enabled || !this.ctx) return;
+    // 公路车棘轮花鼓轻快细密哒哒声
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(1450 + Math.random() * 280, now);
+    osc.frequency.exponentialRampToValueAtTime(620, now + 0.024);
+    g.gain.setValueAtTime(0.016, now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.026);
+    osc.connect(g);
+    g.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.03);
   }
 }
 

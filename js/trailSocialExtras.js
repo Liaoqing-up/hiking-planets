@@ -1,6 +1,8 @@
 import * as THREE from "three";
-import { getSurfaceRadius } from "./planetBuilder3D.js?v=4.0.0-r1";
-import { drawSiteQrStamp } from "./qrStamp.js?v=4.0.0-r1";
+import { getSurfaceRadius } from "./sphereMath.js?v=4.2.5-release";
+import { drawSiteQrStamp } from "./qrStamp.js?v=4.2.5-release";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=4.2.5-release";
+import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=4.2.5-release";
 
 const UP = new THREE.Vector3(0, 1, 0);
 const FLAG_STORAGE_KEY = "hiking_planets_flags_v1";
@@ -160,6 +162,7 @@ export function buildFlagMesh(planetId, flagItem) {
     mine: { cloth: "#f59e0b", emi: "#d97706", ring: "#fde68a" },
     kitty: { cloth: "#f472b6", emi: "#db2777", ring: "#fbcfe8" },
     miemie: { cloth: "#10b981", emi: "#059669", ring: "#6ee7b7" },
+    luca: { cloth: "#0ea5e9", emi: "#0284c7", ring: "#bae6fd" },
   };
   const c = COLORS[flagItem.role] || COLORS.mine;
 
@@ -196,99 +199,264 @@ export function buildFlagMesh(planetId, flagItem) {
   return { group: wrap, pennant, topStar, unitDir, data: flagItem };
 }
 
+function loadCertPhoto(src) {
+  return new Promise((resolve) => {
+    if (!src) return resolve(null);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+function drawLaurelWreath(ctx, cx, cy, r) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  for (const side of [-1, 1]) {
+    ctx.save();
+    ctx.scale(side, 1);
+    ctx.strokeStyle = "#c9963b";
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.arc(0, 6, r, Math.PI * 0.62, Math.PI * 1.35, false);
+    ctx.stroke();
+    for (let i = 0; i < 8; i++) {
+      const a = Math.PI * 0.66 + i * 0.088 * Math.PI;
+      const lx = Math.cos(a) * r;
+      const ly = 6 + Math.sin(a) * r;
+      ctx.save();
+      ctx.translate(lx, ly);
+      ctx.rotate(a - Math.PI * 0.42);
+      ctx.fillStyle = i % 2 === 0 ? "#dca946" : "#b98228";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 12, 4.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 // ==================== 3. 🏅 《双人并肩完赛荣誉证》高清联名典藏证书生成器 ====================
-export function generateDuoFinisherCertDataUrl(planet, hostName = "星主", visitorName = "同行旅人", steps = 0) {
-  const W = 900, H = 1260;
+export async function generateDuoFinisherCertDataUrl(
+  planet,
+  hostName = "星主",
+  visitorName = "同行旅人",
+  steps = 0
+) {
+  const W = 960, H = 1420;
   const c = document.createElement("canvas");
   c.width = W;
   c.height = H;
   const ctx = c.getContext("2d");
-  const pOwner = planet?.owner === "kitty" || planet?.owner === "miemie" ? planet.owner : "mine";
+  const pOwner =
+    planet?.owner === "kitty" || planet?.owner === "miemie" || planet?.owner === "luca" ? planet.owner : "mine";
 
-  // 深空烫金底框 + 羊皮纸内芯
+  // 1. 深空繁星外衬 + 典藏羊皮纸内芯 + 烫金双线框与星芒角花
   const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, "#0b142e");
-  bg.addColorStop(1, "#132046");
+  bg.addColorStop(0, "#091228");
+  bg.addColorStop(0.5, "#112145");
+  bg.addColorStop(1, "#0b1530");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 42; i++) {
+    ctx.fillStyle = `rgba(253, 230, 138, ${0.18 + (i % 4) * 0.12})`;
+    ctx.beginPath();
+    ctx.arc((i * 197) % W, (i * 283) % H, (i % 2) + 1, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
-  ctx.fillStyle = "#fbf4e4";
+  const paperGrad = ctx.createLinearGradient(0, 42, 0, H - 42);
+  paperGrad.addColorStop(0, "#fdf8ec");
+  paperGrad.addColorStop(1, "#f4e6c8");
+  ctx.fillStyle = paperGrad;
   ctx.beginPath();
-  ctx.roundRect(46, 46, W - 92, H - 92, 24);
+  ctx.roundRect(42, 42, W - 84, H - 84, 24);
   ctx.fill();
 
-  ctx.strokeStyle = "#c9963b";
+  ctx.strokeStyle = "#c59134";
   ctx.lineWidth = 3.5;
-  ctx.strokeRect(64, 64, W - 128, H - 128);
-  ctx.strokeStyle = "rgba(201, 150, 59, 0.45)";
-  ctx.lineWidth = 1.2;
-  ctx.strokeRect(74, 74, W - 148, H - 148);
+  ctx.strokeRect(60, 60, W - 120, H - 120);
+  ctx.strokeStyle = "rgba(197, 145, 52, 0.42)";
+  ctx.lineWidth = 1.3;
+  ctx.strokeRect(70, 70, W - 140, H - 140);
+  [[82, 82], [W - 82, 82], [82, H - 82], [W - 82, H - 82]].forEach(([cx, cy]) => {
+    ctx.fillStyle = "#c59134";
+    ctx.font = "18px Georgia, serif";
+    ctx.textAlign = "center";
+    ctx.fillText("✦", cx, cy + 6);
+  });
 
-  // 顶部抬头与星轨圆徽
+  // 2. 顶部抬头 + 手绘微缩水彩星球主视觉 + 烫金月桂桂冠 + 联名丝绒绶带
   ctx.textAlign = "center";
   ctx.fillStyle = "#9a6b21";
-  ctx.font = "600 18px 'Cormorant Garamond', Georgia, serif";
-  ctx.fillText("✦ CO-OP TRAIL FINISHER CERTIFICATE ✦", W / 2, 128);
+  ctx.font = "600 17px 'Cormorant Garamond', Georgia, serif";
+  ctx.fillText("✦ CO-OP TRAIL FINISHER CERTIFICATE · 星际并肩完赛典藏 ✦", W / 2, 118);
 
   ctx.fillStyle = "#2c1e0f";
   ctx.font = "44px 'ZCOOL XiaoWei', 'Songti SC', serif";
-  ctx.fillText("双 人 并 肩 完 赛 荣 誉 证", W / 2, 188);
+  ctx.fillText("双 人 并 肩 完 赛 荣 誉 证", W / 2, 174);
 
+  const pCx = W / 2, pCy = 328;
   const halo = planet?.palette?.halo || "#f59e0b";
-  const core = planet?.palette?.ground || "#3b82f6";
-  const rg = ctx.createRadialGradient(W / 2, 315, 16, W / 2, 315, 96);
-  rg.addColorStop(0, core);
-  rg.addColorStop(0.68, halo);
-  rg.addColorStop(1, "rgba(251,244,228,0)");
-  ctx.fillStyle = rg;
+  const haloGrad = ctx.createRadialGradient(pCx, pCy, 34, pCx, pCy, 150);
+  haloGrad.addColorStop(0, "rgba(255, 248, 224, 0.95)");
+  haloGrad.addColorStop(0.58, `${halo}38`);
+  haloGrad.addColorStop(1, "rgba(251, 244, 228, 0)");
+  ctx.fillStyle = haloGrad;
   ctx.beginPath();
-  ctx.arc(W / 2, 315, 96, 0, Math.PI * 2);
+  ctx.arc(pCx, pCy, 150, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.strokeStyle = "#b7791f";
-  ctx.lineWidth = 2;
+  drawLaurelWreath(ctx, pCx, pCy, 132);
+
+  const planetArt = document.createElement("canvas");
+  planetArt.width = 300;
+  planetArt.height = 300;
+  renderPlanetIllustration(planetArt, planet?.terrainType || planet?.id || "yading");
+  ctx.drawImage(planetArt, pCx - 122, pCy - 122, 244, 244);
+
+  // 皇家深金联名绶带
+  const ribGrad = ctx.createLinearGradient(pCx - 190, 444, pCx + 190, 444);
+  ribGrad.addColorStop(0, "#7c4f15");
+  ribGrad.addColorStop(0.5, "#3b240b");
+  ribGrad.addColorStop(1, "#7c4f15");
+  ctx.fillStyle = ribGrad;
   ctx.beginPath();
-  ctx.ellipse(W / 2, 315, 118, 38, -0.24, 0, Math.PI * 2);
+  ctx.roundRect(pCx - 196, 434, 392, 44, 22);
+  ctx.fill();
+  ctx.strokeStyle = "#eab308";
+  ctx.lineWidth = 1.6;
   ctx.stroke();
+  ctx.fillStyle = "#fef3c7";
+  ctx.font = "600 20px 'LXGW WenKai Screen', 'Kaiti SC', serif";
+  ctx.fillText(`🏅  ${hostName}  ×  ${visitorName}  ·  并肩完赛`, pCx, 463);
 
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 34px Georgia, serif";
-  ctx.fillText("🏅", W / 2, 326);
-
-  // 授牌正文
-  ctx.fillStyle = "#3b2712";
+  // 3. 星球档案与授牌正文
+  ctx.fillStyle = "#2e1d0d";
   ctx.font = "34px 'ZCOOL XiaoWei', 'Songti SC', serif";
-  ctx.fillText(`《 ${planet?.name || "山海星球"} 》`, W / 2, 462);
+  ctx.fillText(`《 ${planet?.name || "山海星球"} 》`, W / 2, 528);
 
   ctx.fillStyle = "#7c5829";
-  ctx.font = "22px 'LXGW WenKai Screen', 'Kaiti SC', serif";
-  ctx.fillText(`${planet?.code || "STAR"} · 最高海拔 ${planet?.stats?.altitude || ""} · 同行 ${Math.max(steps, 88)} 步`, W / 2, 504);
-
-  ctx.fillStyle = "#2d1f10";
-  ctx.font = "25px 'LXGW WenKai Screen', 'Kaiti SC', serif";
-  ctx.fillText(`兹证明  ${visitorName}  与星球主人  ${hostName}`, W / 2, 578);
-  ctx.fillText(`并肩走完本星球全部 ${(planet?.waypoints || []).length} 处山海路标，共赏星辰！`, W / 2, 618);
-
-  // 路标全满贯打勾印记框
-  ctx.fillStyle = "rgba(201, 150, 59, 0.11)";
-  ctx.beginPath();
-  ctx.roundRect(110, 658, W - 220, 236, 16);
-  ctx.fill();
+  ctx.font = "19px 'LXGW WenKai Screen', 'Kaiti SC', serif";
+  const distStr = planet?.stats?.distance ? ` · 里程 ${planet.stats.distance}` : "";
+  ctx.fillText(
+    `${planet?.code || "STAR"} · 最高海拔 ${planet?.stats?.altitude || "—"}${distStr} · 同行 ${Math.max(steps, 128)} 步`,
+    W / 2,
+    562
+  );
 
   const wps = planet?.waypoints || [];
-  ctx.font = "21px 'LXGW WenKai Screen', 'Kaiti SC', serif";
-  ctx.fillStyle = "#4a3319";
-  wps.slice(0, 6).forEach((wp, idx) => {
-    const col = idx % 2;
-    const row = Math.floor(idx / 2);
-    const tx = col === 0 ? W * 0.31 : W * 0.69;
-    const ty = 712 + row * 62;
-    ctx.fillText(`✦ ${wp.shortName || wp.name}`, tx, ty);
+  ctx.fillStyle = "#3a2612";
+  ctx.font = "22px 'LXGW WenKai Screen', 'Kaiti SC', serif";
+  ctx.fillText(
+    `兹见证「${visitorName}」与星球主人「${hostName}」集齐全部 ${wps.length} 处山海印记，共赏星辰！`,
+    W / 2,
+    602
+  );
+
+  // 4. 三联山海实景拍立得纪念画廊（精选首/中/末三站实景照片 + 智能人像防截断裁切）
+  const getWpPhoto = (w) => w?.photo || w?.photo2 || (Array.isArray(w?.photos) ? w.photos[0] : "");
+  const photoWps = wps.filter((w) => getWpPhoto(w));
+  const certPool = photoWps.length > 0 ? photoWps : wps;
+  const picked =
+    certPool.length <= 3
+      ? certPool
+      : [certPool[0], certPool[Math.floor(certPool.length / 2)], certPool[certPool.length - 1]];
+  const loadedImgs = await Promise.all(picked.map((w) => loadCertPhoto(getWpPhoto(w))));
+  const cardW = 222, cardH = 226, imgW = 198, imgH = 158;
+  const angles = [-0.052, 0.014, 0.055];
+  const countP = Math.max(1, picked.length);
+  const spanX = countP === 1 ? 0 : countP === 2 ? 256 : 244;
+
+  for (let i = 0; i < picked.length; i++) {
+    const wp = picked[i];
+    const pUrl = getWpPhoto(wp);
+    const img = loadedImgs[i];
+    const cx = W / 2 + (i - (countP - 1) / 2) * spanX;
+    const cy = 752 + (i === 1 ? -8 : 4);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angles[i % 3]);
+    ctx.shadowColor = "rgba(44, 30, 14, 0.24)";
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 8;
+    ctx.fillStyle = "#fffdf8";
+    ctx.beginPath();
+    ctx.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 6);
+    ctx.fill();
+    ctx.shadowColor = "transparent";
+    ctx.strokeStyle = "rgba(180, 146, 94, 0.35)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    if (img && img.naturalWidth > 0) {
+      const natW = img.naturalWidth, natH = img.naturalHeight;
+      const crop = computeSmartPhotoCrop(pUrl, natW, natH, imgW / imgH);
+      const pan = getSavedPhotoPan(pUrl);
+      const xNorm = pan ? (pan[0] / 100) * (1 - crop.winW) : crop.x0;
+      const yNorm = pan ? (pan[1] / 100) * (1 - crop.winH) : crop.y0;
+      ctx.drawImage(
+        img,
+        xNorm * natW,
+        yNorm * natH,
+        crop.winW * natW,
+        crop.winH * natH,
+        -imgW / 2,
+        -cardH / 2 + 12,
+        imgW,
+        imgH
+      );
+    } else {
+      const fb = document.createElement("canvas");
+      fb.width = 320;
+      fb.height = 240;
+      renderPostcardScene(fb, planet?.terrainType || planet?.id || "yading", wp?.sceneArt || wp?.artScene || "ridge");
+      ctx.drawImage(fb, -imgW / 2, -cardH / 2 + 12, imgW, imgH);
+    }
+    // 顶部和纸胶带装饰
+    ctx.fillStyle = "rgba(234, 179, 8, 0.34)";
+    ctx.fillRect(-34, -cardH / 2 - 6, 68, 15);
+    ctx.fillStyle = "#3f2b15";
+    ctx.font = "15.5px 'LXGW WenKai Screen', 'Kaiti SC', serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`✦ ${(wp.shortName || wp.name || "").slice(0, 10)}`, 0, cardH / 2 - 18);
+    ctx.restore();
+  }
+
+  // 5. 全路标满贯打卡印记榜（自适应 4~8+ 个路标全展示）
+  ctx.fillStyle = "rgba(201, 150, 59, 0.11)";
+  ctx.strokeStyle = "rgba(197, 145, 52, 0.35)";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.roundRect(88, 902, W - 176, 212, 16);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#8a5d1c";
+  ctx.font = "600 16px 'LXGW WenKai Screen', 'Kaiti SC', serif";
+  ctx.fillText(`✦ 全 路 标 并 肩 满 贯 印 记 （ ${wps.length} / ${wps.length} 已 点 亮 ） ✦`, W / 2, 934);
+
+  const cols = wps.length > 6 ? 4 : 3;
+  const rows = Math.ceil(wps.length / cols);
+  ctx.font = wps.length > 6 ? "17.5px 'LXGW WenKai Screen', 'Kaiti SC', serif" : "19px 'LXGW WenKai Screen', 'Kaiti SC', serif";
+  ctx.fillStyle = "#422c14";
+  wps.forEach((wp, idx) => {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const cellW = (W - 216) / cols;
+    const tx = 108 + cellW * (col + 0.5);
+    const ty = (rows <= 2 ? 988 : 974) + row * (rows <= 2 ? 56 : 42);
+    const label = (wp.shortName || wp.name || "").slice(0, cols === 4 ? 7 : 9);
+    ctx.fillText(`✓ ${label}`, tx, ty);
   });
 
-  // 双人联名朱砂红火漆大印章
+  // 6. 双人联名朱砂红火漆大印章 + 寄语 + 扫码回访邮票
   ctx.save();
-  ctx.translate(230, 1045);
+  ctx.translate(196, 1246);
   ctx.rotate(-0.11);
   ctx.strokeStyle = "#be2623";
   ctx.lineWidth = 4;
@@ -300,23 +468,25 @@ export function generateDuoFinisherCertDataUrl(planet, hostName = "星主", visi
   ctx.arc(0, 0, 65, 0, Math.PI * 2);
   ctx.stroke();
   ctx.fillStyle = "#be2623";
+  ctx.textAlign = "center";
   ctx.font = "bold 20px 'Songti SC', serif";
   ctx.fillText("山海并肩完赛", 0, -18);
-  ctx.font = "bold 19px 'Songti SC', serif";
+  ctx.font = "bold 18px 'Songti SC', serif";
   ctx.fillText(`${hostName} × ${visitorName}`, 0, 10);
   ctx.font = "15px Georgia, serif";
   ctx.fillText(new Date().toISOString().slice(0, 10), 0, 36);
   ctx.restore();
 
   ctx.textAlign = "left";
-  ctx.fillStyle = "#6b4f2a";
+  ctx.fillStyle = "#5c401e";
   ctx.font = "20px 'LXGW WenKai Screen', 'Kaiti SC', serif";
-  ctx.fillText("“山路也许陡峭，但有人并肩同行的每一步都闪闪发光。”", 340, 1025);
-  ctx.font = "17px 'LXGW WenKai Screen', 'Kaiti SC', serif";
+  ctx.fillText("“山路也许陡峭，但有人并肩同行的", 302, 1222);
+  ctx.fillText("  每一步，都在宇宙里闪闪发光。”", 302, 1254);
+  ctx.font = "16.5px 'LXGW WenKai Screen', 'Kaiti SC', serif";
   ctx.fillStyle = "#8c6d43";
-  ctx.fillText("扫码回访这颗星球 · 开启下一段山海奇遇 →", 340, 1068);
+  ctx.fillText("扫码回访这颗星球 · 开启下一段山海奇遇 →", 308, 1298);
 
-  drawSiteQrStamp(ctx, W - 208, H - 216, 118, "parchment", pOwner);
+  drawSiteQrStamp(ctx, W - 216, H - 246, 122, "parchment", pOwner);
   return c.toDataURL("image/png");
 }
 

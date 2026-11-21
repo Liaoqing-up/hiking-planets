@@ -1,4 +1,4 @@
-const CACHE_NAME = "hikerplanets-v4.0.0-r1";
+const CACHE_NAME = "hikerplanets-v4.2.5-release";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -42,7 +42,7 @@ self.addEventListener("fetch", (event) => {
   } else {
     // HTML / CSS / 业务 JS：严格网络最新优先，弱网/进山离线时自动回退缓存（绝不卡版本更新）
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: "no-cache" })
         .then((res) => {
           if (res && res.ok) {
             const copy = res.clone();

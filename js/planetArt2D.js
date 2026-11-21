@@ -112,6 +112,18 @@ export function renderPlanetIllustration(canvas, planetId) {
       seed: 4700, topA: "#fff5df", topB: "#9bb8d4", botA: "#6e7d91", botB: "#3f4b63",
       crater: "#51607a", rim: "#ffffff", glow: "rgba(255, 210, 138, 0.3)",
     },
+    "miemie-guizhou": {
+      seed: 1980, topA: "#ccfbf1", topB: "#34d399", botA: "#1e3a8a", botB: "#0f172a",
+      crater: "#115e59", rim: "#e0f2fe", glow: "rgba(52, 211, 153, 0.35)",
+    },
+    "miemie-volcano": {
+      seed: 1620, topA: "#fda4af", topB: "#be123c", botA: "#27272a", botB: "#09090b",
+      crater: "#18181b", rim: "#fb923c", glow: "rgba(251, 113, 133, 0.36)",
+    },
+    "miemie-hulunbuir": {
+      seed: 1380, topA: "#fef08a", topB: "#65a30d", botA: "#2c6b42", botB: "#14532d",
+      crater: "#ca8a04", rim: "#fef9c3", glow: "rgba(250, 204, 21, 0.34)",
+    },
     "miemie-tonggudang": {
       seed: 2160, topA: "#d1fae5", topB: "#4d8a54", botA: "#374151", botB: "#1f2937",
       crater: "#2d5e40", rim: "#ecfdf5", glow: "rgba(110, 231, 183, 0.32)",
@@ -131,6 +143,14 @@ export function renderPlanetIllustration(canvas, planetId) {
     "miemie-yading": {
       seed: 4750, topA: "#f0f9ff", topB: "#7dd3fc", botA: "#475569", botB: "#1e293b",
       crater: "#334155", rim: "#ffffff", glow: "rgba(125, 211, 252, 0.32)",
+    },
+    "luca-hainan": {
+      seed: 948, topA: "#fef9c3", topB: "#38bdf8", botA: "#0284c7", botB: "#0f766e",
+      crater: "#0369a1", rim: "#e0f2fe", glow: "rgba(56, 189, 248, 0.38)",
+    },
+    "luca-tianshan": {
+      seed: 2800, topA: "#f8fafc", topB: "#528c5c", botA: "#2c5e43", botB: "#1e3a2f",
+      crater: "#334155", rim: "#e0f2fe", glow: "rgba(96, 165, 250, 0.34)",
     },
   };
 
@@ -444,11 +464,22 @@ function drawPlanetCrownBack(ctx, id, cx, cy, r) {
     // 远方连绵天山雪岭
     drawMountainPeak(ctx, cx - 26, topY + 22, 50, 44, "#799496", "#f5faff");
     drawMountainPeak(ctx, cx + 18, topY + 22, 54, 48, "#6f8a8f", "#f5faff");
-  } else if (id === "kitty-xiaowutai" || id === "miemie-tonggudang" || id === "miemie-buyi") {
-    // 小五台连绵青翠四台草甸山峰
-    drawMountainPeak(ctx, cx - 26, topY + 22, 46, 42, "#4f8c5a", "#dff5c8");
-    drawMountainPeak(ctx, cx + 8, topY + 20, 52, 50, "#3f7a4d", "#eef9dc");
-    drawMountainPeak(ctx, cx + 34, topY + 24, 38, 36, "#5a9964", "#dff5c8");
+  } else if (id === "kitty-xiaowutai" || id === "miemie-guizhou" || id === "miemie-tonggudang" || id === "miemie-buyi") {
+    // 喀斯特刃脊与青翠草甸群峰
+    drawMountainPeak(ctx, cx - 26, topY + 22, 46, 42, "#2f7c66", "#ccfbf1");
+    drawMountainPeak(ctx, cx + 8, topY + 20, 52, 50, "#1f6354", "#99f6e4");
+    drawMountainPeak(ctx, cx + 34, topY + 24, 38, 36, "#3b8c73", "#ccfbf1");
+  } else if (id === "miemie-volcano") {
+    // 左边大红山赤红台地 + 右边乌兰哈达黑色火山锥与橘焰火山口
+    drawMountainPeak(ctx, cx - 24, topY + 22, 48, 38, "#be123c", "#fda4af");
+    drawMountainPeak(ctx, cx + 20, topY + 20, 50, 48, "#27272a", "#fb923c");
+  } else if (id === "miemie-hulunbuir") {
+    // 阿尔山绿林山丘 + 呼伦贝尔金色圆草垛
+    drawMountainPeak(ctx, cx - 22, topY + 24, 48, 36, "#4d8a54", "#fef08a");
+    ctx.fillStyle = "#eab308";
+    ctx.beginPath();
+    ctx.arc(cx + 22, topY + 14, 11, 0, Math.PI * 2);
+    ctx.fill();
   } else if (id === "kitty-changbai") {
     // 长白山火山口环峰 + 中央蔚蓝天池
     drawMountainPeak(ctx, cx - 30, topY + 22, 48, 48, "#5d738a", "#f2f8ff");
@@ -473,6 +504,14 @@ function drawPlanetCrownBack(ctx, id, cx, cy, r) {
     drawMountainPeak(ctx, cx - 26, topY + 22, 46, 54, "#7588a3", "#ffffff");
     drawMountainPeak(ctx, cx + 2, topY + 20, 52, 70, "#859ab8", "#ffffff");
     drawMountainPeak(ctx, cx + 28, topY + 24, 44, 48, "#6a7d96", "#f5faff");
+  } else if (id === "luca-hainan") {
+    ctx.fillStyle = "rgba(253, 224, 71, 0.85)";
+    ctx.beginPath();
+    ctx.arc(cx + 22, topY - 2, 18, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (id === "luca-tianshan") {
+    drawMountainPeak(ctx, cx - 24, topY + 22, 50, 48, "#64748b", "#f8fafc");
+    drawMountainPeak(ctx, cx + 18, topY + 22, 54, 54, "#475569", "#ffffff");
   }
 }
 
@@ -637,6 +676,52 @@ function drawPlanetCrownFront(ctx, id, cx, cy, r) {
     drawSpruce(ctx, cx - 36, topY + 18, 1.0, "#2f734e");
     drawSpruce(ctx, cx + 34, topY + 18, 0.95, "#d99b38");
     drawTent(ctx, cx + 6, topY + 14, "#f472b6");
+  } else if (id === "luca-hainan" || id === "luca-tianshan") {
+    const drawMiniBike2D = (bx, by, col) => {
+      ctx.save();
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(bx - 9, by, 5.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(bx + 9, by, 5.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(bx - 9, by);
+      ctx.lineTo(bx - 2, by - 9);
+      ctx.lineTo(bx + 7, by - 9);
+      ctx.lineTo(bx + 9, by);
+      ctx.moveTo(bx - 2, by - 9);
+      ctx.lineTo(bx + 1, by);
+      ctx.stroke();
+      ctx.restore();
+    };
+    if (id === "luca-hainan") {
+      // 热带椰子树剪影 + 迎风单车
+      [-28, 30].forEach((dx) => {
+        ctx.strokeStyle = "#78350f";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cx + dx, topY + 16);
+        ctx.quadraticCurveTo(cx + dx + 4, topY + 2, cx + dx + 7, topY - 10);
+        ctx.stroke();
+        ctx.strokeStyle = "#16a34a";
+        ctx.lineWidth = 2.2;
+        [-12, -5, 4, 12].forEach((lx) => {
+          ctx.beginPath();
+          ctx.moveTo(cx + dx + 7, topY - 10);
+          ctx.quadraticCurveTo(cx + dx + 7 + lx * 0.7, topY - 15, cx + dx + 7 + lx, topY - 6);
+          ctx.stroke();
+        });
+      });
+      drawMiniBike2D(cx + 2, topY + 8, "#0f172a");
+    } else {
+      drawSpruce(ctx, cx - 36, topY + 18, 1.0, "#1e5638");
+      drawSpruce(ctx, cx + 36, topY + 18, 0.95, "#2b6e49");
+      drawTent(ctx, cx - 12, topY + 14, "#b45309");
+      drawMiniBike2D(cx + 14, topY + 12, "#0f172a");
+    }
   }
 }
 
