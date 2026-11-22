@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.8-prologue-cosmos";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.8-prologue-cosmos";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.9-luminous-galaxies";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.9-luminous-galaxies";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.2.8-prologue-cosmos";
+} from "./universeRegistry.js?v=5.2.9-luminous-galaxies";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.2.8-prologue-cosmos";
-import { sound } from "./audio.js?v=5.2.8-prologue-cosmos";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.8-prologue-cosmos";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.8-prologue-cosmos";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.8-prologue-cosmos";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.8-prologue-cosmos";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.8-prologue-cosmos";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.2.8-prologue-cosmos";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.8-prologue-cosmos";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.8-prologue-cosmos";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.8-prologue-cosmos";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.2.8-prologue-cosmos";
+} from "./neighborSocial.js?v=5.2.9-luminous-galaxies";
+import { sound } from "./audio.js?v=5.2.9-luminous-galaxies";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.9-luminous-galaxies";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.9-luminous-galaxies";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.9-luminous-galaxies";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.9-luminous-galaxies";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.9-luminous-galaxies";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.2.9-luminous-galaxies";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.9-luminous-galaxies";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.9-luminous-galaxies";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.9-luminous-galaxies";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.2.9-luminous-galaxies";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.2.8-prologue-cosmos";
-import { createFootprintTrail } from "./footprints3D.js?v=5.2.8-prologue-cosmos";
+} from "./trailSocialExtras.js?v=5.2.9-luminous-galaxies";
+import { createFootprintTrail } from "./footprints3D.js?v=5.2.9-luminous-galaxies";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.2.8-prologue-cosmos";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.8-prologue-cosmos";
+} from "./bestiaryAndExtras.js?v=5.2.9-luminous-galaxies";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.9-luminous-galaxies";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,20 +75,20 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.2.8-prologue-cosmos";
+} from "./cloudClient.js?v=5.2.9-luminous-galaxies";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.2.8-prologue-cosmos";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.8-prologue-cosmos";
+} from "./photoPlanetBuilder.js?v=5.2.9-luminous-galaxies";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.9-luminous-galaxies";
 import {
   createObservatoryController,
   recordVisitedGalaxy,
   markSessionPlanetSeen,
   resetSessionSeenPlanets,
-} from "./starObservatory.js?v=5.2.8-prologue-cosmos";
-import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.2.8-prologue-cosmos";
+} from "./starObservatory.js?v=5.2.9-luminous-galaxies";
+import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.2.9-luminous-galaxies";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
@@ -585,6 +585,7 @@ function ensureHistoryGuard() {
 
 function setScreen(nextMode) {
   mode = nextMode;
+  document.body.dataset.mode = mode;
   elScreenPrologue?.classList.toggle("active", mode === "prologue");
   elScreenTitle.classList.toggle("active", mode === "title");
   elScreenMap.classList.toggle("active", mode === "map");
@@ -598,8 +599,10 @@ function updateTitleLayout() {
   if (mode === "prologue") {
     const isMobile = window.innerWidth <= 820;
     currentWorld.group.position.set(0, 0, 0);
-    camera.position.set(0, 1.2, isMobile ? 31 : 25);
-    camera.lookAt(0, 0.8, -10);
+    // 移动端纵向窄视窗稍微拉远并向内收拢比例，确保左右彩色旋臂星云完整入画！
+    currentWorld.group.scale.setScalar(isMobile ? 0.68 : 1.0);
+    camera.position.set(0, 1.0, isMobile ? 27 : 23.5);
+    camera.lookAt(0, 0.8, -12);
     return;
   }
   if (mode !== "title") return;
@@ -727,10 +730,10 @@ function setupPrologueScene() {
   hiker.setHeadlamp(true);
   sound.setPlanetBGM("space");
 
-  // 深空微光调暗主直射日照、增强冷蓝边缘光，让未探索的暗星呈现极具电影感的日食剪影轮廓！
-  hemiLight.intensity = 0.42;
-  sunLight.intensity = 0.28;
-  rimLight.intensity = 1.15;
+  // 温润靛蓝星光 + 柔和边缘光，照亮小人与前景山海剪影轮廓
+  hemiLight.intensity = 0.72;
+  sunLight.intensity = 0.55;
+  rimLight.intensity = 1.25;
 
   currentWorld = buildPrologueCosmosWorld();
   currentWorld.group.position.set(0, 0, 0);
@@ -741,11 +744,11 @@ function setupPrologueScene() {
   if (hiker.root.parent !== currentWorld.pedestal) {
     currentWorld.pedestal.add(hiker.root);
   }
-  hiker.root.position.set(-1.35, 6.18, 0.45);
+  hiker.root.position.set(-1.1, 5.78, 0.45);
   hiker.root.rotation.set(0.06, Math.PI * 0.84, 0);
   hiker.root.visible = true;
 
-  scene.background.set("#050918");
+  scene.background.set("#0a1532");
   camera.up.set(0, 1, 0);
   setScreen("prologue");
   updateTitleLayout();
@@ -3971,10 +3974,11 @@ function animate() {
   }
 
   if (mode === "prologue" && currentWorld) {
-    // 轻微深空呼吸漂移，让远近旋臂银河与暗星剪影呈现立体视差景深
-    camera.position.x = Math.sin(elapsed * 0.18) * 1.15;
-    camera.position.y = 1.2 + Math.cos(elapsed * 0.14) * 0.42;
-    camera.lookAt(0, 0.8, -10);
+    const baseZ = window.innerWidth <= 820 ? 27 : 23.5;
+    camera.position.x = Math.sin(elapsed * 0.22) * 0.95;
+    camera.position.y = 1.0 + Math.cos(elapsed * 0.16) * 0.35;
+    camera.position.z = baseZ;
+    camera.lookAt(0, 0.8, -12);
     hiker.update(dt, elapsed, 0.08);
   } else if (mode === "title" && currentWorld) {
     const baseY = currentWorld.group.userData.baseY ?? -1.2;

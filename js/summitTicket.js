@@ -1,5 +1,5 @@
-import { renderPlanetIllustration } from "./planetArt2D.js?v=5.2.8-prologue-cosmos";
-import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.2.8-prologue-cosmos";
+import { renderPlanetIllustration } from "./planetArt2D.js?v=5.2.9-luminous-galaxies";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.2.9-luminous-galaxies";
 
 function loadImg(url) {
   return new Promise((resolve) => {

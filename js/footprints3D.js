@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.2.8-prologue-cosmos";
+import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.2.9-luminous-galaxies";
 
 const POOL_SIZE = 34;
 const RIPPLE_POOL_SIZE = 14;

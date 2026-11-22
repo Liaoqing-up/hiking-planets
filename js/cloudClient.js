@@ -16,7 +16,7 @@ import {
   STORAGE_BUCKET_MEDIA,
   SUPABASE_ANON_KEY,
   resolveCloudApiBase,
-} from "./cloudConfig.js?v=5.2.8-prologue-cosmos";
+} from "./cloudConfig.js?v=5.2.9-luminous-galaxies";
 
 const SESSION_STORAGE_KEY = "hikerstars_auth_session_v1";
 

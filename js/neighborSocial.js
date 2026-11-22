@@ -12,9 +12,9 @@ import {
   latLonToUnitVec,
   getSurfaceRadius,
   registerGuestTerrain,
-} from "./sphereMath.js?v=5.2.8-prologue-cosmos";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.8-prologue-cosmos";
-import { drawSiteQrStamp, drawPostmarkSeal } from "./qrStamp.js?v=5.2.8-prologue-cosmos";
+} from "./sphereMath.js?v=5.2.9-luminous-galaxies";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.9-luminous-galaxies";
+import { drawSiteQrStamp, drawPostmarkSeal } from "./qrStamp.js?v=5.2.9-luminous-galaxies";
 
 const UP = new THREE.Vector3(0, 1, 0);
 const SOCIAL_STORAGE_KEY = "hiking_planets_neighbor_social_v4";

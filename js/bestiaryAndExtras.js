@@ -1,7 +1,7 @@
-import { renderPlanetIllustration } from "./planetArt2D.js?v=5.2.8-prologue-cosmos";
-import { CREATURE_CATALOG } from "./creatures3D.js?v=5.2.8-prologue-cosmos";
-import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.2.8-prologue-cosmos";
-import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=5.2.8-prologue-cosmos";
+import { renderPlanetIllustration } from "./planetArt2D.js?v=5.2.9-luminous-galaxies";
+import { CREATURE_CATALOG } from "./creatures3D.js?v=5.2.9-luminous-galaxies";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.2.9-luminous-galaxies";
+import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=5.2.9-luminous-galaxies";
 
 const PORTRAIT_BG = {
   tengger: ["#2e1a12", "#8b4b22"],
