@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.3.1-uncharted-galaxies";
+import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.3.2-shanhai-astrolabe";
 
 const POOL_SIZE = 34;
 const RIPPLE_POOL_SIZE = 14;

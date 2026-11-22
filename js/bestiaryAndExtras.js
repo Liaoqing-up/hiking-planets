@@ -1,7 +1,7 @@
-import { renderPlanetIllustration } from "./planetArt2D.js?v=5.3.1-uncharted-galaxies";
-import { CREATURE_CATALOG } from "./creatures3D.js?v=5.3.1-uncharted-galaxies";
-import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.3.1-uncharted-galaxies";
-import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=5.3.1-uncharted-galaxies";
+import { renderPlanetIllustration } from "./planetArt2D.js?v=5.3.2-shanhai-astrolabe";
+import { CREATURE_CATALOG } from "./creatures3D.js?v=5.3.2-shanhai-astrolabe";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.3.2-shanhai-astrolabe";
+import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=5.3.2-shanhai-astrolabe";
 
 const PORTRAIT_BG = {
   tengger: ["#2e1a12", "#8b4b22"],

@@ -1,4 +1,4 @@
-const CACHE_NAME = "hikerplanets-v5.3.1-uncharted-galaxies";
+const CACHE_NAME = "hikerplanets-v5.3.2-shanhai-astrolabe";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

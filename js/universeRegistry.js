@@ -5,11 +5,11 @@
  */
 
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.1-uncharted-galaxies";
-import { KITTY_PLANETS, NEIGHBOR_PROFILES } from "./kittyUniverse.js?v=5.3.1-uncharted-galaxies";
-import { MIEMIE_PLANETS } from "./miemieUniverse.js?v=5.3.1-uncharted-galaxies";
-import { LUCA_PLANETS } from "./lucaUniverse.js?v=5.3.1-uncharted-galaxies";
-import { latLonToUnitVec } from "./sphereMath.js?v=5.3.1-uncharted-galaxies";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.2-shanhai-astrolabe";
+import { KITTY_PLANETS, NEIGHBOR_PROFILES } from "./kittyUniverse.js?v=5.3.2-shanhai-astrolabe";
+import { MIEMIE_PLANETS } from "./miemieUniverse.js?v=5.3.2-shanhai-astrolabe";
+import { LUCA_PLANETS } from "./lucaUniverse.js?v=5.3.2-shanhai-astrolabe";
+import { latLonToUnitVec } from "./sphereMath.js?v=5.3.2-shanhai-astrolabe";
 
 export const VALID_HOST_ROLES = ["mine", "kitty", "miemie", "luca"];
 

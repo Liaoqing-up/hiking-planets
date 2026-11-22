@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.1-uncharted-galaxies";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.1-uncharted-galaxies";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.2-shanhai-astrolabe";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.2-shanhai-astrolabe";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.3.1-uncharted-galaxies";
+} from "./universeRegistry.js?v=5.3.2-shanhai-astrolabe";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.3.1-uncharted-galaxies";
-import { sound } from "./audio.js?v=5.3.1-uncharted-galaxies";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.1-uncharted-galaxies";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.1-uncharted-galaxies";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.1-uncharted-galaxies";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.1-uncharted-galaxies";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.1-uncharted-galaxies";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.3.1-uncharted-galaxies";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.1-uncharted-galaxies";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.1-uncharted-galaxies";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.1-uncharted-galaxies";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.3.1-uncharted-galaxies";
+} from "./neighborSocial.js?v=5.3.2-shanhai-astrolabe";
+import { sound } from "./audio.js?v=5.3.2-shanhai-astrolabe";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.2-shanhai-astrolabe";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.2-shanhai-astrolabe";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.2-shanhai-astrolabe";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.2-shanhai-astrolabe";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.2-shanhai-astrolabe";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.3.2-shanhai-astrolabe";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.2-shanhai-astrolabe";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.2-shanhai-astrolabe";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.2-shanhai-astrolabe";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.3.2-shanhai-astrolabe";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.3.1-uncharted-galaxies";
-import { createFootprintTrail } from "./footprints3D.js?v=5.3.1-uncharted-galaxies";
+} from "./trailSocialExtras.js?v=5.3.2-shanhai-astrolabe";
+import { createFootprintTrail } from "./footprints3D.js?v=5.3.2-shanhai-astrolabe";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.3.1-uncharted-galaxies";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.1-uncharted-galaxies";
+} from "./bestiaryAndExtras.js?v=5.3.2-shanhai-astrolabe";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.2-shanhai-astrolabe";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,20 +75,20 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.3.1-uncharted-galaxies";
+} from "./cloudClient.js?v=5.3.2-shanhai-astrolabe";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.3.1-uncharted-galaxies";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.1-uncharted-galaxies";
+} from "./photoPlanetBuilder.js?v=5.3.2-shanhai-astrolabe";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.2-shanhai-astrolabe";
 import {
   createObservatoryController,
   recordVisitedGalaxy,
   markSessionPlanetSeen,
   resetSessionSeenPlanets,
-} from "./starObservatory.js?v=5.3.1-uncharted-galaxies";
-import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.1-uncharted-galaxies";
+} from "./starObservatory.js?v=5.3.2-shanhai-astrolabe";
+import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.2-shanhai-astrolabe";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
@@ -726,29 +726,31 @@ function setupPrologueScene() {
   document.title = "行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS";
   hiker.setOutfit("gold");
   hiker.setCycling(false);
-  hiker.root.scale.setScalar(1.12);
+  hiker.root.scale.setScalar(1.08);
   hiker.setHeadlamp(false);
   sound.setPlanetBGM("space");
 
-  // 《小王子》温暖绘本水彩天光：明亮柔和的暖金日照与矢车菊蓝环境光！
-  hemiLight.intensity = 1.28;
-  sunLight.intensity = 1.65;
-  rimLight.intensity = 0.85;
+  // 与进入后的个人扉页 setupTitleScene 完全一致的晨曦天光与 #0a1228 靛蓝星空，过渡零违和！
+  hemiLight.intensity = 1.15;
+  sunLight.intensity = 1.85;
+  rimLight.intensity = 0.75;
 
   currentWorld = buildPrologueCosmosWorld();
   currentWorld.group.position.set(0, 0, 0);
   currentWorld.group.visible = true;
   scene.add(currentWorld.group);
 
-  // 最底端保留行者小人：伫立在绿茵野花与玻璃罩红玫瑰、暖黄小街灯之间，仰望漫天彩色小星球
+  // 最底端保留行者小人：伫立在高山松林草甸营地脊顶，仰望漫天真实山海微缩星球与未知星系
   if (hiker.root.parent !== currentWorld.pedestal) {
     currentWorld.pedestal.add(hiker.root);
   }
-  hiker.root.position.set(-0.65, 5.56, 0.55);
+  const standDir = new THREE.Vector3(-0.08, 0.975, 0.20).normalize();
+  const groundR = currentWorld.surfaceAt ? currentWorld.surfaceAt(standDir) : 5.75;
+  hiker.root.position.copy(standDir).multiplyScalar(groundR + 0.04);
   hiker.root.rotation.set(0.08, Math.PI * 0.86, 0);
   hiker.root.visible = true;
 
-  scene.background.set("#2b4582");
+  scene.background.set("#0a1228");
   camera.up.set(0, 1, 0);
   setScreen("prologue");
   updateTitleLayout();

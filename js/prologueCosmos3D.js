@@ -1,64 +1,23 @@
 import * as THREE from "three";
-import { STORYBOOK_GRAD } from "./sphereMath.js?v=5.3.1-uncharted-galaxies";
+import { PLANET_RADIUS, STORYBOOK_GRAD, getSurfaceRadius } from "./sphereMath.js?v=5.3.2-shanhai-astrolabe";
 
 /**
- * 绘制《小王子》水彩绘本风暮光天幕贴图：
- * 上方是柔和的矢车菊蓝与鸢尾紫，中下部晕染开蜂蜜金、杏桃粉与晨雾奶白，彻底告别压抑暗黑感！
+ * 绘制温润深邃的「古星图星云水墨晕染层」（克制的靛青与暗金星尘，融入 #0a1228 星空底色，绝不马卡龙！）
  */
-function createWatercolourTwilightSky() {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext("2d");
-
-  const grad = ctx.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0.0, "#1d356b");  // 顶部清透暮蓝
-  grad.addColorStop(0.32, "#325194"); // 矢车菊星蓝
-  grad.addColorStop(0.62, "#5c65a8"); // 薰衣草柔紫
-  grad.addColorStop(0.84, "#c87d92"); // 晚霞玫瑰粉
-  grad.addColorStop(1.0, "#f5be7d");  // 天际线暖杏金
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 512, 512);
-
-  // 水彩云絮晕染斑块（柔和粉彩笔触）
-  const washes = [
-    { x: 110, y: 150, r: 170, col: "rgba(147, 197, 253, 0.24)" },
-    { x: 405, y: 145, r: 175, col: "rgba(249, 168, 212, 0.24)" },
-    { x: 256, y: 240, r: 210, col: "rgba(253, 230, 138, 0.20)" },
-    { x: 95, y: 340, r: 165, col: "rgba(167, 243, 208, 0.20)" },
-    { x: 420, y: 345, r: 170, col: "rgba(254, 215, 170, 0.26)" },
-  ];
-  for (const w of washes) {
-    const g = ctx.createRadialGradient(w.x, w.y, 6, w.x, w.y, w.r);
-    g.addColorStop(0, w.col);
-    g.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 512, 512);
-  }
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
-/**
- * 绘制手绘水彩星云团贴图（像绘本里柔和晕染的棉花糖彩色星团，温暖明亮）
- */
-function createPastelNebulaPatch(centerHex, edgeHex) {
+function createAstrolabeNebulaTexture(innerHex, outerHex) {
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 256;
   const ctx = canvas.getContext("2d");
-  const c1 = new THREE.Color(centerHex);
-  const c2 = new THREE.Color(edgeHex);
+  const c1 = new THREE.Color(innerHex);
+  const c2 = new THREE.Color(outerHex);
   const rgb = (c, a) =>
     `rgba(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)},${a})`;
 
-  const g = ctx.createRadialGradient(128, 128, 4, 128, 128, 124);
-  g.addColorStop(0, "rgba(255,254,248,0.72)");
-  g.addColorStop(0.28, rgb(c1, 0.52));
-  g.addColorStop(0.66, rgb(c2, 0.24));
-  g.addColorStop(1, "rgba(255,255,255,0)");
+  const g = ctx.createRadialGradient(128, 128, 6, 128, 128, 124);
+  g.addColorStop(0, rgb(c1, 0.34));
+  g.addColorStop(0.45, rgb(c2, 0.16));
+  g.addColorStop(1, "rgba(10, 18, 40, 0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 256, 256);
 
@@ -68,119 +27,73 @@ function createPastelNebulaPatch(centerHex, edgeHex) {
 }
 
 /**
- * 绘制《小王子》四芒十字手绘小星星贴图
+ * 绘制古典鎏金星盘旋涡贴图（用于远方「未知星系」：细金刻度环 + 银蓝星尘旋臂，克制典雅）
  */
-function createFourPointStarTexture() {
+function createUnchartedAstrolabeDisc(armHex = "#7892b8") {
   const canvas = document.createElement("canvas");
-  canvas.width = 64;
-  canvas.height = 64;
+  canvas.width = 384;
+  canvas.height = 384;
   const ctx = canvas.getContext("2d");
+  const cx = 192;
+  const cy = 192;
+  const armCol = new THREE.Color(armHex);
+  const rgbArm = (a) =>
+    `rgba(${Math.round(armCol.r * 255)},${Math.round(armCol.g * 255)},${Math.round(armCol.b * 255)},${a})`;
 
-  const glow = ctx.createRadialGradient(32, 32, 0, 32, 32, 28);
-  glow.addColorStop(0, "rgba(255, 252, 235, 1)");
-  glow.addColorStop(0.35, "rgba(254, 240, 138, 0.65)");
-  glow.addColorStop(1, "rgba(254, 240, 138, 0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, 64, 64);
+  // 中心微弱古金银雾核
+  const core = ctx.createRadialGradient(cx, cy, 2, cx, cy, 175);
+  core.addColorStop(0, "rgba(240, 199, 104, 0.38)");
+  core.addColorStop(0.28, rgbArm(0.22));
+  core.addColorStop(0.72, rgbArm(0.07));
+  core.addColorStop(1, "rgba(10, 18, 40, 0)");
+  ctx.fillStyle = core;
+  ctx.fillRect(0, 0, 384, 384);
 
-  ctx.fillStyle = "#fffef5";
-  ctx.beginPath();
-  ctx.moveTo(32, 4);
-  ctx.quadraticCurveTo(34.5, 29.5, 60, 32);
-  ctx.quadraticCurveTo(34.5, 34.5, 32, 60);
-  ctx.quadraticCurveTo(29.5, 34.5, 4, 32);
-  ctx.quadraticCurveTo(29.5, 29.5, 32, 4);
-  ctx.closePath();
-  ctx.fill();
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
-/**
- * 绘制《小王子》古典手绘星图风「未知星系旋涡星云圆盘贴图」（乳白鎏金虚线星轨 + 水彩柔光旋臂）
- */
-function createChartSwirlTexture(tintHex = "#e0e7ff") {
-  const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 256;
-  const ctx = canvas.getContext("2d");
-  const cx = 128;
-  const cy = 128;
-  const c = new THREE.Color(tintHex);
-  const rgb = (a) => `rgba(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)},${a})`;
-
-  const base = ctx.createRadialGradient(cx, cy, 4, cx, cy, 122);
-  base.addColorStop(0, "rgba(255, 253, 244, 0.78)");
-  base.addColorStop(0.38, rgb(0.42));
-  base.addColorStop(0.78, rgb(0.14));
-  base.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, 256, 256);
-
+  // 古星图同心细金轨线与 36 道罗盘刻度
   ctx.save();
-  ctx.strokeStyle = "rgba(254, 240, 138, 0.65)";
-  ctx.lineWidth = 1.8;
-  ctx.setLineDash([7, 6]);
+  ctx.strokeStyle = "rgba(240, 199, 104, 0.34)";
+  ctx.lineWidth = 1.1;
+  ctx.setLineDash([6, 7]);
   ctx.beginPath();
-  ctx.arc(cx, cy, 102, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 156, 0, Math.PI * 2);
   ctx.stroke();
+
+  ctx.strokeStyle = "rgba(184, 214, 255, 0.24)";
+  ctx.setLineDash([3, 6]);
   ctx.beginPath();
-  ctx.arc(cx, cy, 66, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.restore();
-
-  for (let arm = 0; arm < 2; arm++) {
-    ctx.strokeStyle = arm === 0 ? "rgba(255, 251, 235, 0.62)" : rgb(0.55);
-    ctx.lineWidth = 5.5;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    for (let s = 0; s < 42; s++) {
-      const t = s / 42;
-      const ang = arm * Math.PI + t * 3.6;
-      const rad = 10 + t * 98;
-      const x = cx + Math.cos(ang) * rad;
-      const y = cy + Math.sin(ang) * rad;
-      if (s === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  }
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
-/**
- * 绘制手绘绘本风「未知星系微缩星图铭牌」贴图（如「✦ 未知星系 · B-???」）
- */
-function createUnknownLabelTexture(titleText, subText = "") {
-  const canvas = document.createElement("canvas");
-  canvas.width = 340;
-  canvas.height = 104;
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "rgba(38, 54, 102, 0.58)";
-  ctx.strokeStyle = "rgba(253, 230, 138, 0.78)";
-  ctx.lineWidth = 2.2;
-  ctx.setLineDash([7, 5]);
-  ctx.beginPath();
-  ctx.roundRect(12, 14, 316, subText ? 76 : 58, 30);
-  ctx.fill();
+  ctx.arc(cx, cy, 106, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
 
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#fef3c7";
-  ctx.font = "600 24px 'Songti SC', 'Kaiti SC', serif";
-  ctx.fillText(titleText, 170, subText ? 46 : 51);
+  ctx.strokeStyle = "rgba(240, 199, 104, 0.28)";
+  for (let i = 0; i < 36; i++) {
+    const a = (i / 36) * Math.PI * 2;
+    const r0 = i % 3 === 0 ? 148 : 152;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+    ctx.lineTo(cx + Math.cos(a) * 158, cy + Math.sin(a) * 158);
+    ctx.stroke();
+  }
+  ctx.restore();
 
-  if (subText) {
-    ctx.fillStyle = "rgba(224, 242, 254, 0.92)";
-    ctx.font = "17px 'Songti SC', serif";
-    ctx.fillText(subText, 170, 74);
+  // 双旋臂细腻银金星尘微粒（替代卡通粗线条）
+  let seed = 73;
+  const rand = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+  for (let i = 0; i < 420; i++) {
+    const t = Math.pow(rand(), 0.78);
+    const arm = i % 2;
+    const ang = arm * Math.PI + t * 4.2 + (rand() - 0.5) * (0.35 + t * 0.45);
+    const rad = 10 + t * 146;
+    const x = cx + Math.cos(ang) * rad;
+    const y = cy + Math.sin(ang) * rad;
+    const sz = (1 - t * 0.55) * (0.8 + rand() * 1.4);
+    ctx.fillStyle = rand() > 0.3 ? rgbArm(0.45 * (1 - t * 0.6)) : `rgba(248, 226, 166, ${0.48 * (1 - t * 0.6)})`;
+    ctx.beginPath();
+    ctx.arc(x, y, sz, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -189,27 +102,118 @@ function createUnknownLabelTexture(titleText, subText = "") {
 }
 
 /**
- * 构建一颗《小王子》绘本插画风的彩色迷你星球（MeshToonMaterial 水彩阶梯色 + 积雪圆润小山尖 + 小松树/帐篷/风车 + 金色星轨环）
+ * 绘制无边框古典星图细线标注（与游戏内标题/星海卷轴同源字体气质，无卡通胶囊框）
  */
-function buildStorybookMiniPlanet(spec) {
+function createClassicalStarChartLabel(titleText, subText = "") {
+  const canvas = document.createElement("canvas");
+  canvas.width = 384;
+  canvas.height = 96;
+  const ctx = canvas.getContext("2d");
+
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(6, 11, 26, 0.92)";
+  ctx.shadowBlur = 10;
+
+  // 两侧渐隐鎏金细横线
+  const lg = ctx.createLinearGradient(36, 0, 348, 0);
+  lg.addColorStop(0, "rgba(240, 199, 104, 0)");
+  lg.addColorStop(0.22, "rgba(240, 199, 104, 0.55)");
+  lg.addColorStop(0.5, "rgba(240, 199, 104, 0.15)");
+  lg.addColorStop(0.78, "rgba(240, 199, 104, 0.55)");
+  lg.addColorStop(1, "rgba(240, 199, 104, 0)");
+  ctx.strokeStyle = lg;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(36, 56);
+  ctx.lineTo(348, 56);
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(246, 224, 164, 0.92)";
+  ctx.font = "500 22px 'Songti SC', 'STSong', 'Kaiti SC', serif";
+  ctx.fillText(titleText, 192, 44);
+
+  if (subText) {
+    ctx.fillStyle = "rgba(186, 206, 236, 0.78)";
+    ctx.font = "16px 'Songti SC', 'STSong', serif";
+    ctx.fillText(subText, 192, 78);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * 使用与进入游戏后完全同源的 getSurfaceRadius 等高平滑顶点着色算法，
+ * 塑造微缩山海真实地貌星球（雪山冰川、金色沙海、云杉草甸、蔚蓝海岸），彻底告别马卡龙塑料球感！
+ */
+function buildMiniatureRealTerrainPlanet(spec) {
   const wrap = new THREE.Group();
   wrap.position.set(...spec.pos);
-  const r = spec.r;
+  const scaleRatio = spec.r / PLANET_RADIUS;
 
-  const bodyMat = new THREE.MeshToonMaterial({
-    color: spec.color,
-    gradientMap: STORYBOOK_GRAD,
-  });
-  const sphere = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 3), bodyMat);
-  wrap.add(sphere);
+  const geo = new THREE.SphereGeometry(PLANET_RADIUS, 56, 42);
+  const pos = geo.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  const cLow = new THREE.Color(spec.low);
+  const cMid = new THREE.Color(spec.mid);
+  const cHigh = new THREE.Color(spec.high);
+  const tmpDir = new THREE.Vector3();
+  const tmpCol = new THREE.Color();
 
-  // 柔和暖色大气光圈（非暗黑日食，而是水彩温暖光晕）
+  for (let i = 0; i < pos.count; i++) {
+    tmpDir.fromBufferAttribute(pos, i).normalize();
+    const r = getSurfaceRadius(spec.templateId, tmpDir);
+    pos.setXYZ(i, tmpDir.x * r, tmpDir.y * r, tmpDir.z * r);
+    const hNorm = THREE.MathUtils.clamp((r - PLANET_RADIUS + 0.3) / 1.85, 0, 1);
+    if (hNorm < 0.46) tmpCol.copy(cLow).lerp(cMid, hNorm / 0.46);
+    else tmpCol.copy(cMid).lerp(cHigh, (hNorm - 0.46) / 0.54);
+    colors[i * 3] = tmpCol.r;
+    colors[i * 3 + 1] = tmpCol.g;
+    colors[i * 3 + 2] = tmpCol.b;
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+
+  const coreGroup = new THREE.Group();
+  coreGroup.scale.setScalar(scaleRatio);
+
+  const terrainMesh = new THREE.Mesh(
+    geo,
+    new THREE.MeshToonMaterial({
+      vertexColors: true,
+      gradientMap: STORYBOOK_GRAD,
+      transparent: Boolean(spec.opacity),
+      opacity: spec.opacity || 1,
+    })
+  );
+  coreGroup.add(terrainMesh);
+
+  if (spec.water) {
+    const waterMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(PLANET_RADIUS + 0.16, 40, 30),
+      new THREE.MeshStandardMaterial({
+        color: spec.water,
+        roughness: 0.25,
+        metalness: 0.1,
+        transparent: true,
+        opacity: spec.opacity ? 0.45 : 0.78,
+      })
+    );
+    coreGroup.add(waterMesh);
+  }
+
+  wrap.add(coreGroup);
+
   const haloMat = new THREE.ShaderMaterial({
     transparent: true,
     side: THREE.BackSide,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    uniforms: { uColor: { value: new THREE.Color(spec.halo || "#fde68a") } },
+    uniforms: {
+      uColor: { value: new THREE.Color(spec.halo || "#f0c768") },
+      uStrength: { value: spec.haloStrength ?? 0.52 },
+    },
     vertexShader: `
       varying vec3 vNormal;
       varying vec3 vViewPos;
@@ -222,300 +226,204 @@ function buildStorybookMiniPlanet(spec) {
     `,
     fragmentShader: `
       uniform vec3 uColor;
+      uniform float uStrength;
       varying vec3 vNormal;
       varying vec3 vViewPos;
       void main() {
         vec3 viewDir = normalize(vViewPos);
-        float rim = pow(clamp(1.0 + dot(vNormal, viewDir), 0.0, 1.0), 2.2);
-        gl_FragColor = vec4(uColor, rim * 0.52);
+        float rim = pow(clamp(1.0 + dot(vNormal, viewDir), 0.0, 1.0), 2.5);
+        gl_FragColor = vec4(uColor, rim * uStrength);
       }
     `,
   });
-  wrap.add(new THREE.Mesh(new THREE.SphereGeometry(r * 1.22, 28, 20), haloMat));
+  wrap.add(new THREE.Mesh(new THREE.SphereGeometry(spec.r * 1.24, 32, 24), haloMat));
 
-  // 星球表面圆润可爱的雪顶小山峰
-  const snowMat = new THREE.MeshToonMaterial({ color: "#fffdf7", gradientMap: STORYBOOK_GRAD });
-  const peakMat = new THREE.MeshToonMaterial({ color: spec.peakColor || "#84a98c", gradientMap: STORYBOOK_GRAD });
-  const peakDirs = [
-    new THREE.Vector3(0.25, 0.92, 0.28).normalize(),
-    new THREE.Vector3(-0.52, 0.78, 0.34).normalize(),
-    new THREE.Vector3(0.68, 0.55, 0.48).normalize(),
-  ];
-  peakDirs.forEach((dir, idx) => {
-    const h = r * (0.42 - idx * 0.06);
-    const coneGrp = new THREE.Group();
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(r * 0.26, h, 7), peakMat);
-    cone.position.y = h * 0.42;
-    const snowCap = new THREE.Mesh(new THREE.ConeGeometry(r * 0.13, h * 0.46, 7), snowMat);
-    snowCap.position.y = h * 0.66;
-    coneGrp.add(cone, snowCap);
-    coneGrp.position.copy(dir).multiplyScalar(r * 0.95);
-    coneGrp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-    wrap.add(coneGrp);
-  });
-
-  // 2 棵童话小松树 + 1 顶暖橙小帐篷
-  const treeMat = new THREE.MeshToonMaterial({ color: spec.treeColor || "#3b875e", gradientMap: STORYBOOK_GRAD });
-  const trunkMat = new THREE.MeshToonMaterial({ color: "#8c5a3c", gradientMap: STORYBOOK_GRAD });
-  for (const tDir of [
-    new THREE.Vector3(-0.22, 0.52, 0.82).normalize(),
-    new THREE.Vector3(0.42, -0.35, 0.84).normalize(),
-  ]) {
-    const tg = new THREE.Group();
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.025, r * 0.035, r * 0.14, 6), trunkMat);
-    trunk.position.y = r * 0.07;
-    const crown1 = new THREE.Mesh(new THREE.ConeGeometry(r * 0.12, r * 0.22, 7), treeMat);
-    crown1.position.y = r * 0.2;
-    const crown2 = new THREE.Mesh(new THREE.ConeGeometry(r * 0.09, r * 0.18, 7), treeMat);
-    crown2.position.y = r * 0.31;
-    tg.add(trunk, crown1, crown2);
-    tg.position.copy(tDir).multiplyScalar(r * 0.98);
-    tg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tDir);
-    wrap.add(tg);
-  }
-
-  if (spec.hasTent) {
-    const tentDir = new THREE.Vector3(0.08, 0.62, 0.78).normalize();
-    const tent = new THREE.Mesh(
-      new THREE.ConeGeometry(r * 0.13, r * 0.18, 4),
-      new THREE.MeshToonMaterial({ color: "#fb923c", gradientMap: STORYBOOK_GRAD })
-    );
-    tent.position.copy(tentDir).multiplyScalar(r * 1.05);
-    tent.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tentDir);
-    wrap.add(tent);
-  }
-
-  // 环绕小星球的软萌白朵云
-  const cloudGrp = new THREE.Group();
-  const cloudMat = new THREE.MeshToonMaterial({ color: "#fffaf0", gradientMap: STORYBOOK_GRAD });
-  for (let c = 0; c < 2; c++) {
-    const cg = new THREE.Group();
-    const ang = c * Math.PI + 0.5;
-    [-0.12, 0, 0.12].forEach((ox, i) => {
-      const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(r * (i === 1 ? 0.13 : 0.095), 1), cloudMat);
-      puff.position.x = ox * r * 1.3;
-      cg.add(puff);
-    });
-    cg.position.set(Math.cos(ang) * r * 1.35, (c === 0 ? 0.28 : -0.22) * r, Math.sin(ang) * r * 1.35);
-    cloudGrp.add(cg);
-  }
-  wrap.add(cloudGrp);
-
-  // 可选：金色/粉彩星轨细环
   let ringMesh = null;
   if (spec.ringColor) {
     ringMesh = new THREE.Mesh(
-      new THREE.TorusGeometry(r * 1.52, r * 0.025, 8, 64),
-      new THREE.MeshBasicMaterial({ color: spec.ringColor, transparent: true, opacity: 0.72 })
+      new THREE.TorusGeometry(spec.r * 1.54, 0.022, 8, 72),
+      new THREE.MeshBasicMaterial({ color: spec.ringColor, transparent: true, opacity: 0.45 })
     );
-    ringMesh.rotation.set(1.18, 0.25, -0.32);
+    ringMesh.rotation.set(1.22, 0.26, -0.28);
     wrap.add(ringMesh);
   }
 
-  return { wrap, sphere, cloudGrp, ringMesh, baseY: spec.pos[1], phase: spec.phase || 0 };
+  return { wrap, coreGroup, ringMesh, baseY: spec.pos[1], phase: spec.phase || 0 };
 }
 
 /**
- * 构建未登录首屏《小王子 · 山海皆星辰》童话水彩绘本总扉页 3D 场景：
- * - 温暖暮蓝→薰衣草粉→晚霞杏金手绘水彩天幕（彻底摆脱暗黑风！）
- * - 多座粉彩水彩星云群落与细金线串联的星座小星球（对应多位已入驻星主的星系缩影）
- * - 远景柔雾晨光中的待命名未知小星球剪影
- * - 最底端保留B-612童话风绿茵小野花小行星 + 红玫瑰玻璃罩 + 铸铁暖黄小路灯 + 小人伫立仰望漫天星辰！
+ * 构建与进入游戏后完全同频的《山海古星图 · 行者的星球》总扉页 3D 宇宙：
+ * - 延续游戏原生 #0a1228 深邃静谧靛蓝夜空 + 双色闪烁星穹（无缝衔接个人扉页与羊皮星图！）
+ * - 近中景：4 颗真实山海等高地貌微缩星球（雪峰冰海、腾格里金沙、天山云杉、蔚蓝海岸）串联成鎏金星轨
+ * - 远景：4 座古典鎏金星盘「未知星系」旋涡，内含晨雾靛青色未探索山海星体与细金线古星图角标
+ * - 最底端：同源平滑高山草甸雪脊星球弧顶 + 行者小人伫立 + 暖光徒步帐篷篝火 + 松林与小王子玫瑰
  */
 export function buildPrologueCosmosWorld() {
   const group = new THREE.Group();
   const miniPlanets = [];
-  const nebulaSprites = [];
+  const unknownGalaxies = [];
 
-  const starTex = createFourPointStarTexture();
-
-  // 1. 《小王子》水彩暮霞天幕背景板
-  const skyPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(140, 88),
-    new THREE.MeshBasicMaterial({ map: createWatercolourTwilightSky(), depthWrite: false })
-  );
-  skyPlane.position.set(0, 1.5, -36);
-  group.add(skyPlane);
-
-  // 2. 四座粉彩水彩星云缩影群落（琥珀苍山星云、蜜桃猫耳星云、薄荷绵羊星云、晴空追风星云）
-  const nebulaSpecs = [
-    { pos: [-14.2, 6.8, -16], scale: 14.5, c1: "#fde68a", c2: "#fb923c" },
-    { pos: [14.6, 7.2, -16.5], scale: 14.0, c1: "#fbcfe8", c2: "#c084fc" },
-    { pos: [-14.8, -3.6, -17], scale: 12.8, c1: "#a7f3d0", c2: "#38bdf8" },
-    { pos: [15.0, -3.2, -16.2], scale: 13.2, c1: "#bae6fd", c2: "#818cf8" },
+  // 1. 低饱和度苍青与流金古星云薄雾（融入 #0a1228 星空，温润通透不暗黑、绝不甜腻卡通）
+  const nebulaWashes = [
+    { pos: [-14.0, 5.2, -18], scale: 18, c1: "#335c96", c2: "#162a52" },
+    { pos: [14.5, 5.6, -18.5], scale: 17.5, c1: "#8c6d3b", c2: "#1b2e56" },
+    { pos: [0, -3.5, -20], scale: 22, c1: "#24477a", c2: "#0e1c3a" },
   ];
-  nebulaSpecs.forEach((n, i) => {
+  for (const nw of nebulaWashes) {
     const sp = new THREE.Sprite(
       new THREE.SpriteMaterial({
-        map: createPastelNebulaPatch(n.c1, n.c2),
+        map: createAstrolabeNebulaTexture(nw.c1, nw.c2),
         transparent: true,
-        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
         depthWrite: false,
       })
     );
-    sp.position.set(...n.pos);
-    sp.scale.setScalar(n.scale);
+    sp.position.set(...nw.pos);
+    sp.scale.setScalar(nw.scale);
     group.add(sp);
-    nebulaSprites.push({ sp, baseScale: n.scale, phase: i * 1.4 });
-  });
-
-  // 3. 漫天手绘金色四芒星与童话星座金色虚线连线
-  const starCount = 260;
-  const starPos = new Float32Array(starCount * 3);
-  for (let i = 0; i < starCount; i++) {
-    starPos[i * 3] = (Math.random() - 0.5) * 56;
-    starPos[i * 3 + 1] = -8 + Math.random() * 28;
-    starPos[i * 3 + 2] = -14 - Math.random() * 18;
   }
-  const starGeo = new THREE.BufferGeometry();
-  starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-  const fourPointStars = new THREE.Points(
-    starGeo,
-    new THREE.PointsMaterial({
-      size: 0.95,
-      map: starTex,
-      transparent: true,
-      opacity: 0.92,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    })
-  );
-  group.add(fourPointStars);
 
-  // 4. 环绕中央绘本卡片的《小王子》水彩彩色迷你徒步星球群（圆润雪峰 + 小松树 + 白朵云 + 金色星环）
+  // 2. 已点亮山海星系代表：与游戏内完全同款地貌着色的 4 颗微缩真实徒步星球
   const litSpecs = [
     {
-      pos: [-11.8, 5.4, -8.2],
+      // 稻城亚丁三神山雪峰星
+      templateId: "yading",
+      pos: [-11.8, 5.2, -8.0],
       r: 2.05,
-      color: "#eab308", // 金色腾格里沙丘星
-      peakColor: "#d97706",
-      treeColor: "#4d7c0f",
-      halo: "#fef08a",
-      ringColor: "#fde68a",
-      hasTent: true,
+      low: "#b88944",
+      mid: "#727f8e",
+      high: "#f2f6fc",
+      water: "#1c92cf",
+      halo: "#7ec8ff",
+      ringColor: "#f0c768",
       phase: 0.3,
     },
     {
-      pos: [12.2, 5.6, -8.6],
-      r: 2.15,
-      color: "#f472b6", // 蜜桃樱花晚霞星
-      peakColor: "#fb7185",
-      treeColor: "#2dd4bf",
-      halo: "#fbcfe8",
-      ringColor: "#fed7aa",
-      hasTent: true,
-      phase: 1.7,
+      // 腾格里金色沙海绿洲星
+      templateId: "tengger",
+      pos: [12.2, 5.4, -8.4],
+      r: 2.1,
+      low: "#c6843e",
+      mid: "#dfa858",
+      high: "#f6e3be",
+      water: null,
+      halo: "#f0c768",
+      ringColor: "#ffe399",
+      phase: 1.8,
     },
     {
-      pos: [-12.4, -3.4, -9.2],
-      r: 1.85,
-      color: "#4ade80", // 翡翠高山草甸星
-      peakColor: "#34d399",
-      treeColor: "#15803d",
-      halo: "#bbf7d0",
+      // 伊犁天山云杉草甸星
+      templateId: "yili",
+      pos: [-12.5, -3.3, -9.0],
+      r: 1.82,
+      low: "#3d754c",
+      mid: "#6ba35c",
+      high: "#eef5fc",
+      water: "#2185d0",
+      halo: "#9ed6a0",
       ringColor: null,
-      hasTent: false,
       phase: 3.1,
     },
     {
+      // 麦理浩蔚蓝海湾山脊星
+      templateId: "maclehose",
       pos: [12.6, -3.0, -8.8],
-      r: 1.92,
-      color: "#60a5fa", // 蔚蓝海湾骑行星
-      peakColor: "#38bdf8",
-      treeColor: "#10b981",
-      halo: "#bae6fd",
-      ringColor: "#fef08a",
-      hasTent: false,
-      phase: 4.4,
+      r: 1.88,
+      low: "#467c52",
+      mid: "#76a365",
+      high: "#eef4fa",
+      water: "#1d68b5",
+      halo: "#68b5f8",
+      ringColor: "#f0c768",
+      phase: 4.5,
     },
   ];
 
   for (const s of litSpecs) {
-    const mp = buildStorybookMiniPlanet(s);
+    const mp = buildMiniatureRealTerrainPlanet(s);
     group.add(mp.wrap);
     miniPlanets.push(mp);
   }
 
-  // 左翼与右翼绘本金色星座连线（把同星系的小星球串联成星座）
-  for (const pair of [
-    [litSpecs[0].pos, [-15.2, 1.2, -13.5], litSpecs[2].pos],
-    [litSpecs[1].pos, [15.6, 1.5, -13.8], litSpecs[3].pos],
+  // 左右两侧古典鎏金星轨虚线，将已点亮微缩星球与远方星系优雅串联
+  for (const pts of [
+    [litSpecs[0].pos, [-15.8, 1.0, -13.8], litSpecs[2].pos],
+    [litSpecs[1].pos, [16.0, 1.2, -14.0], litSpecs[3].pos],
   ]) {
-    const curvePts = pair.map((p) => new THREE.Vector3(...p));
-    const lineGeo = new THREE.BufferGeometry().setFromPoints(curvePts);
+    const curve = new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3(...p)));
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(36));
     const line = new THREE.Line(
       lineGeo,
       new THREE.LineDashedMaterial({
-        color: "#fde68a",
-        dashSize: 0.45,
-        gapSize: 0.32,
+        color: "#f0c768",
+        dashSize: 0.36,
+        gapSize: 0.28,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.42,
       })
     );
     line.computeLineDistances();
     group.add(line);
   }
 
-  // 5. 暮霞深处的「未知星系群落（Uncharted Galaxies）」：
-  // 手绘古典星图旋涡圆盘 + 多颗柔雾未命名小星球串联成虚线星座 + 悬停绘本问号铭牌！
-  const unknownGalaxies = [];
+  // 3. 远方深邃星海中的「未知星系群落（Uncharted Astrolabe Galaxies）」：
+  // 细金罗盘旋涡星尘盘 + 晨雾苍青色未点亮真实地形星体 + 无边框古典宋体星图角标
   const unchartedSpecs = [
     {
-      center: [-15.8, 1.1, -13.5],
-      tilt: [0.95, 0.28, -0.22],
-      discSize: 8.6,
-      tint: "#c4b5fd",
-      title: "✦ 未知星系 · ？",
-      sub: "待新行者点亮命名",
+      center: [-16.0, 1.0, -14.2],
+      tilt: [1.02, 0.26, -0.2],
+      discSize: 9.2,
+      armHex: "#7290bc",
+      title: "✦ 未名星系 · 待点亮",
+      sub: "静候新行者开辟疆域",
       satellites: [
-        [-1.8, 0.5, 0.4, 0.72],
-        [0.2, 0.15, -0.2, 1.08],
-        [2.1, -0.45, 0.5, 0.64],
+        [-1.9, 0.45, 0.3, 0.66, "zhagana"],
+        [0.15, 0.12, -0.15, 1.05, "siguniang"],
+        [2.05, -0.4, 0.4, 0.58, "tengger"],
       ],
-      phase: 0.6,
+      phase: 0.7,
     },
     {
-      center: [16.0, 1.3, -13.8],
-      tilt: [0.92, -0.30, 0.24],
-      discSize: 8.8,
-      tint: "#bae6fd",
+      center: [16.2, 1.2, -14.5],
+      tilt: [0.98, -0.28, 0.22],
+      discSize: 9.4,
+      armHex: "#8aa2c4",
       title: "✦ 迷雾星云 · B-???",
-      sub: "尚无足迹抵达的远方",
+      sub: "尚无足迹抵达的山海",
       satellites: [
-        [-2.0, -0.3, 0.5, 0.68],
-        [-0.1, 0.2, 0.1, 1.12],
-        [1.9, 0.55, -0.4, 0.76],
+        [-2.0, -0.35, 0.4, 0.64, "yili"],
+        [-0.1, 0.18, 0.1, 1.08, "yading"],
+        [1.95, 0.5, -0.35, 0.7, "maclehose"],
       ],
-      phase: 2.1,
+      phase: 2.3,
     },
     {
-      center: [-6.6, 10.2, -16.2],
-      tilt: [1.05, 0.18, -0.15],
+      center: [-6.8, 10.2, -16.8],
+      tilt: [1.08, 0.16, -0.14],
       discSize: 7.4,
-      tint: "#fbcfe8",
-      title: "✦ 无名星座 · ？",
+      armHex: "#6d88b2",
+      title: "✦ 远方未知星群",
       sub: "",
       satellites: [
-        [-1.5, 0.2, 0.3, 0.58],
-        [0.3, 0.0, 0.0, 0.92],
-        [1.7, -0.25, -0.2, 0.55],
+        [-1.45, 0.2, 0.25, 0.52, "zhagana"],
+        [0.25, 0.0, 0.0, 0.86, "yading"],
+        [1.65, -0.22, -0.2, 0.5, "yili"],
       ],
-      phase: 3.5,
+      phase: 3.8,
     },
     {
-      center: [6.8, 10.4, -16.5],
-      tilt: [1.02, -0.22, 0.18],
+      center: [7.0, 10.4, -17.0],
+      tilt: [1.06, -0.2, 0.16],
       discSize: 7.2,
-      tint: "#fde68a",
-      title: "✦ 远方星群 · ？",
+      armHex: "#8c9bb8",
+      title: "✦ 隐秘星域 · ？",
       sub: "",
       satellites: [
-        [-1.4, -0.2, 0.2, 0.56],
-        [0.1, 0.1, 0.1, 0.88],
-        [1.6, 0.3, -0.3, 0.60],
+        [-1.4, -0.18, 0.2, 0.5, "tengger"],
+        [0.1, 0.08, 0.1, 0.84, "siguniang"],
+        [1.55, 0.28, -0.25, 0.54, "maclehose"],
       ],
-      phase: 4.9,
+      phase: 5.1,
     },
   ];
 
@@ -523,204 +431,249 @@ export function buildPrologueCosmosWorld() {
     const ugWrap = new THREE.Group();
     ugWrap.position.set(...ug.center);
 
-    // (a) 古典绘本手绘旋涡星云圆盘（倾斜透视，缓慢自转）
     const swirlDisc = new THREE.Mesh(
       new THREE.PlaneGeometry(ug.discSize, ug.discSize),
       new THREE.MeshBasicMaterial({
-        map: createChartSwirlTexture(ug.tint),
+        map: createUnchartedAstrolabeDisc(ug.armHex),
         transparent: true,
-        opacity: 0.88,
+        opacity: 0.9,
         side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
         depthWrite: false,
       })
     );
     swirlDisc.rotation.set(...ug.tilt);
     ugWrap.add(swirlDisc);
 
-    // (b) 构成这座未知星系的多颗柔雾粉蓝未探索小星球 + 虚线星座连线
+    // 笼罩在苍青夜雾中的真实山海微缩星体剪影（边缘泛着微弱香槟金晨曦轮廓光）
     const satPts = [];
-    for (const [sx, sy, sz, sr] of ug.satellites) {
-      const pPos = new THREE.Vector3(sx, sy, sz);
-      satPts.push(pPos);
-      const mistPlanet = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(sr, 2),
-        new THREE.MeshToonMaterial({
-          color: "#818cf8",
-          gradientMap: STORYBOOK_GRAD,
-          transparent: true,
-          opacity: 0.78,
-        })
-      );
-      mistPlanet.position.copy(pPos);
-      ugWrap.add(mistPlanet);
-
-      // 外围金色虚线待探索光环
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(sr * 1.38, 0.025, 6, 32),
-        new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.55 })
-      );
-      ring.position.copy(pPos);
-      ring.rotation.set(1.2, 0.3, -0.2);
-      ugWrap.add(ring);
+    for (const [sx, sy, sz, sr, tpl] of ug.satellites) {
+      satPts.push(new THREE.Vector3(sx, sy, sz));
+      const veiledPlanet = buildMiniatureRealTerrainPlanet({
+        templateId: tpl,
+        pos: [sx, sy, sz],
+        r: sr,
+        low: "#1a2947",
+        mid: "#2b4068",
+        high: "#526d99",
+        water: null,
+        halo: "#f0c768",
+        haloStrength: 0.36,
+        opacity: 0.88,
+      });
+      ugWrap.add(veiledPlanet.wrap);
     }
 
     const constLine = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(satPts),
       new THREE.LineDashedMaterial({
-        color: "#fef08a",
-        dashSize: 0.28,
+        color: "#f0c768",
+        dashSize: 0.24,
         gapSize: 0.22,
         transparent: true,
-        opacity: 0.72,
+        opacity: 0.42,
       })
     );
     constLine.computeLineDistances();
     ugWrap.add(constLine);
 
-    // (c) 悬停在未知星系上方的《小王子》绘本虚线铭牌（「✦ 未知星系 · ？」）
     const labelSp = new THREE.Sprite(
       new THREE.SpriteMaterial({
-        map: createUnknownLabelTexture(ug.title, ug.sub),
+        map: createClassicalStarChartLabel(ug.title, ug.sub),
         transparent: true,
-        opacity: 0.92,
+        opacity: 0.86,
         depthWrite: false,
       })
     );
-    labelSp.position.set(0, ug.sub ? 2.15 : 1.75, 0.6);
-    labelSp.scale.set(ug.sub ? 4.8 : 4.1, ug.sub ? 1.48 : 1.26, 1);
+    labelSp.position.set(0, ug.sub ? 2.05 : 1.65, 0.5);
+    labelSp.scale.set(ug.sub ? 5.2 : 4.5, ug.sub ? 1.3 : 1.12, 1);
     ugWrap.add(labelSp);
 
     group.add(ugWrap);
     unknownGalaxies.push({ ugWrap, swirlDisc, labelSp, baseY: ug.center[1], phase: ug.phase });
   }
 
-  // 6. 最底端保留并精心雕琢：B-612 童话风绿茵野花小行星 + 小人伫立仰望 + 红玫瑰玻璃罩 + 暖黄铸铁小路灯！
-  const pedestal = buildLittlePrinceHomePedestal();
+  // 4. 最底端前景：与个人扉页 setupTitleScene 完全同源的高山松林草甸营地星球脊顶 + 小人伫立仰望！
+  const { pedestal, fireLight, fireMesh, surfaceAt } = buildAlpineHikerPedestal();
   group.add(pedestal);
 
   return {
     group,
     pedestal,
+    surfaceAt,
     waypointObjs: [],
     update(dt, elapsed) {
       for (const mp of miniPlanets) {
-        mp.wrap.position.y = mp.baseY + Math.sin(elapsed * 0.85 + mp.phase) * 0.22;
-        mp.sphere.rotation.y = elapsed * 0.16;
-        if (mp.cloudGrp) mp.cloudGrp.rotation.y = -elapsed * 0.24;
-        if (mp.ringMesh) mp.ringMesh.rotation.z = -0.32 + Math.sin(elapsed * 0.4 + mp.phase) * 0.06;
-      }
-      for (const nb of nebulaSprites) {
-        const s = nb.baseScale * (1 + Math.sin(elapsed * 0.5 + nb.phase) * 0.04);
-        nb.sp.scale.setScalar(s);
+        mp.wrap.position.y = mp.baseY + Math.sin(elapsed * 0.72 + mp.phase) * 0.18;
+        mp.coreGroup.rotation.y = elapsed * 0.14;
+        if (mp.ringMesh) mp.ringMesh.rotation.z = -0.28 + Math.sin(elapsed * 0.35 + mp.phase) * 0.05;
       }
       for (const ug of unknownGalaxies) {
-        ug.ugWrap.position.y = ug.baseY + Math.sin(elapsed * 0.65 + ug.phase) * 0.2;
-        ug.swirlDisc.rotation.z += dt * 0.16;
-        ug.labelSp.material.opacity = 0.78 + Math.sin(elapsed * 1.6 + ug.phase) * 0.18;
+        ug.ugWrap.position.y = ug.baseY + Math.sin(elapsed * 0.55 + ug.phase) * 0.16;
+        ug.swirlDisc.rotation.z += dt * 0.12;
+        ug.labelSp.material.opacity = 0.72 + Math.sin(elapsed * 1.4 + ug.phase) * 0.16;
       }
-      fourPointStars.rotation.z = Math.sin(elapsed * 0.06) * 0.02;
+      if (fireLight) {
+        fireLight.intensity = 2.2 + Math.sin(elapsed * 7.5) * 0.35;
+      }
+      if (fireMesh) {
+        fireMesh.scale.setScalar(0.95 + Math.sin(elapsed * 9.0) * 0.1);
+      }
     },
   };
 }
 
 /**
- * 最底端前景 B-612《小王子》绿茵野花初生星球座：
- * 温润抹茶草地弧面 + 遍野五彩绘本小野花 + 玻璃罩红玫瑰 + 暖黄街灯 + 木质观星长椅
+ * 最底端前景高山营地观星星球脊（与进入后的 setupTitleScene 星球地貌 & 材质 100% 同源）：
+ * 平滑等高顶点着色山脊 + 苍翠冷杉松林 + 暖光徒步帐篷与跳动篝火 + 玻璃罩红玫瑰 + 金色大气晨曦光边
  */
-function buildLittlePrinceHomePedestal() {
+function buildAlpineHikerPedestal() {
   const pedestal = new THREE.Group();
-  pedestal.position.set(0, -9.85, 5.8);
-  const R = 5.6;
+  pedestal.position.set(0, -10.35, 5.6);
+  const scaleRatio = 5.65 / PLANET_RADIUS;
 
-  // 温润嫩绿草甸球面（水彩阶梯着色）
-  const grassSphere = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(R, 3),
-    new THREE.MeshToonMaterial({
-      color: "#68b678",
-      gradientMap: STORYBOOK_GRAD,
-    })
-  );
-  pedestal.add(grassSphere);
+  const geo = new THREE.SphereGeometry(PLANET_RADIUS, 88, 64);
+  const pos = geo.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  const cLow = new THREE.Color("#3b6e49");
+  const cMid = new THREE.Color("#6b9e5c");
+  const cHigh = new THREE.Color("#edf3fa");
+  const tmpDir = new THREE.Vector3();
+  const tmpCol = new THREE.Color();
 
-  // 小王子星球标志性的微缩火山口浅坑与石阶小径
-  const craterMat = new THREE.MeshToonMaterial({ color: "#eab308", gradientMap: STORYBOOK_GRAD });
-  for (const [x, y, z] of [
-    [-2.2, 4.95, 1.4],
-    [2.4, 4.8, 1.6],
-  ]) {
-    const dir = new THREE.Vector3(x, y, z).normalize();
-    const crater = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.08, 7, 16), craterMat);
-    crater.position.copy(dir).multiplyScalar(R - 0.02);
-    crater.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
-    pedestal.add(crater);
+  for (let i = 0; i < pos.count; i++) {
+    tmpDir.fromBufferAttribute(pos, i).normalize();
+    const r = getSurfaceRadius("title", tmpDir);
+    pos.setXYZ(i, tmpDir.x * r, tmpDir.y * r, tmpDir.z * r);
+    const hNorm = THREE.MathUtils.clamp((r - PLANET_RADIUS + 0.3) / 1.9, 0, 1);
+    if (hNorm < 0.48) tmpCol.copy(cLow).lerp(cMid, hNorm / 0.48);
+    else tmpCol.copy(cMid).lerp(cHigh, (hNorm - 0.48) / 0.52);
+    colors[i * 3] = tmpCol.r;
+    colors[i * 3 + 1] = tmpCol.g;
+    colors[i * 3 + 2] = tmpCol.b;
   }
+  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
 
-  // 遍野彩色绘本小野花簇
-  const flowerColors = ["#fef08a", "#fda4af", "#fffbeb", "#fbcfe8", "#bae6fd"];
-  for (let i = 0; i < 42; i++) {
-    const theta = ((i * 137.5) % 360) * (Math.PI / 180);
-    const phi = 0.08 + (i / 42) * 0.52;
-    const dir = new THREE.Vector3(
-      Math.sin(phi) * Math.cos(theta),
-      Math.cos(phi),
-      Math.sin(phi) * Math.sin(theta)
-    ).normalize();
-    const fl = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(0.085, 0),
-      new THREE.MeshBasicMaterial({ color: flowerColors[i % flowerColors.length] })
-    );
-    fl.position.copy(dir).multiplyScalar(R + 0.04);
-    pedestal.add(fl);
-  }
+  const terrainWrap = new THREE.Group();
+  terrainWrap.scale.setScalar(scaleRatio);
+  terrainWrap.add(
+    new THREE.Mesh(
+      geo,
+      new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: STORYBOOK_GRAD })
+    )
+  );
+  pedestal.add(terrainWrap);
 
-  // 右侧：B-612 透明玻璃罩下的红玫瑰（The Rose under a Glass Dome）
-  const roseGrp = new THREE.Group();
-  const roseDir = new THREE.Vector3(0.24, 0.95, 0.19).normalize();
-  const stem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.02, 0.02, 0.36, 6),
-    new THREE.MeshBasicMaterial({ color: "#15803d" })
-  );
-  stem.position.y = 0.18;
-  const bloom = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(0.12, 1),
-    new THREE.MeshToonMaterial({ color: "#f43f5e", gradientMap: STORYBOOK_GRAD })
-  );
-  bloom.position.y = 0.38;
-  const dome = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.22, 0.25, 0.56, 16, 1, false),
-    new THREE.MeshBasicMaterial({
-      color: "#e0f2fe",
+  // 金色晨曦大气边缘光（与游戏内封面星球同款）
+  const rimHalo = new THREE.Mesh(
+    new THREE.SphereGeometry(5.65 * 1.16, 40, 28),
+    new THREE.ShaderMaterial({
       transparent: true,
-      opacity: 0.28,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
       depthWrite: false,
+      uniforms: { uColor: { value: new THREE.Color("#f0c768") } },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vViewPos;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+          vViewPos = -mvPos.xyz;
+          gl_Position = projectionMatrix * mvPos;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        varying vec3 vNormal;
+        varying vec3 vViewPos;
+        void main() {
+          vec3 viewDir = normalize(vViewPos);
+          float rim = pow(clamp(1.0 + dot(vNormal, viewDir), 0.0, 1.0), 2.8);
+          gl_FragColor = vec4(uColor, rim * 0.45);
+        }
+      `,
     })
   );
-  dome.position.y = 0.28;
+  pedestal.add(rimHalo);
+
+  const surfaceAt = (dir) => getSurfaceRadius("title", dir) * scaleRatio;
+
+  // 两侧自然苍翠冷杉林（与 planetBuilder3D 同款双层松塔）
+  const pineMat = new THREE.MeshToonMaterial({ color: "#2d5a40", gradientMap: STORYBOOK_GRAD });
+  const pineTopMat = new THREE.MeshToonMaterial({ color: "#3d7552", gradientMap: STORYBOOK_GRAD });
+  const trunkMat = new THREE.MeshToonMaterial({ color: "#5c4033", gradientMap: STORYBOOK_GRAD });
+  for (const [tx, ty, tz, sc] of [
+    [-0.48, 0.85, 0.22, 0.95],
+    [-0.58, 0.78, 0.08, 0.75],
+    [0.52, 0.82, 0.20, 0.9],
+    [0.62, 0.75, 0.05, 0.72],
+  ]) {
+    const dir = new THREE.Vector3(tx, ty, tz).normalize();
+    const tg = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.24, 6), trunkMat);
+    trunk.position.y = 0.12;
+    const c1 = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.52, 7), pineMat);
+    c1.position.y = 0.42;
+    const c2 = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.42, 7), pineTopMat);
+    c2.position.y = 0.68;
+    tg.add(trunk, c1, c2);
+    tg.scale.setScalar(sc);
+    tg.position.copy(dir).multiplyScalar(surfaceAt(dir) - 0.03);
+    tg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    pedestal.add(tg);
+  }
+
+  // 右侧：暖橙色徒步营地小帐篷 + 跳动篝火（与进入后的星球营地完全呼应）
+  const campDir = new THREE.Vector3(0.26, 0.94, 0.21).normalize();
+  const campGrp = new THREE.Group();
+  const tent = new THREE.Mesh(
+    new THREE.ConeGeometry(0.32, 0.42, 4),
+    new THREE.MeshStandardMaterial({
+      color: "#e88b35",
+      emissive: "#ff9838",
+      emissiveIntensity: 0.38,
+      roughness: 0.72,
+    })
+  );
+  tent.position.y = 0.2;
+  tent.rotation.y = Math.PI * 0.22;
+  const fireMesh = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.095, 0),
+    new THREE.MeshBasicMaterial({ color: "#ffd266" })
+  );
+  fireMesh.position.set(-0.32, 0.1, 0.14);
+  const fireLight = new THREE.PointLight("#ffad42", 2.2, 6.5, 1.5);
+  fireLight.position.set(-0.32, 0.35, 0.16);
+  campGrp.add(tent, fireMesh, fireLight);
+  campGrp.position.copy(campDir).multiplyScalar(surfaceAt(campDir) - 0.02);
+  campGrp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), campDir);
+  pedestal.add(campGrp);
+
+  // 左侧小人近旁：克制雅致的微缩玻璃罩红玫瑰彩蛋（保留《小王子》诗意隐喻而不突兀）
+  const roseDir = new THREE.Vector3(-0.26, 0.94, 0.22).normalize();
+  const roseGrp = new THREE.Group();
+  const stem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.014, 0.014, 0.22, 6),
+    new THREE.MeshBasicMaterial({ color: "#2d6a4f" })
+  );
+  stem.position.y = 0.11;
+  const bloom = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(0.075, 1),
+    new THREE.MeshToonMaterial({ color: "#d9465f", gradientMap: STORYBOOK_GRAD })
+  );
+  bloom.position.y = 0.24;
+  const dome = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14, 0.16, 0.36, 14),
+    new THREE.MeshBasicMaterial({ color: "#dbeafe", transparent: true, opacity: 0.2, depthWrite: false })
+  );
+  dome.position.y = 0.18;
   roseGrp.add(stem, bloom, dome);
-  roseGrp.position.copy(roseDir).multiplyScalar(R - 0.02);
+  roseGrp.position.copy(roseDir).multiplyScalar(surfaceAt(roseDir) - 0.01);
   roseGrp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), roseDir);
   pedestal.add(roseGrp);
 
-  // 左侧：《小王子》点灯人的暖光复古铸铁小路灯，温柔照亮小人背影！
-  const lampGrp = new THREE.Group();
-  const lampDir = new THREE.Vector3(-0.34, 0.92, 0.16).normalize();
-  const postMat = new THREE.MeshStandardMaterial({ color: "#334155", roughness: 0.7 });
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 1.35, 8), postMat);
-  pole.position.y = 0.67;
-  const lantern = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.18, 1),
-    new THREE.MeshBasicMaterial({ color: "#fef08a" })
-  );
-  lantern.position.y = 1.42;
-  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.14, 7), postMat);
-  cap.position.y = 1.56;
-  const warmLight = new THREE.PointLight("#fde047", 2.4, 8.5, 1.4);
-  warmLight.position.set(0, 1.4, 0.15);
-  lampGrp.add(pole, lantern, cap, warmLight);
-  lampGrp.position.copy(lampDir).multiplyScalar(R - 0.03);
-  lampGrp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), lampDir);
-  pedestal.add(lampGrp);
-
-  return pedestal;
+  return { pedestal, fireLight, fireMesh, surfaceAt };
 }
 

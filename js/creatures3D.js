@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.1-uncharted-galaxies";
+import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.2-shanhai-astrolabe";
 
 const UP = new THREE.Vector3(0, 1, 0);
 

@@ -76,7 +76,7 @@ html, body {
 }
 
 body[data-mode="prologue"] .starry-vignette {
-  background: radial-gradient(circle at 50% 48%, rgba(255, 248, 232, 0.04) 55%, rgba(28, 42, 86, 0.18) 100%);
+  background: radial-gradient(circle at 50% 48%, rgba(10, 18, 40, 0) 54%, rgba(5, 9, 22, 0.42) 100%);
 }
 
 button {
@@ -4459,12 +4459,12 @@ a[href*="netlify.com?utm_source"] {
   max-width: 560px;
   width: 100%;
   text-align: center;
-  padding: 22px 28px 18px;
-  border-radius: 30px;
-  background: linear-gradient(180deg, rgba(36, 56, 108, 0.50) 0%, rgba(28, 42, 84, 0.58) 100%);
-  border: 1.5px solid rgba(253, 230, 138, 0.54);
-  box-shadow: 0 20px 52px rgba(18, 28, 62, 0.34), 0 0 42px rgba(253, 224, 71, 0.14), inset 0 1px 0 rgba(255, 252, 240, 0.36);
-  backdrop-filter: blur(9px);
+  padding: 24px 30px 20px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(16, 27, 58, 0.64) 0%, rgba(10, 18, 40, 0.72) 100%);
+  border: 1px solid rgba(240, 199, 104, 0.36);
+  box-shadow: 0 24px 60px rgba(4, 8, 22, 0.52), 0 0 36px rgba(240, 199, 104, 0.08), inset 0 1px 0 rgba(247, 240, 224, 0.18);
+  backdrop-filter: blur(10px);
   pointer-events: auto;
 }
 
@@ -4521,11 +4521,11 @@ a[href*="netlify.com?utm_source"] {
   margin: 0 auto 20px;
   padding: 8px 18px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(46, 68, 126, 0.62), rgba(76, 82, 142, 0.58), rgba(46, 68, 126, 0.62));
-  border: 1px solid rgba(253, 230, 138, 0.48);
-  box-shadow: inset 0 1px 0 rgba(255, 252, 235, 0.24), 0 6px 18px rgba(20, 30, 68, 0.28);
+  background: rgba(12, 22, 48, 0.72);
+  border: 1px solid rgba(240, 199, 104, 0.34);
+  box-shadow: inset 0 1px 0 rgba(247, 240, 224, 0.12), 0 6px 20px rgba(4, 9, 24, 0.38);
   font-size: 13px;
-  color: #fffbeb;
+  color: #f4efe4;
 }
 
 .census-metric {

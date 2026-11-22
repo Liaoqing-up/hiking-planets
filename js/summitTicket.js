@@ -1,5 +1,5 @@
-import { renderPlanetIllustration } from "./planetArt2D.js?v=5.3.1-uncharted-galaxies";
-import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.3.1-uncharted-galaxies";
+import { renderPlanetIllustration } from "./planetArt2D.js?v=5.3.2-shanhai-astrolabe";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.3.2-shanhai-astrolabe";
 
 function loadImg(url) {
   return new Promise((resolve) => {
