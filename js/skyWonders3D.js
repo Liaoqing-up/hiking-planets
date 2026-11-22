@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=4.2.5-release";
+import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.2.4-dual-mirror";
 
 function drawPlanetLabelCanvas(canvas, text, progressStr = "", isCleared = false) {
   const ctx = canvas.getContext("2d");

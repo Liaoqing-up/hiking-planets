@@ -43,11 +43,19 @@ function fbm3(x, y, z) {
 }
 
 export const GUEST_TERRAIN_MAP = {};
-export function registerGuestTerrain(planetId, templateId) {
+export const GUEST_SEED_MAP = {};
+export function registerGuestTerrain(planetId, templateId, seedOffset = 0) {
   GUEST_TERRAIN_MAP[planetId] = templateId;
+  if (seedOffset) GUEST_SEED_MAP[planetId] = seedOffset;
 }
 
 export function getSurfaceRadius(planetId, dir) {
+  const seedShift = GUEST_SEED_MAP[planetId] || 0;
+  let sampleDir = dir;
+  if (seedShift) {
+    const cs = Math.cos(seedShift), sn = Math.sin(seedShift);
+    sampleDir = new THREE.Vector3(dir.x * cs - dir.z * sn, dir.y, dir.x * sn + dir.z * cs);
+  }
   const mappedId = GUEST_TERRAIN_MAP[planetId] || planetId;
   if (mappedId === "kitty-zhagana" || mappedId === "miemie-guizhou" || mappedId === "miemie-longji") planetId = "zhagana";
   else if (mappedId === "kitty-wusun" || mappedId === "miemie-hulunbuir") planetId = "yili";
@@ -57,6 +65,7 @@ export function getSurfaceRadius(planetId, dir) {
   else if (mappedId === "miemie-buyi") planetId = "kitty-daqing";
   else if (mappedId === "luca-tianshan") planetId = "yili";
   else planetId = mappedId;
+  dir = sampleDir;
 
   const x = dir.x, y = dir.y, z = dir.z;
   const base = fbm3(x, y, z);

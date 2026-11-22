@@ -23,14 +23,20 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=4.2.5-release" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=4.2.5-release" />
-  <link rel="manifest" href="./manifest.webmanifest?v=4.2.5-release" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=ZCOOL+XiaoWei&display=swap" media="print" onload="this.media='all'" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css" media="print" onload="this.media='all'" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=5.2.4-dual-mirror" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=5.2.4-dual-mirror" />
+  <link rel="manifest" href="./manifest.webmanifest?v=5.2.4-dual-mirror" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://registry.npmmirror.com/three/0.187.0/files/build/three.module.js"
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://registry.npmmirror.com" crossorigin />
+  <link rel="modulepreload" href="https://registry.npmmirror.com/three/0.187.0/files/build/three.module.js" crossorigin />
+  <link rel="modulepreload" href="https://registry.npmmirror.com/three/0.187.0/files/build/three.core.js" crossorigin />
+  <link rel="stylesheet" href="https://registry.npmmirror.com/lxgw-wenkai-screen-webfont/1.1.0/files/style.css" media="print" onload="this.media='all'" />
   <style>
     html, body { background: #080f24; }
     #boot-curtain {
@@ -63,24 +69,25 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=4.2.5-release" />
-  <script
-    defer
-    src="https://cloud.umami.is/script.js"
-    data-website-id="72e08928-ff09-4e3e-b930-2212813f9bc4"
-  ></script>
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "./vendor/three.module.js"
-      }
-    }
+  <link rel="stylesheet" href="./styles.css?v=5.2.4-dual-mirror" />
+  <script>
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        var s = document.createElement("script");
+        s.async = true;
+        s.src = "https://cloud.umami.is/script.js";
+        s.dataset.websiteId = "72e08928-ff09-4e3e-b930-2212813f9bc4";
+        document.head.appendChild(s);
+      }, 2800);
+    });
   </script>
 </head>
 <body>
-  <!-- 微信内置浏览器右上角「··· 转发给朋友」专属方形星球徽章首图兜底（400x400 30KB 瞬抓） -->
+  <!-- 微信内置浏览器右上角「··· 转发给朋友」专属方形星球徽章首图兜底（懒加载防阻塞首屏） -->
   <img
     src="./assets/wechat-share.jpg"
+    loading="lazy"
+    decoding="async"
     width="400"
     height="400"
     alt=""
@@ -150,20 +157,68 @@
     ♪ 星音
   </button>
 
-  <!-- 3. Screen 1 — Title Screen -->
-  <section id="screen-title" class="screen active" aria-label="扉页">
-    <div id="host-role-switcher" class="host-role-switcher" role="group" aria-label="选择星主登录身份">
-      <button type="button" class="host-role-btn active" data-host-role="mine">🏔️ 清哥入口</button>
-      <button type="button" class="host-role-btn kitty-role" data-host-role="kitty">🐾 Kitty 入口</button>
-      <button type="button" class="host-role-btn miemie-role" data-host-role="miemie">🐑 咩咩入口</button>
-      <button type="button" class="host-role-btn luca-role" data-host-role="luca">🚴 Luca 入口</button>
+  <!-- 2.5. Screen 0 — Cosmic Prologue Gate (未登录访客初始总扉页；登录后方进入个人专属扉页) -->
+  <section id="screen-prologue" class="screen active" aria-label="山海星海总序章扉页">
+    <div class="prologue-top-bar">
+      <button id="btn-prologue-observatory-top" type="button" class="host-role-btn observatory-role-btn">🔭 星海观星台 · 万星名录</button>
+    </div>
+
+    <div class="prologue-center">
+      <div class="prologue-badge">
+        <span class="star-glyph" aria-hidden="true">✦</span>
+        <span>TRAILS AMONG THE STARS · 山海皆星辰</span>
+        <span class="star-glyph" aria-hidden="true">✦</span>
+      </div>
+      <h1 class="prologue-heading">行者的星球</h1>
+      <div class="prologue-ornament" aria-hidden="true">
+        <span class="ornament-line"></span>
+        <span class="ornament-star">🪐</span>
+        <span class="ornament-line rev"></span>
+      </div>
+      <p class="prologue-poem">
+        每一座用双脚丈量过的雪山、荒漠、峡谷与海湾，<br />
+        都会在夜空深处，凝结成一颗独属于你的 3D 记忆星球。
+      </p>
+
+      <div class="prologue-actions">
+        <button id="btn-prologue-login" type="button" class="prologue-primary-btn">
+          🪪 登录 / 申领星际行者护照 · 开启专属宇宙
+        </button>
+        <div class="prologue-secondary-row">
+          <button id="btn-prologue-observatory" type="button" class="neighbor-title-btn observatory-cta-btn">
+            🔭 免登录逛逛 · 万星观星台
+          </button>
+          <button id="btn-prologue-warp" type="button" class="neighbor-title-btn miemie-btn">
+            🌠 虫洞漫游 · 随机降落星辰
+          </button>
+        </div>
+      </div>
+
+      <div class="prologue-founders-strip" aria-label="四大创世领航星系直通车">
+        <span class="prologue-founders-label">👑 创世领航星系免登录体验：</span>
+        <div class="prologue-founders-pills">
+          <button type="button" class="prologue-founder-pill" data-prologue-founder="mine">🏔️ 清哥 · 苍山星河</button>
+          <button type="button" class="prologue-founder-pill" data-prologue-founder="kitty">🐾 Kitty · 猫耳星云</button>
+          <button type="button" class="prologue-founder-pill" data-prologue-founder="miemie">🐑 咩咩 · 绵羊星云</button>
+          <button type="button" class="prologue-founder-pill" data-prologue-founder="luca">🚴 Luca · 追风星云</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Screen 1 — Personal Universe Title Screen (登录护照或选定星主后进入) -->
+  <section id="screen-title" class="screen" aria-label="个人专属扉页">
+    <div id="host-role-switcher" class="host-role-switcher" role="group" aria-label="星海通行与身份切换">
+      <button id="btn-back-prologue" type="button" class="host-role-btn" title="返回《行者的星球》星海总大厅">🌌 星海总扉页</button>
+      <button id="btn-open-observatory-title" type="button" class="host-role-btn observatory-role-btn" title="打开《星海观星台 · 万星名录》，拜访创世四星主与万千行者">🔭 星海观星台 · 万星名录</button>
+      <button id="btn-open-passport-title" type="button" class="host-role-btn passport-role-btn" title="查看或切换你的星际行者护照">🪪 行者护照</button>
     </div>
     <div class="title-composition">
       <div class="title-eyebrow">
         <span class="star-glyph" aria-hidden="true">✦</span>
-        <span id="title-eyebrow-text">TRAILS AMONG THE STARS · 山海皆星辰</span>
+        <span id="title-eyebrow-text">AZURE PEAKS &amp; STARRY SEAS · 苍山星河主场</span>
       </div>
-      <h1 id="title-main-heading" class="title-heading">清哥的星球</h1>
+      <h1 id="title-main-heading" class="title-heading">清哥的苍山星河</h1>
       <div class="title-ornament" aria-hidden="true">
         <span class="ornament-line"></span>
         <span class="ornament-star">✦</span>
@@ -171,22 +226,21 @@
         <span class="ornament-line"></span>
       </div>
       <p id="title-main-poem" class="title-poem">
-        有些山川太过辽阔，记忆便把走过的每一段路，凝成了一颗只属于行者的星球。
+        有些山川太过辽阔，记忆便把走过的每一段路，凝成了一片只属于清哥的苍山星河。
       </p>
     </div>
 
     <div class="title-bottom-cta">
-      <button id="btn-start-journey" type="button">✦ 点击 · 开始旅程</button>
+      <button id="btn-start-journey" type="button">✦ 开启清哥的苍山星河</button>
       <div class="neighbor-title-row">
-        <button id="btn-visit-kitty-title" type="button" class="neighbor-title-btn">🐾 串门 · 拜访 Kitty</button>
-        <button id="btn-visit-miemie-title" type="button" class="neighbor-title-btn miemie-btn">🐑 串门 · 拜访咩咩</button>
-        <button id="btn-visit-luca-title" type="button" class="neighbor-title-btn luca-btn">🚴 串门 · 拜访 Luca</button>
+        <button id="btn-open-observatory-cta" type="button" class="neighbor-title-btn observatory-cta-btn">🔭 星海串门 · 探访万千行者星系</button>
+        <button id="btn-random-warp-title" type="button" class="neighbor-title-btn miemie-btn">🌠 虫洞漫游 · 偶遇一颗远方星辰</button>
       </div>
     </div>
   </section>
 
   <!-- 4. Screen 2 — Torn-Edge Parchment Star Scroll -->
-  <section id="screen-map" class="screen" aria-label="行者的旅程星图卷轴">
+  <section id="screen-map" class="screen" aria-label="山海星图卷轴">
     <article class="parchment-scroll">
       <!-- Torn organic paper surface & watercolor sky-blue cloud washes -->
       <div class="parchment-paper-bg" aria-hidden="true"></div>
@@ -207,17 +261,16 @@
         <span class="p-star p-star-br">✧</span>
       </div>
 
-      <!-- Scroll Header -->
+      <!-- Scroll Header: 极简常驻锚点栏（无论百人万人都不变形） -->
       <header class="scroll-header">
-        <div id="universe-switcher" class="universe-switcher" role="tablist" aria-label="切换行者星系">
-          <button type="button" class="uni-tab active" data-uni="mine">🪐 我的星系</button>
-          <button type="button" class="uni-tab kitty-tab" data-uni="kitty">🐾 邻居 Kitty 的星系</button>
-          <button type="button" class="uni-tab miemie-tab" data-uni="miemie">🐑 邻居咩咩的星系</button>
-          <button type="button" class="uni-tab luca-tab" data-uni="luca">🚴 邻居 Luca 的星系</button>
-          <button type="button" id="btn-open-creator" class="uni-tab creator-tab">✨ 造一颗我的星</button>
+        <div id="universe-switcher" class="universe-switcher" role="tablist" aria-label="星际导航栏">
+          <button type="button" id="btn-uni-home" class="uni-tab active" title="一键返回我的主场星系">🪐 我的星系</button>
+          <button type="button" id="btn-open-observatory-map" class="uni-tab observatory-uni-tab" title="展开《星海观星台》，拜访创世四星主、搜索山友或虫洞偶遇">🔭 星海串门 · 发现星友 ▾</button>
+          <button type="button" id="btn-open-creator" class="uni-tab creator-tab" title="上传实拍照片或 GPX 轨迹，铸造你的新星球">✨ 造一颗星</button>
+          <button type="button" id="btn-open-passport-map" class="uni-tab passport-uni-tab" title="管理你的星际行者护照与专属网址">🪪 行者护照</button>
         </div>
         <p id="scroll-latin" class="scroll-latin">LE VOYAGE DU RANDONNEUR</p>
-        <h1 id="scroll-heading" class="scroll-heading">行 者 的 旅 程</h1>
+        <h1 id="scroll-heading" class="scroll-heading">清哥的苍山星河</h1>
         <p id="scroll-subtitle" class="scroll-subtitle">有些山川太过辽阔，记忆便把走过的每一段路，凝成了一颗只属于行者的星球。</p>
         <div class="scroll-progress-bar">
           <button id="scroll-total-progress" type="button" class="scroll-meta-pill clickable" title="点击翻阅全星系印记明信片总图集">
@@ -351,6 +404,9 @@
       </button>
       <button id="btn-neighbor-hub" type="button" class="dock-btn neighbor-dock-btn" title="星际漂流瓶 · 串门互动 · 双星同频 [N]">
         🍾 漂流瓶
+      </button>
+      <button id="btn-hud-observatory" type="button" class="dock-btn" title="打开《星海观星台 · 万星名录》串门其他星友 [O]">
+        🔭 串门
       </button>
       <button id="btn-plant-flag" type="button" class="dock-btn" title="在脚下插一面 3D 串门纪念营旗 · 可复制坐标链接发给好友 [F]">
         🚩 插旗
@@ -712,7 +768,7 @@
           <label>星球山海之名<input id="cr-name" type="text" maxlength="14" placeholder="如：武功山云海 / 雨崩神瀑" required /></label>
         </div>
         <div class="creator-row">
-          <label>最高海拔 / 坐标<input id="cr-elev" type="text" maxlength="10" placeholder="如：1918m / 北纬30°" value="3200m" /></label>
+          <label>最高海拔 / 坐标<input id="cr-elev" type="text" maxlength="16" placeholder="如：1918m / 北纬30°" value="3200m" /></label>
           <label>3D 星球地貌
             <select id="cr-template">
               <option value="volcano">🌋 火山蔚蓝天池</option>
@@ -734,14 +790,28 @@
             <option value="yili">🐑 云朵小绵羊</option>
           </select>
         </label>
+        <div class="creator-photo-box">
+          <div class="creator-photo-head">
+            <span>📸 上传真实山海旅途照片（可选 1～4 张，自动压缩存云端明信片）</span>
+            <button id="btn-cr-ai-inspire" type="button" class="passport-mini-btn">🪄 AI 识图写诗与配色</button>
+          </div>
+          <input id="cr-photos-input" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+          <div id="cr-photo-previews" class="creator-photo-previews hidden"></div>
+          <div class="creator-photo-head" style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(124,88,41,0.22);">
+            <span>🧭 导入户外 GPX 轨迹（可选，兼容两步路 / 六只脚 / Garmin 实测里程与爬升）</span>
+          </div>
+          <input id="cr-gpx-input" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" />
+          <div id="cr-gpx-summary" class="creator-cloud-hint hidden" style="margin-top:4px;color:#2e6b4f;font-weight:600;"></div>
+        </div>
         <label>留给串门朋友的一句山海诗笺
           <input id="cr-quote" type="text" maxlength="60" placeholder="如：金顶的风很大，但日出把所有疲惫都吹散了。" required />
         </label>
         <label>藏在星球山巅的真实旅途故事
           <textarea id="cr-memory" rows="2" maxlength="110" placeholder="写下你和搭子在这座山里的难忘瞬间…"></textarea>
         </label>
+        <p id="cr-cloud-hint" class="creator-cloud-hint">💡 提示：已登录「🪪 行者护照」时，照片与星球将永久刻入云端星海，好友随时可来串门留言！</p>
         <div class="creator-submit-row">
-          <button type="submit" class="creator-go-btn">🪐 点亮星球 · 生成串门链接与海报</button>
+          <button id="btn-cr-submit" type="submit" class="creator-go-btn">🪐 点亮星球 · 生成串门链接与海报</button>
           <button id="btn-close-creator" type="button" class="mani-close-btn">暂不创建</button>
         </div>
       </form>
@@ -783,7 +853,215 @@
     </article>
   </div>
 
-  <script type="module" src="./js/main.js?v=4.2.5-release"></script>
+  <!-- V5.0 🪪 星际行者护照 · 云端个人宇宙注册/登录/主页链接弹窗 -->
+  <div id="modal-passport" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="passport-modal-title">
+    <article class="mani-card passport-card">
+      <div class="mani-header">
+        <div class="mani-eyebrow">✦ STAR HIKER PASSPORT · 星际行者护照</div>
+        <h3 id="passport-modal-title">🪪 申领你的个人宇宙护照</h3>
+        <p id="passport-modal-sub" class="mani-sub">免登录即可漫步串门；登录护照后可拥有专属星系链接、上传真实照片造星，并永久收存好友漂流瓶</p>
+      </div>
+
+      <!-- 已登录态：展示个人护照铭牌 + 专属串门链接 + 快捷造星/退出 -->
+      <div id="passport-profile-view" class="passport-profile-view hidden">
+        <div class="passport-id-badge">
+          <span id="pp-badge-icon" class="pp-badge-icon">🏔️</span>
+          <div class="pp-badge-meta">
+            <div class="pp-badge-title-row">
+              <strong id="pp-badge-name">星际行者</strong>
+              <span id="pp-badge-handle" class="pp-handle-pill">@hiker</span>
+            </div>
+            <p id="pp-badge-poem" class="pp-badge-poem">山海皆星辰，每一步都算数。</p>
+          </div>
+        </div>
+        <div id="pp-founder-bind-box" style="margin-top:10px;padding:9px 12px;border-radius:10px;background:rgba(201,150,59,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <span id="pp-founder-status" style="font-size:12.5px;color:#5c3f1c;">🔗 创始星系绑定：未绑定原生星系</span>
+          <select id="pp-bind-legacy-select" style="font-size:12.5px;padding:4px 8px;border-radius:8px;border:1px solid rgba(124,88,41,0.35);background:#fffdf8;color:#2c1e0f;">
+            <option value="">不绑定（纯自建新星系）</option>
+            <option value="mine">🏔️ 绑定「清哥的6颗原生星」</option>
+            <option value="kitty">🐾 绑定「Kitty的6颗原生星」</option>
+            <option value="miemie">🐑 绑定「咩咩的6颗原生星」</option>
+            <option value="luca">🚴 绑定「Luca的6颗原生星」</option>
+          </select>
+        </div>
+        <div class="creator-url-box" style="margin-top:10px;">
+          <input id="pp-universe-url" type="text" readonly />
+          <button id="btn-copy-pp-url" type="button">📋 复制我的宇宙链接</button>
+        </div>
+        <div class="creator-result-btns" style="margin-top:10px;">
+          <button id="btn-pp-enter-my-uni" type="button" class="creator-go-btn">🪐 进入我的个人星系</button>
+          <button id="btn-pp-build-planet" type="button" class="neighbor-act-btn">✨ 上传照片造新星</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+          <button id="btn-pp-logout" type="button" class="mani-close-btn" style="font-size:12px;opacity:0.8;">退出当前护照</button>
+          <button id="btn-close-passport-logged" type="button" class="mani-close-btn">合上护照 ✕</button>
+        </div>
+      </div>
+
+      <!-- 未登录态：登录 / 注册双页签 + 拟真星际护照预览铭牌 -->
+      <div id="passport-auth-view">
+        <div id="pp-live-specimen" class="passport-specimen-card" aria-hidden="true">
+          <div class="pp-specimen-top">
+            <span class="pp-specimen-agency">🪐 INTERSTELLAR TRAIL BUREAU · 星际徒步局签发</span>
+            <span class="pp-specimen-serial">NO. HS-2026</span>
+          </div>
+          <div class="pp-specimen-body">
+            <div id="pp-preview-avatar" class="pp-specimen-avatar">🏔️</div>
+            <div class="pp-specimen-info">
+              <div class="pp-specimen-name-row">
+                <strong id="pp-preview-name">山海漫游者</strong>
+                <span id="pp-preview-handle" class="pp-handle-pill">?u=hiker</span>
+              </div>
+              <p id="pp-preview-poem" class="pp-specimen-poem">“把走过的每一座山，都点亮成夜空里的星。”</p>
+            </div>
+            <div class="pp-specimen-wax" title="星际通行火漆印"><span>星海<br/>通行</span></div>
+          </div>
+          <div id="pp-perks-strip" class="pp-perks-strip">
+            <span>🔗 专属个人宇宙短链</span>
+            <span>📸 实拍 / GPX 造 3D 星</span>
+            <span>🍾 云端收存好友留言</span>
+          </div>
+        </div>
+
+        <div class="passport-mode-tabs">
+          <button id="tab-pp-login" type="button" class="uni-tab active">🔑 护照登录</button>
+          <button id="tab-pp-signup" type="button" class="uni-tab">✨ 免费申领新护照</button>
+        </div>
+
+        <form id="passport-auth-form" class="creator-form" style="margin-top:8px;">
+          <div id="pp-signup-fields" class="pp-signup-fields hidden">
+            <div class="creator-row">
+              <label>星系英文代号 (?u=代号)
+                <input id="pp-handle" type="text" maxlength="20" placeholder="如：aze / xiaolin" autocomplete="username" />
+              </label>
+              <label>行者显示昵称
+                <input id="pp-display-name" type="text" maxlength="14" placeholder="如：阿泽 / 小林" />
+              </label>
+            </div>
+            <div class="creator-row">
+              <label>护照徽章图标
+                <select id="pp-avatar-icon">
+                  <option value="🏔️">🏔️ 雪峰行者</option>
+                  <option value="🐾">🐾 猫耳旅人</option>
+                  <option value="🐑">🐑 云朵绵羊</option>
+                  <option value="🚴">🚴 追风骑士</option>
+                  <option value="🦊">🦊 星林小狐</option>
+                  <option value="⛺">⛺ 旷野帐篷</option>
+                </select>
+              </label>
+              <label>3D 漫步装扮配色
+                <select id="pp-outfit">
+                  <option value="gold">🧣 暖金冲锋衣（经典）</option>
+                  <option value="pink">🌸 樱粉猫耳装</option>
+                  <option value="mint">🌿 薄荷山野装</option>
+                  <option value="cyan">🌊 破风蔚蓝骑行装</option>
+                </select>
+              </label>
+            </div>
+            <label>个人宇宙签名诗句（选填）
+              <input id="pp-bio-poem" type="text" maxlength="60" placeholder="如：把走过的每一座山，都点亮成夜空里的星。" />
+            </label>
+            <label>认领已有创始星系（仅清哥 / Kitty / 咩咩 / Luca 本人选填，新朋友保持默认即可）
+              <select id="pp-legacy-role">
+                <option value="">🌱 我是新行者（从零点亮我的专属星系）</option>
+                <option value="mine">🏔️ 我是清哥 · 绑定已有的 6 颗山海星球</option>
+                <option value="kitty">🐾 我是 Kitty · 绑定已有的 6 颗雪峰星球</option>
+                <option value="miemie">🐑 我是咩咩 · 绑定已有的 6 颗云端星球</option>
+                <option value="luca">🚴 我是 Luca · 绑定已有的 6 颗破风星球</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="creator-row">
+            <label>通行邮箱
+              <input id="pp-email" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </label>
+            <label>通行密码（至少6位）
+              <input id="pp-password" type="password" minlength="6" placeholder="••••••" autocomplete="current-password" required />
+            </label>
+          </div>
+
+          <p id="pp-auth-error" class="pp-auth-error hidden"></p>
+
+          <div class="creator-submit-row">
+            <button id="btn-pp-submit" type="submit" class="creator-go-btn">🔑 登录星际行者护照</button>
+            <button id="btn-close-passport" type="button" class="mani-close-btn">先免登录随便逛逛</button>
+          </div>
+        </form>
+      </div>
+    </article>
+  </div>
+
+  <!-- 17. 《星海观星台 · 万星名录》 (Star Observatory & Galaxy Directory Modal) -->
+  <div id="modal-observatory" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="obs-modal-title">
+    <article class="observatory-card">
+      <button id="btn-close-observatory-x" type="button" class="obs-close-x" aria-label="关闭观星台">✕</button>
+
+      <header class="obs-header">
+        <span class="obs-eyebrow">STAR OBSERVATORY · 万星罗盘与串门名录</span>
+        <h3 id="obs-modal-title">🔭 星海观星台 · 探访万千行者</h3>
+        <p class="obs-subtitle">每一座被双脚丈量过的山海，都在这片深空化作了有名字的星系。输入山峰名可「以山会友」。</p>
+      </header>
+
+      <!-- 搜索框 + 筛选胶囊栏 -->
+      <div class="obs-toolbar">
+        <div class="obs-search-box">
+          <span class="obs-search-icon" aria-hidden="true">🔍</span>
+          <input id="obs-search-input" type="search" maxlength="40" placeholder="搜行者昵称 / @handle / 山峰名（如：四姑娘山、麦理浩径、雨崩）…" />
+          <button id="btn-obs-clear-search" type="button" class="obs-clear-btn hidden" aria-label="清空搜索">✕</button>
+        </div>
+        <div class="obs-filter-tabs" role="tablist" aria-label="星系排序筛选">
+          <button type="button" class="obs-filter-btn active" data-obs-filter="all">✨ 全部星友</button>
+          <button type="button" class="obs-filter-btn" data-obs-filter="lit">🪐 已点亮新星</button>
+          <button type="button" class="obs-filter-btn" data-obs-filter="popular">🌹 人气星主</button>
+          <button type="button" class="obs-filter-btn" data-obs-filter="visited">👣 我的串门足迹</button>
+        </div>
+      </div>
+
+      <div class="obs-scroll-body">
+        <!-- 模块 A：👑 创世领航四星系（殿堂常驻区） -->
+        <section id="obs-founders-section" class="obs-section">
+          <div class="obs-section-head">
+            <span class="obs-section-title">👑 创世领航四星系 · 镇馆标杆宇宙</span>
+            <span class="obs-section-meta">24+ 颗手工精雕山海星球 · 支持双星同频</span>
+          </div>
+          <div id="obs-founders-grid" class="obs-founders-grid"></div>
+        </section>
+
+        <!-- 模块 B：🌌 银河行者星系广场（实时同步云端注册行者 & 自建星球） -->
+        <section class="obs-section">
+          <div class="obs-section-head">
+            <span id="obs-community-title" class="obs-section-title">🌌 银河行者名录 · 社区点亮星系</span>
+            <button id="btn-obs-refresh" type="button" class="obs-refresh-btn">↻ 刷新星轨</button>
+          </div>
+          <div id="obs-community-grid" class="obs-community-grid">
+            <div class="obs-empty-hint">🔭 正在调准深空望远镜，接收银河系最新信标…</div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 底部行动栏：虫洞随机偶遇 + 快速造星入口 -->
+      <footer class="obs-footer">
+        <button id="btn-obs-random-warp" type="button" class="obs-wormhole-btn">
+          🌠 启动虫洞跃迁 · 随机降落一颗远方星辰
+        </button>
+        <button id="btn-obs-go-create" type="button" class="obs-secondary-btn">
+          ✨ 我也要点亮新星
+        </button>
+      </footer>
+    </article>
+  </div>
+
+  <script>
+    setTimeout(function () {
+      var c = document.getElementById("boot-curtain");
+      if (c && !c.classList.contains("fade-out")) {
+        c.classList.add("fade-out");
+        setTimeout(function () { if (c.parentNode) c.remove(); }, 700);
+      }
+    }, 1000);
+  </script>
+  <script type="module" src="./js/app.bundle.js?v=5.2.4-dual-mirror"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       window.addEventListener("load", () => {

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=4.2.5-release";
+import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.2.4-dual-mirror";
 
 const POOL_SIZE = 34;
 const RIPPLE_POOL_SIZE = 14;

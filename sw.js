@@ -1,4 +1,4 @@
-const CACHE_NAME = "hikerplanets-v4.2.5-release";
+const CACHE_NAME = "hikerplanets-v5.2.4-dual-mirror";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -20,37 +20,26 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // 云端同源网关 (/sb/*) 与 AI 边缘接口 (/api/*) 一律直通网络，禁止 Service Worker 拦截或写缓存
+  if (url.pathname.startsWith("/sb/") || url.pathname.startsWith("/api/")) return;
 
-  const isImmutableAsset =
-    url.pathname.includes("/vendor/") || url.pathname.includes("/assets/");
+  // 所有静态资源与首页 HTML：全面采用「Stale-While-Revalidate (有本地缓存 0ms 瞬回 + 后台静默更新)」！
+  // 彻底消灭之前先等 3.5 秒网络超时再回退缓存的卡死问题！
+  event.respondWith(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.match(req, { ignoreSearch: url.pathname === "/" || url.pathname.endsWith("/index.html") }).then((cached) => {
+        const fetchPromise = fetch(req)
+          .then((res) => {
+            if (res && res.ok) {
+              cache.put(req, res.clone());
+            }
+            return res;
+          })
+          .catch(() => cached);
 
-  if (isImmutableAsset) {
-    // 3D 引擎与明信片实拍照片：本地高速缓存优先 + 后台静默保鲜（二次打开 0.1s 瞬开）
-    event.respondWith(
-      caches.open(CACHE_NAME).then((cache) =>
-        cache.match(req).then((cached) => {
-          const networkFetch = fetch(req)
-            .then((res) => {
-              if (res && res.ok) cache.put(req, res.clone());
-              return res;
-            })
-            .catch(() => cached);
-          return cached || networkFetch;
-        })
-      )
-    );
-  } else {
-    // HTML / CSS / 业务 JS：严格网络最新优先，弱网/进山离线时自动回退缓存（绝不卡版本更新）
-    event.respondWith(
-      fetch(req, { cache: "no-cache" })
-        .then((res) => {
-          if (res && res.ok) {
-            const copy = res.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => caches.match(req))
-    );
-  }
+        // 只要缓存命中，0 毫秒立即返回给浏览器渲染！后台悄悄拉取新版写入缓存
+        return cached || fetchPromise;
+      })
+    )
+  );
 });

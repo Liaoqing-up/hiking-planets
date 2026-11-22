@@ -12,9 +12,9 @@ import {
   latLonToUnitVec,
   getSurfaceRadius,
   registerGuestTerrain,
-} from "./sphereMath.js?v=4.2.5-release";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=4.2.5-release";
-import { drawSiteQrStamp, drawPostmarkSeal } from "./qrStamp.js?v=4.2.5-release";
+} from "./sphereMath.js?v=5.2.4-dual-mirror";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.4-dual-mirror";
+import { drawSiteQrStamp, drawPostmarkSeal } from "./qrStamp.js?v=5.2.4-dual-mirror";
 
 const UP = new THREE.Vector3(0, 1, 0);
 const SOCIAL_STORAGE_KEY = "hiking_planets_neighbor_social_v4";
@@ -132,13 +132,62 @@ export function decodeGuestPlanetPayload(token) {
 export function hydrateGuestPlanet(mini, idOverride) {
   const tplKey = GUEST_TEMPLATES[mini.t] ? mini.t : "volcano";
   const tpl = GUEST_TEMPLATES[tplKey];
-  const pid = idOverride || `guest-${Math.abs(hashStr(mini.o + mini.n))}`;
-  registerGuestTerrain(pid, tpl.terrain);
+  const seedHash = Math.abs(hashStr(`${mini.o || ""}|${mini.n || ""}|${mini.e || ""}`));
+  const pid = idOverride || mini.slug || `guest-${seedHash}`;
+  const seedAngle = ((seedHash % 360) * Math.PI) / 180;
+  registerGuestTerrain(pid, tpl.terrain, seedAngle);
+
+  const customWps =
+    Array.isArray(mini.wps) && mini.wps.length > 0
+      ? mini.wps.map((w, idx) => ({
+          id: `${pid}-${idx + 1}`,
+          name: w.name || `${mini.n} · 印记 ${idx + 1}`,
+          shortName: w.shortName || (idx === 0 ? "出发山口" : idx === mini.wps.length - 1 ? "绝景之巅" : `驿站 ${idx + 1}`),
+          elevation: w.elevation || mini.e || "云端",
+          lat: typeof w.lat === "number" ? w.lat : [34, -18, 22, -32][idx % 4],
+          lon: typeof w.lon === "number" ? w.lon : [16, 108, -74, -158][idx % 4],
+          photo: w.photo || undefined,
+          sceneArt: w.sceneArt || (idx === 0 ? tpl.sceneArt : "starry_forest"),
+          caption: w.caption || `${mini.o} 在 ${mini.n} 留下的旅途影像`,
+          poem: w.poem || mini.q,
+          memory: w.memory || mini.m,
+        }))
+      : [
+          {
+            id: `${pid}-1`,
+            name: `${mini.n} · 起点山门`,
+            shortName: "出发山口",
+            elevation: mini.e || "山野起点",
+            lat: 34,
+            lon: 16,
+            photo: Array.isArray(mini.p) && mini.p[0] ? mini.p[0] : undefined,
+            sceneArt: tpl.sceneArt,
+            caption: `${mini.o} 在 ${mini.n} 留下的第一枚星辰路标`,
+            poem: mini.q,
+            memory: mini.m,
+          },
+          {
+            id: `${pid}-2`,
+            name: `${mini.n} · 云端绝景之巅`,
+            shortName: "绝景之巅",
+            elevation: `${mini.e} · 最高处`,
+            lat: -18,
+            lon: 108,
+            photo: Array.isArray(mini.p) && (mini.p[1] || mini.p[0]) ? mini.p[1] || mini.p[0] : undefined,
+            sceneArt: "starry_forest",
+            caption: `${mini.o} 的星夜营地与山巅远眺`,
+            poem: "两颗各自发光的星球，因为同样热爱山海，在同一片星空下成为了邻居。",
+            memory: `来自星球主人 ${mini.o} 的寄语：“${mini.m}” —— 欢迎随时来我的星球吹风烤火！`,
+          },
+        ];
+
   return {
     id: pid,
+    slug: mini.slug || pid,
     terrainType: tpl.terrain,
     creatureType: mini.c || "kitty-changbai",
-    owner: "guest",
+    owner: mini.ownerHandle || "guest",
+    ownerHandle: mini.ownerHandle || null,
     ownerName: mini.o || "远方山友",
     code: `G-${(mini.e || "STAR").replace(/[^0-9A-Za-z]/g, "").slice(0, 4) || "2026"}`,
     chapter: `好友客座星球 · ${mini.o} 的记忆`,
@@ -167,30 +216,7 @@ export function hydrateGuestPlanet(mini, idOverride) {
       skyNight: "#060918",
       ...tpl.palette,
     },
-    waypoints: [
-      {
-        id: `${pid}-1`,
-        name: `${mini.n} · 起点山门`,
-        shortName: "出发山口",
-        elevation: mini.e || "山野起点",
-        lat: 34, lon: 16,
-        sceneArt: tpl.sceneArt,
-        caption: `${mini.o} 在 ${mini.n} 留下的第一枚星辰路标`,
-        poem: mini.q,
-        memory: mini.m,
-      },
-      {
-        id: `${pid}-2`,
-        name: `${mini.n} · 云端绝景之巅`,
-        shortName: "绝景之巅",
-        elevation: `${mini.e} · 最高处`,
-        lat: -18, lon: 108,
-        sceneArt: "starry_forest",
-        caption: `${mini.o} 的星夜营地与山巅远眺`,
-        poem: "两颗各自发光的星球，因为同样热爱山海，在同一片星空下成为了邻居。",
-        memory: `来自星球主人 ${mini.o} 的寄语：“${mini.m}” —— 欢迎随时来我的星球吹风烤火！`,
-      },
-    ],
+    waypoints: customWps,
   };
 }
 
@@ -220,11 +246,12 @@ export function decodeReplyLetter(token) {
 }
 
 // ==================== 3D 星球主人迎宾实体 + 串门邮筒 + 双星同频碑 ====================
-export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostRole = "mine") {
+export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostRole = "mine", isSelfOwnedPlanet = null) {
   const group = new THREE.Group();
   const planetOwner = planet.owner || "mine";
   // 谁登录谁是主场：当星球归属 !== 当前登录身份时即为「串门拜访邻居」；或者双星同频星球上互派同行伙伴驻守！
-  const isNeighborPlanet = planetOwner !== activeHostRole || Boolean(resonanceInfo);
+  const isNotHome = isSelfOwnedPlanet !== null ? !isSelfOwnedPlanet : planetOwner !== activeHostRole;
+  const isNeighborPlanet = isNotHome || Boolean(resonanceInfo);
   const partnerOwner = resonanceInfo?.partnerId?.startsWith("kitty-")
     ? "kitty"
     : resonanceInfo?.partnerId?.startsWith("miemie-")
@@ -232,7 +259,7 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
       : resonanceInfo?.partnerId?.startsWith("luca-")
         ? "luca"
         : "mine";
-  const residentRole = planetOwner !== activeHostRole ? planetOwner : partnerOwner;
+  const residentRole = isNotHome ? planetOwner : partnerOwner;
 
   // 选定迎宾站位：homeHostUp 记录初始营地驻守位，hostUp 为星主实时球面坐标（支持并肩同行跟随！）
   const wp0 = planet.waypoints[0] || { lat: 20, lon: 10 };
@@ -385,9 +412,11 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
           ? "miemie-host"
           : residentRole === "luca"
             ? "luca-host"
-            : planetOwner === "mine"
-              ? planet.id
-              : "yading";
+            : planet.ownerOutfit
+              ? planet.ownerOutfit
+              : planetOwner === "mine"
+                ? planet.id
+                : "gold";
     hostChar.setOutfit(outfitKey);
     const r = getSurfaceRadius(planet.id, hostUp);
     hostChar.root.position.copy(hostUp).multiplyScalar(r);

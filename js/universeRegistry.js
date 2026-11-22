@@ -5,11 +5,11 @@
  */
 
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=4.2.5-release";
-import { KITTY_PLANETS, NEIGHBOR_PROFILES } from "./kittyUniverse.js?v=4.2.5-release";
-import { MIEMIE_PLANETS } from "./miemieUniverse.js?v=4.2.5-release";
-import { LUCA_PLANETS } from "./lucaUniverse.js?v=4.2.5-release";
-import { latLonToUnitVec } from "./sphereMath.js?v=4.2.5-release";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.4-dual-mirror";
+import { KITTY_PLANETS, NEIGHBOR_PROFILES } from "./kittyUniverse.js?v=5.2.4-dual-mirror";
+import { MIEMIE_PLANETS } from "./miemieUniverse.js?v=5.2.4-dual-mirror";
+import { LUCA_PLANETS } from "./lucaUniverse.js?v=5.2.4-dual-mirror";
+import { latLonToUnitVec } from "./sphereMath.js?v=5.2.4-dual-mirror";
 
 export const VALID_HOST_ROLES = ["mine", "kitty", "miemie", "luca"];
 
@@ -46,20 +46,20 @@ export const HOST_REGISTRY = {
     outfit: "mine-host",
     isCyclingCover: false,
     coverScale: 1.0,
-    docTitle: "清哥的星球 · 山海皆星辰 | TRAILS AMONG THE STARS",
-    titleEyebrow: "TRAILS AMONG THE STARS · 山海皆星辰",
-    titleHeading: "清哥的星球",
-    titlePoem: "有些山川太过辽阔，记忆便把走过的每一段路，凝成了一颗只属于行者的星球。",
-    startBtnText: "✦ 点击 · 开始旅程",
-    tabSelfText: "🪐 我的星系",
-    tabNeighborText: "🪐 清哥的星系",
+    docTitle: "清哥的苍山星河 · 山海皆星辰 | TRAILS AMONG THE STARS",
+    titleEyebrow: "AZURE PEAKS & STARRY SEAS · 苍山星河主场",
+    titleHeading: "清哥的苍山星河",
+    titlePoem: "有些山川太过辽阔，记忆便把走过的每一段路，凝成了一片只属于清哥的苍山星河。",
+    startBtnText: "✦ 开启清哥的苍山星河",
+    tabSelfText: "🏔️ 我的星系 (苍山星河)",
+    tabNeighborText: "🏔️ 清哥的苍山星河",
     tabOrder: ["mine", "kitty", "miemie", "luca"],
-    switchToast: "🏔️ 已切换为清哥主场 · 山海皆星辰",
-    warpLabel: "✦ 跃迁至清哥的山海星云 ✦",
-    mapHeadingSelf: "行 者 的 旅 程",
-    mapHeadingNeighbor: "邻居 · 清哥的星系",
-    mapLatin: "LE VOYAGE DU RANDONNEUR · UNIVERSE A",
-    mapSubtitleNeighbor: "欢迎串门！这是好朋友清哥走过的六座山海星球",
+    switchToast: "🏔️ 已切换为清哥主场 · 苍山星河",
+    warpLabel: "✦ 跃迁至清哥的苍山星河 ✦",
+    mapHeadingSelf: "清哥的苍山星河",
+    mapHeadingNeighbor: "清哥的苍山星河",
+    mapLatin: "QINGGE'S AZURE PEAKS & STARRY SEAS · UNIVERSE A",
+    mapSubtitleNeighbor: "欢迎串门！这是清哥丈量过大漠、雪峰、峡谷与海湾点亮的苍山星河",
     resColCls: "",
     resTagCls: "",
     coverWorld: {
@@ -222,15 +222,25 @@ export function queryCoreUniversePlanets(uni) {
   return [...MY_PLANETS];
 }
 
-export function queryUniversePlanets(uni, guestPlanets = []) {
-  if (uni === "kitty") return [...KITTY_PLANETS];
-  if (uni === "miemie") return [...MIEMIE_PLANETS];
-  if (uni === "luca") return [...LUCA_PLANETS];
-  return [...MY_PLANETS, ...guestPlanets];
+export function queryUniversePlanets(uni, guestPlanets = [], customUserPlanets = [], boundLegacyMap = {}) {
+  const customForRole = (role) => {
+    const allowedHandle = boundLegacyMap && boundLegacyMap[role] ? String(boundLegacyMap[role]).toLowerCase() : null;
+    return customUserPlanets.filter(
+      (p) =>
+        p &&
+        (p.legacyRole === role ||
+          (allowedHandle && String(p.ownerHandle || "").toLowerCase() === allowedHandle))
+    );
+  };
+  if (uni === "custom") return [...customUserPlanets];
+  if (uni === "kitty") return [...KITTY_PLANETS, ...customForRole("kitty")];
+  if (uni === "miemie") return [...MIEMIE_PLANETS, ...customForRole("miemie")];
+  if (uni === "luca") return [...LUCA_PLANETS, ...customForRole("luca")];
+  return [...MY_PLANETS, ...guestPlanets, ...customForRole("mine")];
 }
 
-export function queryAllPlanets(guestPlanets = []) {
-  return [...MY_PLANETS, ...KITTY_PLANETS, ...MIEMIE_PLANETS, ...LUCA_PLANETS, ...guestPlanets];
+export function queryAllPlanets(guestPlanets = [], customUserPlanets = []) {
+  return [...MY_PLANETS, ...KITTY_PLANETS, ...MIEMIE_PLANETS, ...LUCA_PLANETS, ...guestPlanets, ...customUserPlanets];
 }
 
 export function checkPlanetResonance(planet, activeHostRole) {

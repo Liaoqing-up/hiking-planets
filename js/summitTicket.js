@@ -1,5 +1,5 @@
-import { renderPlanetIllustration } from "./planetArt2D.js?v=4.2.5-release";
-import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate } from "./qrStamp.js?v=4.2.5-release";
+import { renderPlanetIllustration } from "./planetArt2D.js?v=5.2.4-dual-mirror";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.2.4-dual-mirror";
 
 function loadImg(url) {
   return new Promise((resolve) => {
@@ -334,15 +334,16 @@ export async function generateSummitTicketDataUrl(
         : effectiveHost === "luca"
           ? "Luca 的星球"
           : "行者的星球";
+  const dm = resolveQrDomainLabel();
   const brandLine = companionName
     ? `✦ 并肩同行：与 ${companionName} 共攀  ·  ${hostSiteTitle}`
     : effectiveHost === "kitty"
-      ? "🐾 Kitty 的星球 · 猫耳星云  |  hikerplanets.pages.dev"
+      ? `🐾 Kitty 的星球 · 猫耳星云  |  ${dm}`
       : effectiveHost === "miemie"
-        ? "🐑 咩咩的星球 · 绵羊星云  |  hikerplanets.pages.dev"
+        ? `🐑 咩咩的星球 · 绵羊星云  |  ${dm}`
         : effectiveHost === "luca"
-          ? "🚴 Luca 的星球 · 追风车辙星云  |  hikerplanets.pages.dev"
-          : "行者的星球 · hikerplanets.pages.dev";
+          ? `🚴 Luca 的星球 · 追风车辙星云  |  ${dm}`
+          : `行者的星球 · ${dm}`;
   ctx.fillText(brandLine, tx + 44, notchY + 234);
 
   // 6c. 右侧博物馆级双环雪山星轨圆形邮戳（一星一专属四字印文）+ 正立高反差扫码二维码

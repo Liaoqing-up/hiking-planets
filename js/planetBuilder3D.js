@@ -13,8 +13,8 @@ import {
   getSurfaceRadius,
   seededRand,
   placeOnSphere,
-} from "./sphereMath.js?v=4.2.5-release";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=4.2.5-release";
+} from "./sphereMath.js?v=5.2.4-dual-mirror";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.4-dual-mirror";
 
 export {
   PLANET_RADIUS,

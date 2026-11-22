@@ -1,13 +1,14 @@
 {
   "name": "trails-among-the-stars",
-  "version": "4.2.5",
-  "description": "",
+  "version": "5.0.0",
+  "description": "行者的星球 · 山海皆星辰 — 3D 个人旅途记忆宇宙与异步社交平台",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "python3 -m http.server 8765 --bind 0.0.0.0",
+    "start": "node scripts/dev-cloud-server.mjs",
+    "start:static": "python3 -m http.server 8765 --bind 0.0.0.0",
     "tunnel": "cloudflared tunnel --url http://127.0.0.1:8765",
-    "dist": "DIST=\"$HOME/Desktop/行者的星球-网页发布包\" && rm -rf \"$DIST\" \"${DIST}.zip\" && mkdir -p \"$DIST/assets/photos\" && cp index.html styles.css sw.js manifest.webmanifest \"$DIST/\" && cp -R js \"$DIST/js\" && cp -R vendor \"$DIST/vendor\" && cp -R assets/postcards \"$DIST/assets/postcards\" && cp -R assets/kitty \"$DIST/assets/kitty\" && cp -R assets/photos/miemie \"$DIST/assets/photos/miemie\" && cp -R assets/photos/luca \"$DIST/assets/photos/luca\" && cp assets/*.jpg assets/*.png \"$DIST/assets/\" && find \"$DIST\" -name \".DS_Store\" -delete && (cd \"$DIST\" && zip -rq \"${DIST}.zip\" .) && echo \"Published clean bundle to $DIST\""
+    "dist": "node scripts/build-dist.mjs"
   },
   "keywords": [],
   "author": "",

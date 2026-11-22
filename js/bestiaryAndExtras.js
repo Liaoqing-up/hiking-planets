@@ -1,7 +1,7 @@
-import { renderPlanetIllustration } from "./planetArt2D.js?v=4.2.5-release";
-import { CREATURE_CATALOG } from "./creatures3D.js?v=4.2.5-release";
-import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate } from "./qrStamp.js?v=4.2.5-release";
-import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=4.2.5-release";
+import { renderPlanetIllustration } from "./planetArt2D.js?v=5.2.4-dual-mirror";
+import { CREATURE_CATALOG } from "./creatures3D.js?v=5.2.4-dual-mirror";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.2.4-dual-mirror";
+import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=5.2.4-dual-mirror";
 
 const PORTRAIT_BG = {
   tengger: ["#2e1a12", "#8b4b22"],
@@ -548,14 +548,15 @@ export function capturePhotoWallpaper(
   } else {
     ctx.fillStyle = "rgba(232, 195, 107, 0.72)";
     ctx.font = "500 19px Georgia, serif";
+    const dm = resolveQrDomainLabel();
     ctx.fillText(
       hostRole === "kitty"
-        ? "🐾 Kitty 的星球 · hikerplanets.pages.dev"
+        ? `🐾 Kitty 的星球 · ${dm}`
         : hostRole === "miemie"
-          ? "🐑 咩咩的星球 · hikerplanets.pages.dev"
+          ? `🐑 咩咩的星球 · ${dm}`
           : hostRole === "luca"
-            ? "🚴 Luca 的星球 · hikerplanets.pages.dev"
-            : "行者的星球 · hikerplanets.pages.dev",
+            ? `🚴 Luca 的星球 · ${dm}`
+            : `行者的星球 · ${dm}`,
       W / 2 - 48,
       fy + fh + 152
     );
@@ -725,14 +726,15 @@ export function generateGrandPassportDataUrl(planets, saveData = {}, travelerNam
 
   ctx.fillStyle = "rgba(240, 199, 104, 0.72)";
   ctx.font = "500 16.5px Georgia, serif";
+  const dm = resolveQrDomainLabel();
   ctx.fillText(
     passOwner === "kitty"
-      ? "🐾 Kitty 的星球 · hikerplanets.pages.dev"
+      ? `🐾 Kitty 的星球 · ${dm}`
       : passOwner === "miemie"
-        ? "🐑 咩咩的星球 · hikerplanets.pages.dev"
+        ? `🐑 咩咩的星球 · ${dm}`
         : passOwner === "luca"
-          ? "🚴 Luca 的星球 · hikerplanets.pages.dev"
-          : "行者的星球 · hikerplanets.pages.dev",
+          ? `🚴 Luca 的星球 · ${dm}`
+          : `行者的星球 · ${dm}`,
     78,
     1126
   );
@@ -949,7 +951,7 @@ export async function generatePostcardBookmarkDataUrl(planet, wp, travelerName =
           ? "咩咩的星球"
           : bmOwner === "luca"
             ? "Luca 的星球"
-            : "hikerplanets.pages.dev"
+            : resolveQrDomainLabel()
     }`,
     padX,
     by + bh - 42

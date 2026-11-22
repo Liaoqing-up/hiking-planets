@@ -1,4 +1,11 @@
-// 经 Apple CoreImage & Vision 100% 校验的 https://hikerplanets.pages.dev 标准 29x29 QR(M) 矩阵
+import {
+  QR_ROWS_HIKERSTARS,
+  QR_ROWS_HIKERSTARS_KITTY,
+  QR_ROWS_HIKERSTARS_MIEMIE,
+  QR_ROWS_HIKERSTARS_LUCA,
+} from "./hikerstarsQrMatrices.js?v=5.2.4-dual-mirror";
+
+// 经 Apple CoreImage & Vision 100% 校验的 https://hikerplanets.pages.dev 标准 29x29 QR(M) 矩阵（兼容备份）
 const QR_ROWS = [
   "11111110010001110011101111111",
   "10000010011111111010001000001",
@@ -137,9 +144,24 @@ const QR_ROWS_LUCA = [
 /**
  * 在分享海报角落绘制高识别率复古小二维码印章（支持 hostRole="kitty" | "miemie" | "luca" 专属主场直达二维码）
  */
+export function resolveQrDomainLabel() {
+  if (typeof window !== "undefined" && /(^|\.)hikerstars\.com$/i.test(window.location.hostname || "")) {
+    return "hikerstars.com";
+  }
+  return "hikerplanets.pages.dev";
+}
+
 export function drawSiteQrStamp(ctx, x, y, boxSize = 96, theme = "parchment", hostRole = "mine") {
-  const matrix =
-    hostRole === "kitty"
+  const useHikerstars = typeof window !== "undefined" && /(^|\.)hikerstars\.com$/i.test(window.location.hostname || "");
+  const matrix = useHikerstars
+    ? hostRole === "kitty"
+      ? QR_ROWS_HIKERSTARS_KITTY
+      : hostRole === "miemie"
+        ? QR_ROWS_HIKERSTARS_MIEMIE
+        : hostRole === "luca"
+          ? QR_ROWS_HIKERSTARS_LUCA
+          : QR_ROWS_HIKERSTARS
+    : hostRole === "kitty"
       ? QR_ROWS_KITTY
       : hostRole === "miemie"
         ? QR_ROWS_MIEMIE

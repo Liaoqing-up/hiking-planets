@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=4.2.5-release";
+import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.4-dual-mirror";
 
 const UP = new THREE.Vector3(0, 1, 0);
 

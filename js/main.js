@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=4.2.5-release";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=4.2.5-release";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.4-dual-mirror";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.4-dual-mirror";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=4.2.5-release";
+} from "./universeRegistry.js?v=5.2.4-dual-mirror";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=4.2.5-release";
-import { sound } from "./audio.js?v=4.2.5-release";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=4.2.5-release";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=4.2.5-release";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=4.2.5-release";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=4.2.5-release";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=4.2.5-release";
-import { createSkyWonders } from "./skyWonders3D.js?v=4.2.5-release";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=4.2.5-release";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=4.2.5-release";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=4.2.5-release";
-import { buildCampfireRig } from "./campfireRadio.js?v=4.2.5-release";
+} from "./neighborSocial.js?v=5.2.4-dual-mirror";
+import { sound } from "./audio.js?v=5.2.4-dual-mirror";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.4-dual-mirror";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.4-dual-mirror";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.4-dual-mirror";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.4-dual-mirror";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.4-dual-mirror";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.2.4-dual-mirror";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.4-dual-mirror";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.4-dual-mirror";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.4-dual-mirror";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.2.4-dual-mirror";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,14 +47,42 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=4.2.5-release";
-import { createFootprintTrail } from "./footprints3D.js?v=4.2.5-release";
+} from "./trailSocialExtras.js?v=5.2.4-dual-mirror";
+import { createFootprintTrail } from "./footprints3D.js?v=5.2.4-dual-mirror";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=4.2.5-release";
+} from "./bestiaryAndExtras.js?v=5.2.4-dual-mirror";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.4-dual-mirror";
+import {
+  restoreCloudSession,
+  getCurrentProfile,
+  isCloudLoggedIn,
+  onAuthStateChange,
+  signUpHikerPassport,
+  signInHikerPassport,
+  signOutHikerPassport,
+  updateMyProfile,
+  fetchProfileByHandle,
+  fetchCloudUserPlanets,
+  fetchStarObservatoryDirectory,
+  createCloudUserPlanet,
+  fetchCloudBucketSocial,
+  sendCloudRose,
+  recordCloudVisitor,
+  postCloudBottleNote,
+  fetchCloudPlantedFlags,
+  saveCloudPlantedFlag,
+} from "./cloudClient.js?v=5.2.4-dual-mirror";
+import {
+  compressTravelPhoto,
+  compressAndUploadPhotos,
+  requestPlanetAiInspiration,
+} from "./photoPlanetBuilder.js?v=5.2.4-dual-mirror";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.4-dual-mirror";
+import { createObservatoryController, recordVisitedGalaxy } from "./starObservatory.js?v=5.2.4-dual-mirror";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
@@ -69,9 +97,21 @@ try {
   }
 } catch (_) {}
 const guestPlanets = (socialState.customPlanets || []).map((raw) => hydrateGuestPlanet(raw));
+const customUserPlanets = [];
+let activeCustomProfile = null;
 const HOST_ROLE_KEY = "hiking_planets_host_role_v1";
-const getPlanetsForUniverse = (uni) => queryUniversePlanets(uni, guestPlanets);
-const getAllKnownPlanets = () => queryAllPlanets(guestPlanets);
+const getBoundLegacyMap = () => {
+  const map = {};
+  const myProf = getCurrentProfile();
+  if (myProf?.legacy_role && myProf?.handle) map[myProf.legacy_role] = myProf.handle;
+  if (activeCustomProfile?.legacy_role && activeCustomProfile?.handle) {
+    map[activeCustomProfile.legacy_role] = activeCustomProfile.handle;
+  }
+  return map;
+};
+const getPlanetsForUniverse = (uni) =>
+  queryUniversePlanets(uni, guestPlanets, customUserPlanets, getBoundLegacyMap());
+const getAllKnownPlanets = () => queryAllPlanets(guestPlanets, customUserPlanets);
 
 let activeHostRole = "mine";
 try {
@@ -202,6 +242,7 @@ function preloadUrl(url) {
     return existing;
   }
   const img = new Image();
+  img.crossOrigin = "anonymous";
   img.decoding = "async";
   img.addEventListener("error", () => {
     if (preloadedImages.get(url) === img) preloadedImages.delete(url);
@@ -248,6 +289,8 @@ let activeResonanceNear = false;
 let neighborModalOpen = false;
 let resonanceModalOpen = false;
 let creatorModalOpen = false;
+let passportModalOpen = false;
+let observatoryModalOpen = false;
 let activeFootprints = null;
 let activeManiNear = false;
 let maniModalOpen = false;
@@ -367,6 +410,13 @@ const MODAL_STACK = [
     toggleKey: "KeyN",
   },
   { id: "modal-resonance", isOpen: () => resonanceModalOpen, close: () => closeResonanceModal() },
+  {
+    id: "modal-observatory",
+    isOpen: () => observatoryModalOpen,
+    close: () => closeObservatoryModal(),
+    toggleKey: "KeyO",
+  },
+  { id: "modal-passport", isOpen: () => passportModalOpen, close: () => closePassportModal() },
   { id: "modal-create-planet", isOpen: () => creatorModalOpen, close: () => closeCreatorModal() },
   { id: "modal-mani", isOpen: () => maniModalOpen, close: () => closeManiModal() },
   {
@@ -511,6 +561,7 @@ function orientHikerOnSphere(parentGroup, upVec, fwdVec, planetId) {
 }
 
 // ==================== SCREEN SWITCHING ====================
+const elScreenPrologue = document.getElementById("screen-prologue");
 const elScreenTitle = document.getElementById("screen-title");
 const elScreenMap = document.getElementById("screen-map");
 const elScreenHud = document.getElementById("screen-hud");
@@ -528,15 +579,24 @@ function ensureHistoryGuard() {
 
 function setScreen(nextMode) {
   mode = nextMode;
+  elScreenPrologue?.classList.toggle("active", mode === "prologue");
   elScreenTitle.classList.toggle("active", mode === "title");
   elScreenMap.classList.toggle("active", mode === "map");
   elScreenHud.classList.toggle("active", mode === "planet");
   if (mode !== "planet" && isPhotoMode) togglePhotoMode(false);
-  if (mode !== "title") ensureHistoryGuard();
+  if (mode !== "title" && mode !== "prologue") ensureHistoryGuard();
 }
 
 function updateTitleLayout() {
-  if (!currentWorld || mode !== "title") return;
+  if (!currentWorld) return;
+  if (mode === "prologue") {
+    currentWorld.group.position.x = 0;
+    currentWorld.group.userData.baseY = -7.8;
+    camera.position.set(0, 2.0, 41);
+    camera.lookAt(0, -1.8, 0);
+    return;
+  }
+  if (mode !== "title") return;
   const isMobile = window.innerWidth <= 820;
   if (isMobile) {
     currentWorld.group.position.x = 0;
@@ -574,48 +634,104 @@ function applyHostRoleUI(role, rebuildScene = false) {
   const heading = document.getElementById("title-main-heading");
   const poem = document.getElementById("title-main-poem");
   const startBtn = document.getElementById("btn-start-journey");
-  const neighborBtn = document.getElementById("btn-visit-kitty-title");
-  const miemieBtn = document.getElementById("btn-visit-miemie-title");
-  const lucaBtn = document.getElementById("btn-visit-luca-title");
   if (eyebrow) eyebrow.textContent = hostCfg.titleEyebrow;
   if (heading) heading.textContent = hostCfg.titleHeading;
   if (poem) poem.textContent = hostCfg.titlePoem;
   if (startBtn) startBtn.textContent = hostCfg.startBtnText;
-  if (neighborBtn) {
-    neighborBtn.textContent = activeHostRole === "kitty" ? "🪐 串门 · 清哥的星球" : "🐾 串门 · 拜访 Kitty";
-  }
-  if (miemieBtn) {
-    miemieBtn.textContent = activeHostRole === "miemie" ? "🪐 串门 · 清哥的星球" : "🐑 串门 · 拜访咩咩";
-  }
-  if (lucaBtn) {
-    lucaBtn.textContent = activeHostRole === "luca" ? "🪐 串门 · 清哥的星球" : "🚴 串门 · 拜访 Luca";
-  }
-
-  // 星图顶部切换 Tab 顺序与主次文案随当前登录星主动态反转
-  const switcher = document.getElementById("universe-switcher");
-  const tabCreator = document.getElementById("btn-open-creator");
-  if (switcher) {
-    const tabsByRole = {};
-    for (const r of ["mine", "kitty", "miemie", "luca"]) {
-      const tabEl = switcher.querySelector(`.uni-tab[data-uni="${r}"]`);
-      if (tabEl) {
-        const rCfg = HOST_REGISTRY[r];
-        tabEl.textContent = activeHostRole === r ? rCfg.tabSelfText : rCfg.tabNeighborText;
-        tabsByRole[r] = tabEl;
-      }
-    }
-    hostCfg.tabOrder.forEach((r) => {
-      if (tabsByRole[r]) switcher.appendChild(tabsByRole[r]);
-    });
-    if (tabCreator) switcher.appendChild(tabCreator);
-  }
 
   document.title = hostCfg.docTitle;
+  syncTopUniverseBar();
 
   if (rebuildScene) {
     switchUniverse(activeHostRole);
     if (mode === "title") setupTitleScene();
   }
+}
+
+function syncTopUniverseBar() {
+  const homeBtn = document.getElementById("btn-uni-home");
+  const obsBtn = document.getElementById("btn-open-observatory-map");
+  const myProf = getCurrentProfile();
+  const loggedIn = isCloudLoggedIn() && Boolean(myProf);
+  const myBoundRole = loggedIn && myProf.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+
+  let isAtHome = false;
+  let homeLabel = "🪐 我的星系";
+  if (loggedIn) {
+    if (myBoundRole) {
+      homeLabel = `${HOST_REGISTRY[myBoundRole].icon} 我的星系 (${HOST_REGISTRY[myBoundRole].name})`;
+      isAtHome = currentUniverse === myBoundRole;
+    } else {
+      homeLabel = `${myProf.avatar_icon || "🪐"} 我的星系 (${myProf.display_name || myProf.handle})`;
+      isAtHome = currentUniverse === "custom" && activeCustomProfile?.handle === myProf.handle;
+    }
+  } else {
+    const hCfg = HOST_REGISTRY[activeHostRole] || HOST_REGISTRY.mine;
+    homeLabel = `${hCfg.icon} ${hCfg.name}的星系`;
+    isAtHome = currentUniverse === activeHostRole;
+  }
+
+  if (homeBtn) {
+    homeBtn.textContent = homeLabel;
+    homeBtn.classList.toggle("active", isAtHome);
+  }
+
+  if (obsBtn) {
+    if (isAtHome) {
+      obsBtn.textContent = "🔭 星海串门 · 发现星友 ▾";
+      obsBtn.classList.remove("active");
+    } else if (currentUniverse === "custom" && activeCustomProfile) {
+      obsBtn.textContent = `🔭 正在串门：${activeCustomProfile.avatar_icon || "🪐"} ${activeCustomProfile.display_name || activeCustomProfile.handle} ▾`;
+      obsBtn.classList.add("active");
+    } else {
+      const targetCfg = HOST_REGISTRY[currentUniverse] || HOST_REGISTRY.mine;
+      obsBtn.textContent = `🔭 正在串门：${targetCfg.icon} ${targetCfg.name}的星系 ▾`;
+      obsBtn.classList.add("active");
+    }
+  }
+}
+
+function syncIndependentHostUI(prof) {
+  if (!prof || (prof.legacy_role && HOST_REGISTRY[prof.legacy_role])) return;
+  syncTopUniverseBar();
+
+  // 扉页标题也同步显示新行者自己的名字
+  const heading = document.getElementById("title-main-heading");
+  const poem = document.getElementById("title-main-poem");
+  const startBtn = document.getElementById("btn-start-journey");
+  if (heading) heading.textContent = `${prof.display_name || prof.handle}的星球`;
+  if (poem && prof.bio_poem) poem.textContent = prof.bio_poem;
+  if (startBtn) startBtn.textContent = `✦ 开启 · ${prof.display_name || "我"}的个人星系`;
+}
+
+function setupPrologueScene() {
+  disposeCurrentWorld();
+  activePlanet = null;
+  skyPhase = "day";
+  isNight = false;
+  document.title = "行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS";
+  const coverCfg = HOST_REGISTRY.mine.coverWorld;
+  hiker.setOutfit("gold");
+  hiker.setCycling(false);
+  hiker.root.scale.setScalar(1.0);
+  hiker.setHeadlamp(false);
+  sound.setPlanetBGM("space");
+
+  currentWorld = buildPlanetWorld(coverCfg);
+  currentWorld.group.userData.baseY = -7.8;
+  currentWorld.group.position.set(0, -7.8, 0);
+  currentWorld.group.visible = true;
+  hiker.root.visible = true;
+  scene.add(currentWorld.group);
+
+  const standDir = latLonToUnitVec(84, -15);
+  const standFwd = new THREE.Vector3(-0.35, 0, 0.9).normalize();
+  orientHikerOnSphere(currentWorld.group, standDir, standFwd, "title");
+
+  scene.background.set("#0a1228");
+  camera.up.set(0, 1, 0);
+  setScreen("prologue");
+  updateTitleLayout();
 }
 
 function setupTitleScene() {
@@ -624,9 +740,14 @@ function setupTitleScene() {
   skyPhase = "day";
   isNight = false;
   applyHostRoleUI(activeHostRole, false);
+  const myProf = getCurrentProfile();
+  const isIndepUser = isCloudLoggedIn() && myProf && !(myProf.legacy_role && HOST_REGISTRY[myProf.legacy_role]);
+  if (isIndepUser) {
+    syncIndependentHostUI(myProf);
+  }
   const hostCfg = HOST_REGISTRY[activeHostRole];
-  const isLucaHost = hostCfg.isCyclingCover;
-  hiker.setOutfit(hostCfg.outfit);
+  const isLucaHost = isIndepUser ? myProf.outfit === "cyan" : hostCfg.isCyclingCover;
+  hiker.setOutfit(isIndepUser ? (myProf.outfit || "gold") : hostCfg.outfit);
   hiker.setCycling(isLucaHost);
   hiker.root.scale.setScalar(hostCfg.coverScale);
   hiker.setHeadlamp(false);
@@ -672,7 +793,49 @@ const planetNodeEls = [];
 function initScrollMapUI() {
   elPlanetGrid.innerHTML = "";
   elPlanetGrid.classList.toggle("grid-many-planets", PLANETS.length >= 7);
+  elPlanetGrid.classList.toggle("grid-empty-universe", PLANETS.length === 0);
   planetNodeEls.length = 0;
+
+  // 新注册/未造星的独立行者星系：展示纯净诗意的「待点亮星云」空白画布与造星召唤卡
+  if (PLANETS.length === 0) {
+    const ownerLabel = escapeNoteHtml(activeCustomProfile?.display_name || activeCustomProfile?.handle || "新行者");
+    const isMyOwn = Boolean(
+      activeCustomProfile && getCurrentProfile()?.handle === activeCustomProfile.handle
+    );
+    const emptyWrap = document.createElement("div");
+    emptyWrap.className = "empty-galaxy-cradle";
+    emptyWrap.innerHTML = `
+      <div class="empty-galaxy-orb" aria-hidden="true"><span>✦</span></div>
+      <h3 class="empty-galaxy-title">${
+        isMyOwn ? `这片属于 ${ownerLabel} 的夜空，正等第一颗山海星辰升起` : `${ownerLabel} 的专属星云尚未点亮第一颗星`
+      }</h3>
+      <p class="empty-galaxy-desc">${
+        isMyOwn
+          ? "上传 1～4 张真实旅途照片，或导入两步路 / 六只脚 .gpx 轨迹，即可亲手搓出你的第一颗 3D 记忆星球。"
+          : "这位星际行者刚刚申领护照登船，过阵子再来串门看看 TA 点亮的第一座山海吧～"
+      }</p>
+      ${
+        isMyOwn
+          ? '<button type="button" id="btn-empty-galaxy-create" class="empty-galaxy-cta">✨ 立即上传照片 / 轨迹 · 点亮第一颗星</button>'
+          : ""
+      }
+    `;
+    elPlanetGrid.appendChild(emptyWrap);
+    emptyWrap.querySelector("#btn-empty-galaxy-create")?.addEventListener("click", () => {
+      sound.init();
+      sound.playSelectPlanet();
+      openCreatorModal();
+    });
+    const tbcRow = document.querySelector(".scroll-tbc-row");
+    if (tbcRow) tbcRow.style.display = "none";
+    refreshScrollMapBadges();
+    selectMapPlanet(0);
+    requestAnimationFrame(updateConstellationTrail);
+    return;
+  }
+
+  const tbcRow = document.querySelector(".scroll-tbc-row");
+  if (tbcRow) tbcRow.style.display = "";
   PLANETS.forEach((p, idx) => {
     const hasRes = hasResonanceWithActiveHost(p);
     const node = document.createElement("div");
@@ -808,25 +971,43 @@ if (typeof ResizeObserver !== "undefined") {
 }
 
 function switchUniverse(uniId, targetPlanetId = null) {
-  currentUniverse = normalizeHostRole(uniId);
-  const uniCfg = HOST_REGISTRY[currentUniverse];
+  currentUniverse =
+    uniId === "custom" && (customUserPlanets.length > 0 || Boolean(activeCustomProfile))
+      ? "custom"
+      : normalizeHostRole(uniId);
+  const uniCfg = HOST_REGISTRY[currentUniverse] || HOST_REGISTRY.mine;
   PLANETS = getPlanetsForUniverse(currentUniverse);
-  document.querySelectorAll("#universe-switcher .uni-tab[data-uni]").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.uni === currentUniverse);
-  });
+  syncTopUniverseBar();
   const prof = getUniverseProfile(currentUniverse);
   const headingEl = document.getElementById("scroll-heading");
   const subEl = document.getElementById("scroll-subtitle");
   const latinEl = document.getElementById("scroll-latin");
-  const isSelfUni = currentUniverse === activeHostRole;
-  if (headingEl) {
-    headingEl.textContent = isSelfUni ? uniCfg.mapHeadingSelf : uniCfg.mapHeadingNeighbor;
-  }
-  if (latinEl) {
-    latinEl.textContent = uniCfg.mapLatin;
-  }
-  if (subEl) {
-    subEl.textContent = isSelfUni ? prof.motto : uniCfg.mapSubtitleNeighbor;
+  if (currentUniverse === "custom" && activeCustomProfile) {
+    const isMyOwn = getCurrentProfile()?.handle === activeCustomProfile.handle;
+    if (headingEl) {
+      headingEl.textContent = `${activeCustomProfile.avatar_icon || "🪐"} ${activeCustomProfile.display_name} 的星系`;
+    }
+    if (latinEl) {
+      latinEl.textContent = `STAR HIKER UNIVERSE · @${String(activeCustomProfile.handle || "").toUpperCase()}`;
+    }
+    if (subEl) {
+      subEl.textContent =
+        activeCustomProfile.bio_poem ||
+        (isMyOwn
+          ? "这是你亲手点亮的个人山海星系，随时上传照片继续造星吧！"
+          : `欢迎串门踏入行者 ${activeCustomProfile.display_name} 亲手点亮的 3D 记忆星系`);
+    }
+  } else {
+    const isSelfUni = currentUniverse === activeHostRole;
+    if (headingEl) {
+      headingEl.textContent = isSelfUni ? uniCfg.mapHeadingSelf : uniCfg.mapHeadingNeighbor;
+    }
+    if (latinEl) {
+      latinEl.textContent = uniCfg.mapLatin;
+    }
+    if (subEl) {
+      subEl.textContent = isSelfUni ? prof.motto : uniCfg.mapSubtitleNeighbor;
+    }
   }
   initScrollMapUI();
   if (targetPlanetId) {
@@ -875,10 +1056,37 @@ function refreshScrollMapBadges() {
       creatureCount >= creatureTotal ? "🐾 生灵 ✦" : `🐾 生灵 ${creatureCount}/${creatureTotal}`;
   }
   const finaleBtn = document.getElementById("btn-grand-finale");
-  if (finaleBtn) finaleBtn.classList.toggle("hidden", doneWp < totalWp);
+  if (finaleBtn) finaleBtn.classList.toggle("hidden", totalWp === 0 || doneWp < totalWp);
 }
 
 function selectMapPlanet(idx) {
+  if (PLANETS.length === 0) {
+    selectedPlanetIdx = 0;
+    const isMyOwn = Boolean(
+      activeCustomProfile && getCurrentProfile()?.handle === activeCustomProfile.handle
+    );
+    const handleText = activeCustomProfile?.handle ? `@${activeCustomProfile.handle}` : "@hiker";
+    elMapChapter.textContent = `GENESIS NEBULA · 初生星云 (${handleText})`;
+    elMapTitle.textContent = isMyOwn ? "第 0 颗星 · 等待你的山海记忆" : "静谧星云 · 尚未铸星";
+    elMapStats.innerHTML = `
+      <span class="stat-pill">已点亮星球 0 颗</span>
+      <span class="stat-pill">支持 实拍照片 EXIF / GPX 轨迹</span>
+      <span class="stat-pill">状态 待开荒点亮</span>
+    `;
+    elMapQuote.textContent =
+      activeCustomProfile?.bio_poem
+        ? `“${activeCustomProfile.bio_poem}”`
+        : "“每一片空白的夜空，都在等待一双沾满山野泥土与晨露的徒步鞋。”";
+    const resBtn = document.getElementById("btn-map-resonance");
+    if (resBtn) resBtn.classList.add("hidden");
+    const enterBtn = document.getElementById("btn-enter-planet");
+    if (enterBtn) {
+      enterBtn.disabled = !isMyOwn;
+      enterBtn.style.opacity = isMyOwn ? "1" : "0.6";
+      enterBtn.textContent = isMyOwn ? "✨ 造一颗我的首发星球" : "✦ 待星主点亮第一颗星";
+    }
+    return;
+  }
   selectedPlanetIdx = (idx + PLANETS.length) % PLANETS.length;
   const p = PLANETS[selectedPlanetIdx];
   const disc = getDiscoveredSet(p.id);
@@ -928,8 +1136,10 @@ function selectMapPlanet(idx) {
     resBtn.classList.toggle("hidden", !hasRes);
     if (hasRes) resBtn.textContent = "⚡ 双星同频共鸣";
   }
-  // 在星图浏览时即提前预加载选中星球照片
-  prefetchPlanetPhotos(p);
+  // 仅当真正处于星图界面 (mode === "map") 时才预加载选中星球照片，绝不在首屏总扉页抢占弱网带宽！
+  if (mode === "map") {
+    prefetchPlanetPhotos(p);
+  }
 }
 
 // 轻量无侵入统计上报（即使被广告拦截器屏蔽也绝不报错）
@@ -984,20 +1194,32 @@ const elPromptInteract = document.getElementById("prompt-interact");
 const elPromptText = document.getElementById("prompt-interact-text");
 
 function enterPlanet(idx) {
+  if (!PLANETS.length || !PLANETS[idx]) {
+    if (getCurrentProfile()) openCreatorModal();
+    return;
+  }
   selectedPlanetIdx = idx;
   const p = PLANETS[idx];
   activePlanet = p;
   disposeCurrentWorld();
   const planetOwner = p.owner || "mine";
-  // 四位星主去别人星球串门时均保持各自招牌穿搭；在自己星球则换上对应路线的冲锋衣/骑行服与帽饰
-  const hostOutfit =
-    activeHostRole === "kitty" && planetOwner !== "kitty"
+  const myProf = getCurrentProfile();
+  const myBound = myProf?.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+  const isSelfOwnedPlanet = myProf
+    ? myBound
+      ? planetOwner === myBound || p.legacyRole === myBound
+      : Boolean(p.ownerHandle && p.ownerHandle === myProf.handle)
+    : planetOwner === activeHostRole;
+  // 已登录行者穿自己护照选定的冲锋衣配色；未登录四位创世星主串门时穿各自招牌穿搭，在自己星球穿路线主题服
+  const hostOutfit = myProf?.outfit
+    ? myProf.outfit
+    : activeHostRole === "kitty" && !isSelfOwnedPlanet
       ? "kitty-host"
-      : activeHostRole === "miemie" && planetOwner !== "miemie"
+      : activeHostRole === "miemie" && !isSelfOwnedPlanet
         ? "miemie-host"
-        : activeHostRole === "luca" && planetOwner !== "luca"
+        : activeHostRole === "luca" && !isSelfOwnedPlanet
           ? "luca-host"
-          : activeHostRole === "mine" && planetOwner !== "mine"
+          : activeHostRole === "mine" && !isSelfOwnedPlanet
             ? "mine-host"
             : p.id;
   hiker.setOutfit(hostOutfit);
@@ -1042,13 +1264,16 @@ function enterPlanet(idx) {
 
   // V4.2 双星主自适应迎宾实体 (邻居主人3D角色 + 发光星际漂流瓶 + 跨宇宙双星同频水晶碑)
   const resPayload = hasResonanceWithActiveHost(p) ? RESONANCE_LINKS[p.id] || { partnerId: activeHostRole } : null;
-  activeNeighborRig = buildNeighborSocialRig(p, resPayload, activeHostRole);
+  activeNeighborRig = buildNeighborSocialRig(p, resPayload, activeHostRole, isSelfOwnedPlanet);
   currentWorld.group.add(activeNeighborRig.group);
   activePlantedFlagObjs = loadPlantedFlags(p.id).map((fl) => {
     const obj = buildFlagMesh(p.id, fl);
     currentWorld.group.add(obj.group);
     return obj;
   });
+  // 云端实时拉取全网好友在此星球插下的 3D 营旗与漂流瓶信笺（无感增量挂载）
+  syncPlanetFlagsFromCloud(p.id);
+  syncBucketSocialFromCloud(getNeighborBucketKeyForPlanet(p));
   pendingHostAction = null;
   document.getElementById("companion-follow-pill")?.classList.add("hidden");
   document.getElementById("host-action-popover")?.classList.add("hidden");
@@ -1163,8 +1388,7 @@ function renderHudWaypoints() {
     hostBtn.type = "button";
     hostBtn.id = "btn-wp-find-host";
     const resRole = activeNeighborRig.residentRole;
-    const resLabel =
-      resRole === "kitty" ? "Kitty" : resRole === "miemie" ? "咩咩" : resRole === "luca" ? "Luca" : "星主";
+    const resLabel = getResidentPartnerName();
     const resIcon =
       resRole === "kitty" ? "🐾" : resRole === "miemie" ? "🐑" : resRole === "luca" ? "🚴" : "🏔️";
     const following = activeNeighborRig.isFollowing;
@@ -1511,6 +1735,50 @@ function openBestiaryModal() {
   const grid = document.getElementById("bestiary-grid");
   if (!grid) return;
   const metSet = new Set(saveData.creatures || []);
+  grid.innerHTML = "";
+
+  if (currentUniverse === "custom") {
+    if (!PLANETS.length) {
+      grid.innerHTML = `
+        <div class="empty-galaxy-cradle" style="grid-column:1 / -1; margin:8px auto;">
+          <div class="empty-galaxy-orb">🐾</div>
+          <h3 class="empty-galaxy-title">你的星系还没有栖息山野小生灵</h3>
+          <p class="empty-galaxy-desc">每当你上传照片或轨迹点亮一颗徒步星球，就可以为那座山指派专属守护小生灵（川西小熊猫、亚丁小松鼠、长白天池小鹿…）。</p>
+        </div>`;
+    } else {
+      PLANETS.forEach((p) => {
+        const refItem =
+          CREATURE_CATALOG.find((c) => c.planetId === p.creatureType) || CREATURE_CATALOG[0];
+        const unlocked = metSet.has(p.id);
+        const card = document.createElement("div");
+        card.className = `bestiary-card ${unlocked ? "unlocked" : "locked"}`;
+        const c = document.createElement("canvas");
+        renderCreaturePortrait(c, refItem.planetId, unlocked);
+        const title = document.createElement("div");
+        title.className = "bestiary-name";
+        title.textContent = unlocked ? `${refItem.emoji} ${refItem.name}` : "✧ 尚未邂逅的山野小生灵";
+        const sub = document.createElement("div");
+        sub.className = "bestiary-planet";
+        sub.textContent = unlocked ? `✦ 已结伴 · ${p.name}` : `栖息星球：${p.name}`;
+        const bio = document.createElement("div");
+        bio.className = "bestiary-note";
+        bio.textContent = unlocked ? refItem.note : "前往该星球漫步走近它，即可建立羁绊同行";
+        const guideBtn = document.createElement("button");
+        guideBtn.type = "button";
+        guideBtn.className = "bestiary-guide-btn";
+        guideBtn.textContent = activePlanet?.id === p.id ? "✦ 星尘寻踪引路" : `✦ 前往${p.name}寻它`;
+        guideBtn.addEventListener("click", () => guideToPlanetCreature(p.id));
+        card.append(c, title, sub, bio, guideBtn);
+        grid.appendChild(card);
+      });
+    }
+    bestiaryModalOpen = true;
+    document.getElementById("modal-bestiary")?.classList.remove("hidden");
+    sound.init();
+    sound.playHover();
+    return;
+  }
+
   const uniCatalog = CREATURE_CATALOG.filter((c) =>
     currentUniverse === "kitty"
       ? c.owner === "kitty"
@@ -1520,7 +1788,6 @@ function openBestiaryModal() {
           ? c.owner === "luca"
           : !c.owner
   );
-  grid.innerHTML = "";
   uniCatalog.forEach((item) => {
     const unlocked = metSet.has(item.planetId);
     const card = document.createElement("div");
@@ -1585,13 +1852,15 @@ function renderAtlasGridUI() {
   const atlasTitleEl = document.getElementById("atlas-title");
   if (atlasTitleEl) {
     atlasTitleEl.textContent =
-      currentUniverse === "kitty"
-        ? `猫耳星云 · ${totalWp} 帧山海印记`
-        : currentUniverse === "miemie"
-          ? `绵羊星云 · ${totalWp} 帧山海印记`
-          : currentUniverse === "luca"
-            ? `追风车辙 · ${totalWp} 帧骑行印记`
-            : `山海 · ${totalWp} 帧星辰印记`;
+      currentUniverse === "custom"
+        ? `${activeCustomProfile?.display_name || "行者"}的星系 · ${totalWp} 帧山海印记`
+        : currentUniverse === "kitty"
+          ? `猫耳星云 · ${totalWp} 帧山海印记`
+          : currentUniverse === "miemie"
+            ? `绵羊星云 · ${totalWp} 帧山海印记`
+            : currentUniverse === "luca"
+              ? `追风车辙 · ${totalWp} 帧骑行印记`
+              : `山海 · ${totalWp} 帧星辰印记`;
   }
 
   tabsEl.innerHTML = "";
@@ -1614,6 +1883,10 @@ function renderAtlasGridUI() {
   });
 
   gridEl.innerHTML = "";
+  if (PLANETS.length === 0) {
+    gridEl.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:28px 14px;color:#6b4f2c;font-size:13.5px;">✨ 当前初生星云尚未点亮星球，先去「造一颗我的星」上传旅途明信片吧！</div>`;
+    return;
+  }
   const targetPlanets =
     atlasFilterPlanetId === "all"
       ? PLANETS
@@ -2455,6 +2728,15 @@ window.addEventListener("keydown", (e) => {
     return;
   }
 
+  if (mode === "prologue") {
+    if (e.code === "KeyO") openObservatoryModal();
+    else if (e.code === "Enter" || e.code === "Space") {
+      sound.init();
+      sound.playSelectPlanet();
+      openPassportModal(false);
+    }
+    return;
+  }
   if (mode === "title" && (e.code === "Enter" || e.code === "Space")) {
     sound.init();
     sound.playSelectPlanet();
@@ -2466,8 +2748,12 @@ window.addEventListener("keydown", (e) => {
     else if (e.code === "ArrowUp" || e.code === "KeyW") selectMapPlanet(selectedPlanetIdx - 3);
     else if (e.code === "KeyB") openBestiaryModal();
     else if (e.code === "KeyG") openAtlasModal();
+    else if (e.code === "KeyO") openObservatoryModal();
     else if (e.code === "Enter" || e.code === "Space") enterPlanet(selectedPlanetIdx);
-    else if (e.code === "Escape") setupTitleScene();
+    else if (e.code === "Escape") {
+      if (isCloudLoggedIn() && getCurrentProfile()) setupTitleScene();
+      else setupPrologueScene();
+    }
   } else if (mode === "planet") {
     const hostPop = document.getElementById("host-action-popover");
     const hostPopOpen = hostPop && !hostPop.classList.contains("hidden");
@@ -2495,6 +2781,8 @@ window.addEventListener("keydown", (e) => {
       openFlagModal(null);
     } else if (e.code === "KeyN") {
       openNeighborHubModal();
+    } else if (e.code === "KeyO") {
+      openObservatoryModal();
     } else if (e.code === "KeyG") {
       openAtlasModal();
     } else if (e.code === "KeyB") {
@@ -2841,20 +3129,72 @@ document.getElementById("btn-global-sound").addEventListener("click", () => {
   document.getElementById("btn-global-sound").textContent = on ? "♪ 星音" : "♪ 静音";
 });
 
-document.getElementById("btn-start-journey").addEventListener("click", () => {
+document.getElementById("btn-start-journey").addEventListener("click", async () => {
   sound.init();
   sound.playSelectPlanet();
-  switchUniverse(activeHostRole);
+  const myProf = getCurrentProfile();
+  const isLogged = isCloudLoggedIn() && Boolean(myProf);
+  const myBound = isLogged && myProf.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+  if (isLogged && activeCustomProfile?.handle !== myProf.handle) {
+    // 若刚才去别人星系串过门（无论自己是独立行者还是绑定了清哥/Kitty的创世星主），点开始旅程时重新拉回自己的纯净星球列表
+    await loadUserUniverseByHandle(myProf.handle, { autoOpenMap: true });
+    return;
+  }
+  if (isLogged && !myBound) {
+    activeCustomProfile = myProf;
+    syncIndependentHostUI(myProf);
+    switchUniverse("custom");
+  } else {
+    switchUniverse(myBound || activeHostRole);
+  }
   openStarMap();
 });
 
 document.getElementById("btn-back-title").addEventListener("click", () => {
-  setupTitleScene();
+  if (isCloudLoggedIn() && getCurrentProfile()) {
+    setupTitleScene();
+  } else {
+    setupPrologueScene();
+  }
+});
+
+document.getElementById("btn-back-prologue")?.addEventListener("click", () => {
+  sound.init();
+  sound.playHover();
+  setupPrologueScene();
+});
+
+document.getElementById("btn-prologue-login")?.addEventListener("click", () => {
+  sound.init();
+  sound.playSelectPlanet();
+  openPassportModal(false);
+});
+
+document.getElementById("btn-prologue-observatory")?.addEventListener("click", openObservatoryModal);
+document.getElementById("btn-prologue-observatory-top")?.addEventListener("click", openObservatoryModal);
+document.getElementById("btn-prologue-warp")?.addEventListener("click", () => {
+  sound.init();
+  observatoryCtrl.triggerWormholeWarp();
+});
+
+document.querySelectorAll("[data-prologue-founder]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const role = normalizeHostRole(btn.getAttribute("data-prologue-founder"));
+    sound.init();
+    sound.playSelectPlanet();
+    applyHostRoleUI(role, false);
+    switchUniverse(role);
+    setupTitleScene();
+  });
 });
 
 document.getElementById("btn-enter-planet").addEventListener("click", () => {
   const enterBtn = document.getElementById("btn-enter-planet");
   if (enterBtn?.disabled) return;
+  if (PLANETS.length === 0) {
+    openCreatorModal();
+    return;
+  }
   enterPlanet(selectedPlanetIdx);
 });
 
@@ -3593,7 +3933,12 @@ function animate() {
     currentWorld.update(dt, elapsed);
   }
 
-  if (mode === "title" && currentWorld) {
+  if (mode === "prologue" && currentWorld) {
+    const baseY = currentWorld.group.userData.baseY ?? -7.8;
+    currentWorld.group.position.y = baseY + Math.sin(elapsed * 0.8) * 0.22;
+    currentWorld.group.rotation.set(0, elapsed * 0.1, 0);
+    hiker.update(dt, elapsed, 0.12);
+  } else if (mode === "title" && currentWorld) {
     const baseY = currentWorld.group.userData.baseY ?? -1.2;
     currentWorld.group.position.y = baseY + Math.sin(elapsed * 0.9) * 0.25;
     if (activeHostRole === "luca") {
@@ -3714,7 +4059,8 @@ window.addEventListener("popstate", () => {
     return;
   }
   if (mode === "map") {
-    setupTitleScene();
+    if (isCloudLoggedIn() && getCurrentProfile()) setupTitleScene();
+    else setupPrologueScene();
   }
 });
 
@@ -3726,7 +4072,11 @@ let duoCamRestoreTimer = null;
 
 function getResidentPartnerName() {
   if (!activeNeighborRig) return "星球伙伴";
-  return (HOST_REGISTRY[activeNeighborRig.residentRole] || HOST_REGISTRY.mine).name;
+  const rRole = activeNeighborRig.residentRole;
+  if (HOST_REGISTRY[rRole]) return HOST_REGISTRY[rRole].name;
+  if (activePlanet?.ownerName) return activePlanet.ownerName;
+  if (activeCustomProfile?.display_name) return activeCustomProfile.display_name;
+  return "星球主人";
 }
 
 function navigateToHostAndOpenMenu(pillBtn = null) {
@@ -4116,7 +4466,12 @@ function warpToPlanetGlobal(targetPlanetId) {
   triggerHaptic(22);
 
   setTimeout(() => {
-    const targetUni = normalizeHostRole(target.owner);
+    const targetUni =
+      customUserPlanets.some((x) => x.id === target.id)
+        ? "custom"
+        : target.owner === "guest" || !HOST_REGISTRY[target.owner]
+          ? "mine"
+          : normalizeHostRole(target.owner);
     if (currentUniverse !== targetUni) switchUniverse(targetUni, target.id);
     const idx = PLANETS.findIndex((x) => x.id === target.id);
     if (idx >= 0) enterPlanet(idx);
@@ -4133,10 +4488,79 @@ function warpToPlanetGlobal(targetPlanetId) {
   }, 1120);
 }
 
+function getNeighborBucketKeyForPlanet(p) {
+  if (!p) {
+    if (currentUniverse === "custom" && activeCustomProfile?.handle) return `u:${activeCustomProfile.handle}`;
+    return normalizeHostRole(currentUniverse);
+  }
+  if (p.owner === "guest" || !HOST_REGISTRY[p.owner]) return `p:${p.slug || p.id}`;
+  return normalizeHostRole(p.owner);
+}
+
 function getNeighborBucketKey() {
-  if (!activePlanet) return normalizeHostRole(currentUniverse);
-  if (activePlanet.owner === "guest") return activePlanet.id;
-  return normalizeHostRole(activePlanet.owner);
+  return getNeighborBucketKeyForPlanet(activePlanet);
+}
+
+async function syncBucketSocialFromCloud(bucketKey) {
+  if (!bucketKey) return;
+  try {
+    const remote = await fetchCloudBucketSocial(bucketKey);
+    let touched = false;
+    if (typeof remote.roseCount === "number") {
+      socialState.roses[bucketKey] = Math.max(socialState.roses[bucketKey] ?? 0, remote.roseCount);
+      touched = true;
+    }
+    if (typeof remote.visitorCount === "number") {
+      if (!socialState.visitors) socialState.visitors = {};
+      socialState.visitors[bucketKey] = Math.max(socialState.visitors[bucketKey] ?? 0, remote.visitorCount);
+      touched = true;
+    }
+    if (Array.isArray(remote.notes) && remote.notes.length > 0) {
+      const localArr = Array.isArray(socialState.notes[bucketKey]) ? socialState.notes[bucketKey] : [];
+      const seen = new Set(localArr.map((n) => `${n.from}|${n.text}`));
+      const toPrepend = [];
+      for (const rn of remote.notes) {
+        const sig = `${rn.from}|${rn.text}`;
+        if (!seen.has(sig)) {
+          seen.add(sig);
+          toPrepend.push(rn);
+        }
+      }
+      if (toPrepend.length > 0) {
+        socialState.notes[bucketKey] = [...toPrepend, ...localArr].slice(0, 50);
+        touched = true;
+      }
+    }
+    if (touched) {
+      saveSocialState(socialState);
+      if (neighborModalOpen) renderNeighborNotesUI();
+      syncBottleUnreadBeacon?.();
+    }
+  } catch (_) {}
+}
+
+async function syncPlanetFlagsFromCloud(planetId) {
+  if (!planetId) return;
+  try {
+    const remoteFlags = await fetchCloudPlantedFlags(planetId);
+    if (!Array.isArray(remoteFlags) || !remoteFlags.length) return;
+    if (mode !== "planet" || activePlanet?.id !== planetId || !currentWorld) return;
+    for (const rf of remoteFlags) {
+      if (!Array.isArray(rf.up) || rf.up.length !== 3) continue;
+      const dup = activePlantedFlagObjs.some(
+        (obj) =>
+          obj.data &&
+          obj.data.author === rf.author &&
+          obj.data.msg === rf.msg
+      );
+      if (!dup) {
+        savePlantedFlag(rf);
+        const meshObj = buildFlagMesh(planetId, rf);
+        currentWorld.group.add(meshObj.group);
+        activePlantedFlagObjs.push(meshObj);
+      }
+    }
+  } catch (_) {}
 }
 
 function recordBottleVisitor(bucketKey, rawName) {
@@ -4195,17 +4619,30 @@ function openNeighborHubModal() {
   closeHostPopover();
   const p = activePlanet || PLANETS[selectedPlanetIdx];
   const pOwner = p?.owner || currentUniverse;
-  const isHome = pOwner === activeHostRole;
-  const hostName = HOST_REGISTRY[pOwner]?.name || p?.ownerName || "清哥";
+  const myProf = getCurrentProfile();
+  const myBound = myProf?.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+  const isHome = myProf
+    ? myBound
+      ? pOwner === myBound || p?.legacyRole === myBound
+      : Boolean(p?.ownerHandle && p.ownerHandle === myProf.handle) ||
+        (currentUniverse === "custom" && activeCustomProfile?.handle === myProf.handle)
+    : pOwner === activeHostRole;
+  const hostName = HOST_REGISTRY[pOwner]?.name || p?.ownerName || activeCustomProfile?.display_name || "清哥";
   const selfVisitorName =
-    activeHostRole === "mine" ? saveData.travelerName || "清哥" : HOST_REGISTRY[activeHostRole].name;
-  if (!isHome) recordBottleVisitor(getNeighborBucketKey(), selfVisitorName);
+    myProf?.display_name ||
+    (activeHostRole === "mine" ? saveData.travelerName || "清哥" : HOST_REGISTRY[activeHostRole].name);
+  const bucketKey = getNeighborBucketKey();
+  if (!isHome) {
+    recordBottleVisitor(bucketKey, selfVisitorName);
+    recordCloudVisitor(bucketKey).catch(() => {});
+  }
+  syncBucketSocialFromCloud(bucketKey);
 
   document.getElementById("neighbor-hub-title").textContent = isHome
     ? `🍾 我的星际漂流瓶 · 「${p?.name || "主场星云"}」`
     : pOwner === "guest"
       ? `🍾 客座漂流瓶 · ${hostName} 的「${p.name}」`
-      : `🍾 星际漂流瓶 · 邻居 ${hostName} 的「${p?.name || "星云"}」`;
+      : `🍾 星际漂流瓶 · 星友 ${hostName} 的「${p?.name || "星云"}」`;
   document.getElementById("neighbor-hub-sub").textContent = isHome
     ? "打捞顺着银河漂流而来的好友信笺与星辰玫瑰，记录每一位踏足星球的旅人"
     : `赠予 ${hostName} 一朵小王子的星辰玫瑰，或写一张纸条塞进漂流瓶放流星海吧！`;
@@ -4377,10 +4814,24 @@ function closeResonanceModal() {
 
 let latestCreatedGuestPlanet = null;
 let latestCreatedShareUrl = "";
+let pendingCreatorFiles = [];
+let pendingGpxParsed = null;
+let passportAuthMode = "login";
 
 function openCreatorModal() {
   creatorModalOpen = true;
   ensureHistoryGuard();
+  const prof = getCurrentProfile();
+  const ownerInput = document.getElementById("cr-owner");
+  if (prof && ownerInput && !ownerInput.value) {
+    ownerInput.value = prof.display_name || "";
+  }
+  const hintEl = document.getElementById("cr-cloud-hint");
+  if (hintEl) {
+    hintEl.textContent = prof
+      ? `✅ 已连接护照 @${prof.handle}：上传的旅途照片与新星球将永久刻入你的云端个人宇宙！`
+      : "💡 免登录可生成轻量客座链接；若想上传真实照片并永久保存进个人星系，请先点右上角「🪪 行者护照」登录。";
+  }
   document.getElementById("creator-share-result")?.classList.add("hidden");
   document.getElementById("modal-create-planet")?.classList.remove("hidden");
   sound.init();
@@ -4392,45 +4843,478 @@ function closeCreatorModal() {
   document.getElementById("modal-create-planet")?.classList.add("hidden");
 }
 
-// 扉页四星主身份切换舱 + 串门副按钮自适应
-document.querySelectorAll("#host-role-switcher .host-role-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const nextRole = normalizeHostRole(btn.dataset.hostRole);
-    if (nextRole === activeHostRole) return;
-    sound.init();
-    sound.playSelectPlanet();
-    applyHostRoleUI(nextRole, true);
-    showWonderToast(HOST_REGISTRY[nextRole].switchToast, 3200);
-  });
-});
+function syncPassportSpecimenPreview() {
+  const avatarEl = document.getElementById("pp-preview-avatar");
+  const nameEl = document.getElementById("pp-preview-name");
+  const handleEl = document.getElementById("pp-preview-handle");
+  const poemEl = document.getElementById("pp-preview-poem");
+  const isSignup = passportAuthMode === "signup";
 
-// 扉页串门副按钮组（数据驱动绑定）
-for (const [btnId, targetRole] of [
-  ["btn-visit-kitty-title", "kitty"],
-  ["btn-visit-miemie-title", "miemie"],
-  ["btn-visit-luca-title", "luca"],
-]) {
-  document.getElementById(btnId)?.addEventListener("click", () => {
-    sound.init();
-    sound.playSelectPlanet();
-    const neighborUni = activeHostRole === targetRole ? "mine" : targetRole;
-    switchUniverse(neighborUni);
-    openStarMap();
-    trackEvent("扉页串门拜访邻居星系", { neighborUni });
-  });
+  const rawHandle = document.getElementById("pp-handle")?.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "") || "";
+  const rawName = document.getElementById("pp-display-name")?.value.trim() || "";
+  const rawAvatar = document.getElementById("pp-avatar-icon")?.value || "🏔️";
+  const rawOutfit = document.getElementById("pp-outfit")?.value || "gold";
+  const rawPoem = document.getElementById("pp-bio-poem")?.value.trim() || "";
+  const rawEmail = document.getElementById("pp-email")?.value.trim() || "";
+  const emailPrefix = rawEmail.includes("@") ? rawEmail.split("@")[0].slice(0, 14) : "";
+
+  if (avatarEl) {
+    avatarEl.textContent = isSignup ? rawAvatar : "🪪";
+    avatarEl.dataset.outfit = isSignup ? rawOutfit : "gold";
+  }
+  if (nameEl) {
+    nameEl.textContent = isSignup
+      ? rawName || rawHandle || "待镌刻你的名字"
+      : emailPrefix ? `${emailPrefix} 的行者护照` : "山海漫游者";
+  }
+  if (handleEl) {
+    handleEl.textContent = isSignup
+      ? `?u=${rawHandle || "your-id"}`
+      : emailPrefix ? `@${emailPrefix}` : "?u=hiker";
+  }
+  if (poemEl) {
+    poemEl.textContent = isSignup && rawPoem
+      ? `“${rawPoem}”`
+      : "“把走过的每一座山，都点亮成夜空里的星。”";
+  }
 }
 
-document.querySelectorAll("#universe-switcher .uni-tab[data-uni]").forEach((btn) => {
-  btn.addEventListener("click", () => {
+function setPassportMode(nextMode) {
+  passportAuthMode = nextMode === "signup" ? "signup" : "login";
+  document.getElementById("tab-pp-login")?.classList.toggle("active", passportAuthMode === "login");
+  document.getElementById("tab-pp-signup")?.classList.toggle("active", passportAuthMode === "signup");
+  document.getElementById("pp-signup-fields")?.classList.toggle("hidden", passportAuthMode !== "signup");
+  const subBtn = document.getElementById("btn-pp-submit");
+  if (subBtn) {
+    subBtn.textContent =
+      passportAuthMode === "signup" ? "✨ 立即铸造我的星际行者护照" : "🔑 登录星际行者护照";
+  }
+  document.getElementById("pp-auth-error")?.classList.add("hidden");
+  syncPassportSpecimenPreview();
+}
+
+function refreshPassportBadgesUI() {
+  const prof = getCurrentProfile();
+  const logged = isCloudLoggedIn() && Boolean(prof);
+  const titleBtn = document.getElementById("btn-open-passport-title");
+  const mapBtn = document.getElementById("btn-open-passport-map");
+  if (titleBtn) {
+    titleBtn.classList.toggle("logged-in", logged);
+    titleBtn.textContent = logged ? `${prof.avatar_icon || "🪪"} ${prof.display_name}` : "🪪 行者护照";
+  }
+  if (mapBtn) {
+    mapBtn.textContent = logged ? `${prof.avatar_icon || "🪪"} @${prof.handle}` : "🪪 行者护照";
+  }
+  const profView = document.getElementById("passport-profile-view");
+  const authView = document.getElementById("passport-auth-view");
+  if (logged) {
+    saveData.travelerName = prof.display_name;
+    persistSave();
+    profView?.classList.remove("hidden");
+    authView?.classList.add("hidden");
+    const iconEl = document.getElementById("pp-badge-icon");
+    const nameEl = document.getElementById("pp-badge-name");
+    const handleEl = document.getElementById("pp-badge-handle");
+    const poemEl = document.getElementById("pp-badge-poem");
+    const urlEl = document.getElementById("pp-universe-url");
+    if (iconEl) iconEl.textContent = prof.avatar_icon || "🏔️";
+    if (nameEl) nameEl.textContent = prof.display_name || prof.handle;
+    if (handleEl) handleEl.textContent = `@${prof.handle}`;
+    if (poemEl) poemEl.textContent = prof.bio_poem || "山海皆星辰，每一步脚印都算数。";
+    if (urlEl) {
+      urlEl.value = `${resolveShareSiteOrigin()}${window.location.pathname}?u=${encodeURIComponent(prof.handle)}`;
+    }
+    const founderStatusEl = document.getElementById("pp-founder-status");
+    const bindSelectEl = document.getElementById("pp-bind-legacy-select");
+    const LEGACY_LABELS = {
+      mine: "🏔️ 已绑定「清哥的 6 颗原生星」",
+      kitty: "🐾 已绑定「Kitty 的 6 颗原生星」",
+      miemie: "🐑 已绑定「咩咩的 6 颗原生星」",
+      luca: "🚴 已绑定「Luca 的 6 颗原生星」",
+    };
+    if (founderStatusEl) {
+      founderStatusEl.textContent =
+        prof.legacy_role && LEGACY_LABELS[prof.legacy_role]
+          ? `🔗 ${LEGACY_LABELS[prof.legacy_role]}`
+          : "🔗 创始星系绑定：独立个人星系";
+    }
+    if (bindSelectEl) {
+      bindSelectEl.value = prof.legacy_role || "";
+    }
+  } else {
+    profView?.classList.add("hidden");
+    authView?.classList.remove("hidden");
+  }
+}
+
+function openPassportModal(preferSignup = false) {
+  refreshPassportBadgesUI();
+  if (!isCloudLoggedIn() && preferSignup) setPassportMode("signup");
+  syncPassportSpecimenPreview();
+  passportModalOpen = true;
+  ensureHistoryGuard();
+  document.getElementById("modal-passport")?.classList.remove("hidden");
+  sound.init();
+  sound.playHover();
+}
+
+function closePassportModal() {
+  passportModalOpen = false;
+  document.getElementById("modal-passport")?.classList.add("hidden");
+}
+
+function hydrateCloudPlanetRow(row, legacyRoleOverride = null, ownerProfile = null) {
+  const rawWps = Array.isArray(row.waypoints_json)
+    ? row.waypoints_json.map((w) => ({
+        ...w,
+        photo: normalizeCloudMediaUrl(w?.photo),
+        photo2: normalizeCloudMediaUrl(w?.photo2),
+      }))
+    : [];
+  const hydrated = hydrateGuestPlanet(
+    {
+      slug: row.slug,
+      ownerHandle: row.owner_handle,
+      o: row.owner_name,
+      n: row.planet_name,
+      e: row.elevation || "3000m",
+      t: row.template || "snow",
+      c: row.creature || "siguniang",
+      q: row.quote || "",
+      m: row.memory || "",
+      wps: rawWps,
+    },
+    row.slug
+  );
+  if (legacyRoleOverride) hydrated.legacyRole = legacyRoleOverride;
+  if (ownerProfile?.outfit) hydrated.ownerOutfit = ownerProfile.outfit;
+  return hydrated;
+}
+
+async function loadUserUniverseByHandle(handle, { autoOpenMap = true, targetSlug = null } = {}) {
+  const clean = String(handle || "").trim().toLowerCase();
+  if (!clean) return false;
+  const prof = await fetchProfileByHandle(clean);
+  const rows = await fetchCloudUserPlanets(clean);
+  const legacyRole = prof?.legacy_role && HOST_REGISTRY[prof.legacy_role] ? prof.legacy_role : null;
+  const hydratedRows = Array.isArray(rows)
+    ? rows.map((r) => hydrateCloudPlanetRow(r, legacyRole, prof))
+    : [];
+
+  // 若绑定了清哥/Kitty/咩咩/Luca 四大创始星主，6 颗原生星球与后续新建云端星球直接合体展示（6 + N 颗）！
+  if (legacyRole) {
+    activeCustomProfile = prof;
+    customUserPlanets.length = 0;
+    customUserPlanets.push(...hydratedRows);
+    applyHostRoleUI(legacyRole, false);
+    switchUniverse(legacyRole, targetSlug);
+    if (targetSlug) {
+      const idx = PLANETS.findIndex((p) => p.id === targetSlug || p.slug === targetSlug);
+      if (idx >= 0) {
+        enterPlanet(idx);
+        return true;
+      }
+    }
+    if (autoOpenMap) openStarMap();
+    return true;
+  }
+
+  if (!prof && hydratedRows.length === 0) {
+    showWonderToast(`🔭 暂未在星海中找到代号 @${clean} 的行者星系`);
+    return false;
+  }
+
+  activeCustomProfile = prof || {
+    handle: clean,
+    display_name: hydratedRows[0]?.ownerName || clean,
+    avatar_icon: "🪐",
+    bio_poem: "",
+  };
+  customUserPlanets.length = 0;
+  customUserPlanets.push(...hydratedRows);
+
+  const isMyOwn = getCurrentProfile()?.handle === activeCustomProfile.handle;
+  if (isMyOwn) {
+    syncIndependentHostUI(activeCustomProfile);
+  }
+  recordVisitedGalaxy(`u:${activeCustomProfile.handle}`);
+
+  switchUniverse("custom", targetSlug || customUserPlanets[0]?.id || null);
+  if (targetSlug && customUserPlanets.length > 0) {
+    const idx = PLANETS.findIndex((p) => p.id === targetSlug || p.slug === targetSlug);
+    if (idx >= 0) {
+      enterPlanet(idx);
+      return true;
+    }
+  }
+  if (autoOpenMap) openStarMap();
+  if (customUserPlanets.length === 0) {
+    showWonderToast(
+      isMyOwn
+        ? `✨ 欢迎踏入你的专属初生星云 @${activeCustomProfile.handle}！点击中央星盘即可点亮第一颗星`
+        : `🔭 行者 @${activeCustomProfile.handle} 刚刚登船，星云尚未点亮第一颗星`,
+      4600
+    );
+  }
+  return true;
+}
+
+onAuthStateChange(() => {
+  refreshPassportBadgesUI();
+  syncTopUniverseBar();
+});
+
+// ==================== 《星海观星台 · 万星名录》控制器与三锚点导航 ====================
+const observatoryCtrl = createObservatoryController({
+  hostRegistry: HOST_REGISTRY,
+  queryCorePlanets: queryCoreUniversePlanets,
+  fetchDirectory: fetchStarObservatoryDirectory,
+  getCurrentUniverseState: () => ({
+    currentUniverse,
+    activeCustomHandle: activeCustomProfile?.handle || null,
+  }),
+  onVisitFounder: async (role, targetPlanetId = null) => {
+    closeObservatoryModal();
+    const cleanRole = normalizeHostRole(role);
+    const myProf = getCurrentProfile();
+    if (isCloudLoggedIn() && myProf?.legacy_role === cleanRole && activeCustomProfile?.handle !== myProf.handle) {
+      await loadUserUniverseByHandle(myProf.handle, { autoOpenMap: !targetPlanetId, targetSlug: targetPlanetId });
+      trackEvent("观星台拜访创世星系", { role: cleanRole });
+      return;
+    }
+    switchUniverse(cleanRole, targetPlanetId);
+    openStarMap();
+    if (targetPlanetId) {
+      const idx = PLANETS.findIndex((p) => p.id === targetPlanetId);
+      if (idx >= 0) enterPlanet(idx);
+    }
+    trackEvent("观星台拜访创世星系", { role: cleanRole });
+  },
+  onVisitUserHandle: async (handle, targetSlug = null) => {
+    closeObservatoryModal();
+    await loadUserUniverseByHandle(handle, {
+      autoOpenMap: !targetSlug,
+      targetSlug,
+    });
+    trackEvent("观星台拜访社区星友", { handle });
+  },
+  onOpenCreator: () => {
+    closeObservatoryModal();
+    openCreatorModal();
+  },
+  onToast: showWonderToast,
+  playHover: () => {
+    sound.init();
+    sound.playHover();
+  },
+  playSelect: () => {
     sound.init();
     sound.playSelectPlanet();
-    switchUniverse(btn.dataset.uni);
-    trackEvent("星图切换宇宙", { universe: btn.dataset.uni });
-  });
+  },
+});
+
+function openObservatoryModal() {
+  observatoryModalOpen = true;
+  ensureHistoryGuard();
+  document.getElementById("modal-observatory")?.classList.remove("hidden");
+  sound.init();
+  sound.playHover();
+  observatoryCtrl.refreshData(false);
+  trackEvent("打开星海观星台", { from: mode });
+}
+
+function closeObservatoryModal() {
+  observatoryModalOpen = false;
+  document.getElementById("modal-observatory")?.classList.add("hidden");
+}
+
+// 顶栏「我的星系」一键回家按钮：智能识别已登录独立行者 / 绑定创世星主 / 未登录访客
+document.getElementById("btn-uni-home")?.addEventListener("click", async () => {
+  sound.init();
+  sound.playSelectPlanet();
+  const myProf = getCurrentProfile();
+  if (isCloudLoggedIn() && myProf) {
+    const myBound = myProf.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+    if (myBound) {
+      if (activeCustomProfile?.handle !== myProf.handle) {
+        await loadUserUniverseByHandle(myProf.handle, { autoOpenMap: true });
+      } else {
+        applyHostRoleUI(myBound, false);
+        switchUniverse(myBound);
+      }
+    } else {
+      await loadUserUniverseByHandle(myProf.handle, { autoOpenMap: true });
+    }
+    return;
+  }
+  switchUniverse(activeHostRole);
+});
+
+["btn-open-observatory-title", "btn-open-observatory-cta", "btn-open-observatory-map", "btn-hud-observatory"].forEach(
+  (id) => {
+    document.getElementById(id)?.addEventListener("click", openObservatoryModal);
+  }
+);
+
+document.getElementById("btn-close-observatory-x")?.addEventListener("click", closeObservatoryModal);
+document.getElementById("modal-observatory")?.addEventListener("click", (e) => {
+  if (e.target?.id === "modal-observatory") closeObservatoryModal();
+});
+
+document.getElementById("btn-random-warp-title")?.addEventListener("click", () => {
+  sound.init();
+  observatoryCtrl.triggerWormholeWarp();
 });
 
 document.getElementById("btn-open-creator")?.addEventListener("click", openCreatorModal);
 document.getElementById("btn-close-creator")?.addEventListener("click", closeCreatorModal);
+document.getElementById("btn-open-passport-title")?.addEventListener("click", () => openPassportModal(false));
+document.getElementById("btn-open-passport-map")?.addEventListener("click", () => openPassportModal(false));
+document.getElementById("btn-close-passport")?.addEventListener("click", closePassportModal);
+document.getElementById("tab-pp-login")?.addEventListener("click", () => setPassportMode("login"));
+document.getElementById("tab-pp-signup")?.addEventListener("click", () => setPassportMode("signup"));
+["pp-handle", "pp-display-name", "pp-avatar-icon", "pp-outfit", "pp-bio-poem", "pp-email"].forEach((id) => {
+  const el = document.getElementById(id);
+  el?.addEventListener("input", syncPassportSpecimenPreview);
+  el?.addEventListener("change", syncPassportSpecimenPreview);
+});
+
+document.getElementById("btn-copy-pp-url")?.addEventListener("click", async () => {
+  const url = document.getElementById("pp-universe-url")?.value || "";
+  if (!url) return;
+  try { await navigator.clipboard.writeText(url); } catch {}
+  showWonderToast("🪪 已复制你的专属星际网址！发给微信好友即可一键串门你的宇宙～", 4200);
+});
+
+document.getElementById("btn-close-passport-logged")?.addEventListener("click", closePassportModal);
+document.getElementById("btn-pp-build-planet")?.addEventListener("click", () => {
+  closePassportModal();
+  openCreatorModal();
+});
+
+document.getElementById("pp-bind-legacy-select")?.addEventListener("change", async (e) => {
+  const nextLegacy = e.target.value || null;
+  try {
+    const updated = await updateMyProfile({ legacy_role: nextLegacy });
+    activeCustomProfile = updated;
+    const myRows = await fetchCloudUserPlanets(updated.handle).catch(() => []);
+    customUserPlanets.length = 0;
+    if (Array.isArray(myRows) && myRows.length > 0) {
+      customUserPlanets.push(...myRows.map((r) => hydrateCloudPlanetRow(r, nextLegacy, updated)));
+    }
+    if (nextLegacy && HOST_REGISTRY[nextLegacy]) {
+      applyHostRoleUI(nextLegacy, true);
+      switchUniverse(nextLegacy);
+      showWonderToast(`🔗 绑定成功！你的护照 @${updated.handle} 已与「${HOST_REGISTRY[nextLegacy].name}」的 6 颗原生星球合体！`, 4800);
+    } else {
+      syncIndependentHostUI(updated);
+      switchUniverse("custom");
+      refreshPassportBadgesUI();
+      showWonderToast("🔓 已切换为独立个人星系模式（空白初生星云）");
+    }
+  } catch (err) {
+    showWonderToast(`⚠️ 绑定更新失败：${err?.message || "请稍后重试"}`);
+  }
+});
+
+document.getElementById("btn-pp-enter-my-uni")?.addEventListener("click", async () => {
+  const prof = getCurrentProfile();
+  closePassportModal();
+  if (!prof) return;
+  await loadUserUniverseByHandle(prof.handle, { autoOpenMap: true });
+});
+
+document.getElementById("btn-pp-logout")?.addEventListener("click", async () => {
+  await signOutHikerPassport();
+  activeCustomProfile = null;
+  customUserPlanets.length = 0;
+  closePassportModal();
+  refreshPassportBadgesUI();
+  setupPrologueScene();
+  showWonderToast("👋 已退出星际行者护照，返回《行者的星球》星海总扉页");
+});
+
+document.getElementById("passport-auth-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById("pp-auth-error");
+  const subBtn = document.getElementById("btn-pp-submit");
+  if (errEl) errEl.classList.add("hidden");
+  const email = document.getElementById("pp-email")?.value.trim() || "";
+  const password = document.getElementById("pp-password")?.value || "";
+  const handle = document.getElementById("pp-handle")?.value.trim() || email.split("@")[0] || "";
+  const displayName = document.getElementById("pp-display-name")?.value.trim() || "";
+  const avatarIcon = document.getElementById("pp-avatar-icon")?.value || "🏔️";
+  const outfit = document.getElementById("pp-outfit")?.value || "gold";
+  const bioPoem = document.getElementById("pp-bio-poem")?.value.trim() || "";
+  const legacyRole = document.getElementById("pp-legacy-role")?.value || null;
+
+  if (subBtn) subBtn.disabled = true;
+  try {
+    if (passportAuthMode === "signup") {
+      const { profile } = await signUpHikerPassport({
+        email,
+        password,
+        handle,
+        displayName: displayName || handle,
+        avatarIcon,
+        outfit,
+        bioPoem,
+        legacyRole,
+      });
+      const fromPrologue = mode === "prologue";
+      if (profile?.legacy_role && HOST_REGISTRY[profile.legacy_role]) {
+        activeCustomProfile = profile;
+        const myRows = await fetchCloudUserPlanets(profile.handle).catch(() => []);
+        customUserPlanets.length = 0;
+        if (Array.isArray(myRows) && myRows.length > 0) {
+          customUserPlanets.push(...myRows.map((r) => hydrateCloudPlanetRow(r, profile.legacy_role, profile)));
+        }
+        applyHostRoleUI(profile.legacy_role, false);
+        switchUniverse(profile.legacy_role);
+        closePassportModal();
+        if (fromPrologue || mode === "title") setupTitleScene();
+        else openStarMap();
+      } else if (profile) {
+        activeCustomProfile = profile;
+        customUserPlanets.length = 0;
+        syncIndependentHostUI(profile);
+        switchUniverse("custom");
+        closePassportModal();
+        if (fromPrologue || mode === "title") setupTitleScene();
+        else openStarMap();
+      }
+      refreshPassportBadgesUI();
+      sound.init();
+      sound.playDiscoverWaypoint?.(true);
+      showWonderToast(
+        profile?.legacy_role
+          ? `🎉 欢迎登船，@${profile.handle}！已进入你的专属扉页，点击开始旅程开启星图吧！`
+          : `🎉 欢迎登船，@${profile.handle}！这是你的个人专属扉页，点击开始旅程点亮第一颗星吧！`,
+        4800
+      );
+    } else {
+      const fromPrologue = mode === "prologue";
+      const { profile } = await signInHikerPassport({ email, password });
+      refreshPassportBadgesUI();
+      if (profile) {
+        const goMap = !fromPrologue && mode !== "title";
+        await loadUserUniverseByHandle(profile.handle, { autoOpenMap: goMap });
+        if (!goMap) setupTitleScene();
+      }
+      closePassportModal();
+      sound.init();
+      sound.playSelectPlanet();
+      showWonderToast(`🔑 欢迎归来，${profile?.display_name || "星际行者"}！已进入你的专属扉页`, 3600);
+    }
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = `⚠️ ${err?.message || "连接云端星海失败，请稍后重试"}`;
+      errEl.classList.remove("hidden");
+    }
+  } finally {
+    if (subBtn) subBtn.disabled = false;
+  }
+});
 document.getElementById("btn-map-resonance")?.addEventListener("click", () => {
   const p = PLANETS[selectedPlanetIdx];
   if (p) openResonanceModal(p.id);
@@ -4479,7 +5363,16 @@ document.getElementById("btn-send-rose")?.addEventListener("click", () => {
   activeNeighborRig?.triggerHostWave();
   sound.init();
   sound.playDiscover?.();
-  showWonderToast("🌹 已赠予一朵小王子的星辰玫瑰 · 星球主人开心向你挥手！");
+  sendCloudRose(key)
+    .then((newTotal) => {
+      if (typeof newTotal === "number") {
+        socialState.roses[key] = Math.max(socialState.roses[key], newTotal);
+        saveSocialState(socialState);
+        renderNeighborNotesUI();
+      }
+    })
+    .catch(() => {});
+  showWonderToast("🌹 已赠予一朵小王子的星辰玫瑰（已实时写入星海云端）· 星球主人开心向你挥手！");
 });
 
 let latestReplyShareUrl = "";
@@ -4491,13 +5384,14 @@ document.getElementById("neighbor-note-form")?.addEventListener("submit", (e) =>
   const text = (textEl?.value || "").trim();
   if (!text) return;
   const defaultName =
-    activeHostRole === "kitty"
+    getCurrentProfile()?.display_name ||
+    (activeHostRole === "kitty"
       ? "Kitty"
       : activeHostRole === "miemie"
         ? "咩咩"
         : activeHostRole === "luca"
           ? "Luca"
-          : saveData.travelerName || "清哥";
+          : saveData.travelerName || "清哥");
   const from = (authorEl?.value || "").trim() || defaultName;
   const key = getNeighborBucketKey();
   if (!Array.isArray(socialState.notes[key])) socialState.notes[key] = [];
@@ -4508,15 +5402,23 @@ document.getElementById("neighbor-note-form")?.addEventListener("submit", (e) =>
   renderNeighborNotesUI();
   activeNeighborRig?.triggerHostWave();
 
-  // 生成零后端跨手机「星海漂流瓶链接」
+  // 实时同步至云端星海数据库（对方打开页面秒收信，无需再手动转发长 token 也能看到！）
+  postCloudBottleNote({ bucketKey: key, authorName: from, content: text })
+    .then(() => syncBucketSocialFromCloud(key))
+    .catch(() => {});
+
+  // 同时保留微信直达信笺链接按钮，方便主动提醒微信好友
   const targetOwner = key === "kitty" || key === "miemie" || key === "luca" ? key : "mine";
   const lToken = encodeReplyLetter({ toOwner: targetOwner, from, text, roses: 1 });
-  const baseUrl = window.location.origin + window.location.pathname;
-  latestReplyShareUrl = `${baseUrl}?host=${targetOwner}&letter=${lToken}`;
+  const baseUrl = `${resolveShareSiteOrigin()}${window.location.pathname}`;
+  latestReplyShareUrl =
+    activePlanet?.ownerHandle
+      ? `${baseUrl}?u=${encodeURIComponent(activePlanet.ownerHandle)}&planet=${encodeURIComponent(activePlanet.slug || activePlanet.id)}`
+      : `${baseUrl}?host=${targetOwner}&letter=${lToken}`;
   const replyBtn = document.getElementById("btn-copy-reply-letter");
   if (replyBtn) replyBtn.classList.remove("hidden");
 
-  showWonderToast("🍾 纸条已塞进星际漂流瓶放流！可点下方按钮复制漂流瓶链接发给 TA～");
+  showWonderToast("🍾 纸条已实时飘入云端漂流瓶！对方打开星球即可打捞看见～");
 });
 
 document.getElementById("btn-copy-reply-letter")?.addEventListener("click", () => {
@@ -4609,8 +5511,11 @@ let viewingFlagItem = null;
 function buildFlagShareLink(flagObj) {
   const token = encodeFlagToken(flagObj);
   const pObj = getAllKnownPlanets().find((x) => x.id === flagObj.planetId);
-  const targetHost = pObj?.owner || "mine";
-  const base = window.location.origin + window.location.pathname;
+  const base = `${resolveShareSiteOrigin()}${window.location.pathname}`;
+  if (pObj?.ownerHandle) {
+    return `${base}?u=${encodeURIComponent(pObj.ownerHandle)}&planet=${encodeURIComponent(flagObj.planetId)}&flag=${token}`;
+  }
+  const targetHost = HOST_REGISTRY[pObj?.owner] ? pObj.owner : "mine";
   return `${base}?host=${targetHost}&planet=${encodeURIComponent(flagObj.planetId)}&flag=${token}`;
 }
 
@@ -4669,6 +5574,7 @@ document.getElementById("flag-plant-form")?.addEventListener("submit", async (e)
     up: [playerUp.x, playerUp.y, playerUp.z],
     date: new Date().toISOString().slice(0, 10),
   });
+  saveCloudPlantedFlag(saved).catch(() => {});
   const meshObj = buildFlagMesh(activePlanet.id, saved);
   currentWorld.group.add(meshObj.group);
   activePlantedFlagObjs.push(meshObj);
@@ -4695,17 +5601,212 @@ document.querySelectorAll(".bottle-preset-chip").forEach((chip) => {
 });
 document.getElementById("btn-pop-bottle")?.addEventListener("click", openNeighborHubModal);
 
-document.getElementById("creator-form")?.addEventListener("submit", (e) => {
+document.getElementById("cr-photos-input")?.addEventListener("change", (e) => {
+  const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith("image/")).slice(0, 4);
+  pendingCreatorFiles = files;
+  const wrap = document.getElementById("cr-photo-previews");
+  if (!wrap) return;
+  if (!files.length) {
+    wrap.classList.add("hidden");
+    wrap.innerHTML = "";
+    return;
+  }
+  wrap.classList.remove("hidden");
+  wrap.innerHTML = files
+    .map((f, idx) => {
+      const blobUrl = URL.createObjectURL(f);
+      return `<div class="cr-photo-thumb"><img src="${blobUrl}" alt="旅途照片${idx + 1}" /><span>#${idx + 1}</span></div>`;
+    })
+    .join("");
+});
+
+document.getElementById("cr-gpx-input")?.addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  const summaryEl = document.getElementById("cr-gpx-summary");
+  if (!file) {
+    pendingGpxParsed = null;
+    summaryEl?.classList.add("hidden");
+    return;
+  }
+  try {
+    const parsed = await parseGpxTrackFile(file);
+    pendingGpxParsed = parsed;
+    if (summaryEl) {
+      summaryEl.textContent = parsed.summaryLabel;
+      summaryEl.classList.remove("hidden");
+    }
+    const nameEl = document.getElementById("cr-name");
+    const elevEl = document.getElementById("cr-elev");
+    const tplEl = document.getElementById("cr-template");
+    if (nameEl && !nameEl.value.trim() && parsed.trackName) nameEl.value = parsed.trackName.slice(0, 14);
+    if (elevEl && parsed.maxElevationM) elevEl.value = `${parsed.maxElevationM}m`;
+    if (tplEl && parsed.recommendedTemplate) tplEl.value = parsed.recommendedTemplate;
+    sound.init();
+    sound.playDiscoverWaypoint?.(false);
+    showWonderToast(`🧭 已读取 GPX 轨迹：全程 ${parsed.distanceKm} km · 最高海拔 ${parsed.maxElevationM}m！`, 4200);
+  } catch (err) {
+    pendingGpxParsed = null;
+    if (summaryEl) {
+      summaryEl.textContent = `⚠️ ${err?.message || "GPX 轨迹解析失败"}`;
+      summaryEl.classList.remove("hidden");
+    }
+  }
+});
+
+document.getElementById("btn-cr-ai-inspire")?.addEventListener("click", async () => {
+  const btn = document.getElementById("btn-cr-ai-inspire");
+  const planetName = document.getElementById("cr-name")?.value.trim() || "未命名远山";
+  const elevation = document.getElementById("cr-elev")?.value.trim() || "3000m";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "🪄 正在凝视照片星尘…";
+  }
+  try {
+    const res = await requestPlanetAiInspiration({
+      planetName,
+      elevation,
+      photoFiles: pendingCreatorFiles,
+    });
+    if (res) {
+      const tplEl = document.getElementById("cr-template");
+      const creEl = document.getElementById("cr-creature");
+      const quoEl = document.getElementById("cr-quote");
+      const memEl = document.getElementById("cr-memory");
+      if (tplEl && res.template) tplEl.value = res.template;
+      if (creEl && res.creature) creEl.value = res.creature;
+      if (quoEl && res.quote) quoEl.value = res.quote;
+      if (memEl && !memEl.value.trim() && res.memory) memEl.value = res.memory;
+      sound.init();
+      sound.playHover();
+      showWonderToast("🪄 星球建筑师已根据照片色彩为你挑好地貌与星语诗行！");
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "🪄 AI 识图写诗与配色";
+    }
+  }
+});
+
+document.getElementById("creator-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
+  const submitBtn = document.querySelector('#creator-form button[type="submit"]');
+  const rawElev = document.getElementById("cr-elev").value.trim() || "3000m";
+  const normalizedElev = /^\d+$/.test(rawElev) ? `${rawElev}m` : rawElev;
   const cfg = {
-    ownerName: document.getElementById("cr-owner").value.trim() || "远方山友",
+    ownerName: document.getElementById("cr-owner").value.trim() || getCurrentProfile()?.display_name || "远方山友",
     planetName: document.getElementById("cr-name").value.trim() || "云海秘境星",
-    elevation: document.getElementById("cr-elev").value.trim() || "3000m",
+    elevation: normalizedElev,
     template: document.getElementById("cr-template").value,
     creature: document.getElementById("cr-creature").value,
     quote: document.getElementById("cr-quote").value.trim(),
     memory: document.getElementById("cr-memory").value.trim() || "山风吹过的时候，我把这段路留在了星空里。",
   };
+
+  const baseOrigin = `${resolveShareSiteOrigin()}${window.location.pathname}`;
+
+  // 分支 A：已登录星际行者护照 -> 压缩上传真实照片至云端 + 写入 user_planets 表，生成永久 ?u=handle&planet=slug 网址！
+  if (isCloudLoggedIn() && getCurrentProfile()) {
+    const prof = getCurrentProfile();
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = pendingCreatorFiles.length
+        ? "☁️ 正在压缩上传旅途照片并铸造 3D 星球…"
+        : "☁️ 正在把新星球刻入你的个人星系…";
+    }
+    try {
+      let waypoints = [];
+      let uploadedUrls = [];
+      if (pendingCreatorFiles.length > 0) {
+        uploadedUrls = await compressAndUploadPhotos(pendingCreatorFiles, (msgText) => {
+          if (submitBtn && msgText) submitBtn.textContent = `☁️ ${msgText}`;
+        });
+      }
+      if (pendingGpxParsed?.sampledSphericalWaypoints?.length) {
+        waypoints = pendingGpxParsed.sampledSphericalWaypoints.map((wp, idx) => ({
+          ...wp,
+          photo:
+            typeof uploadedUrls[idx] === "string"
+              ? uploadedUrls[idx]
+              : uploadedUrls[0] || "assets/photos/luca/siguniang-1.jpg",
+        }));
+      } else if (uploadedUrls.length > 0) {
+        const ANCHORS = [
+          { lat: 24, lon: 18, suffix: "初见营地" },
+          { lat: -16, lon: 112, suffix: "山脊风口" },
+          { lat: 36, lon: -124, suffix: "云端秘境" },
+          { lat: -28, lon: -42, suffix: "星空回望" },
+        ];
+        waypoints = uploadedUrls.map((pubUrl, idx) => ({
+          name: idx === 0 ? `${cfg.planetName}·主峰` : `${cfg.planetName}·${ANCHORS[idx]?.suffix || `驿站${idx + 1}`}`,
+          lat: ANCHORS[idx]?.lat ?? 20,
+          lon: ANCHORS[idx]?.lon ?? 20,
+          elevation: cfg.elevation,
+          date: new Date().toISOString().slice(0, 7),
+          photo: typeof pubUrl === "string" ? pubUrl : pubUrl?.url || "",
+          memory: idx === 0 ? cfg.memory : `${cfg.planetName}旅途珍藏影像 #${idx + 1}`,
+        }));
+      }
+
+      const savedRow = await createCloudUserPlanet({
+        planetName: cfg.planetName,
+        elevation: cfg.elevation,
+        template: cfg.template,
+        creature: cfg.creature,
+        quote: cfg.quote,
+        memory: cfg.memory,
+        waypointsJson: waypoints,
+        gpxSummary: pendingGpxParsed
+          ? {
+              pointCount: pendingGpxParsed.pointCount,
+              distanceKm: pendingGpxParsed.distanceKm,
+              maxElevationM: pendingGpxParsed.maxElevationM,
+              elevationGainM: pendingGpxParsed.elevationGainM,
+            }
+          : null,
+      });
+
+      const boundRole = prof.legacy_role && HOST_REGISTRY[prof.legacy_role] ? prof.legacy_role : null;
+      const hydrated = hydrateCloudPlanetRow(savedRow, boundRole, prof);
+      // 若之前串门停留在别人星系，造新星时先清空别人星球，确保回到纯正的自己星系
+      if (activeCustomProfile?.handle && activeCustomProfile.handle !== prof.handle) {
+        const myExisting = await fetchCloudUserPlanets(prof.handle);
+        customUserPlanets.length = 0;
+        if (Array.isArray(myExisting) && myExisting.length > 0) {
+          customUserPlanets.push(...myExisting.map((r) => hydrateCloudPlanetRow(r, boundRole, prof)));
+        } else {
+          customUserPlanets.unshift(hydrated);
+        }
+      } else {
+        customUserPlanets.unshift(hydrated);
+      }
+      activeCustomProfile = prof;
+      observatoryCtrl.refreshData(true).catch(() => {});
+
+      latestCreatedGuestPlanet = hydrated;
+      latestCreatedShareUrl = `${baseOrigin}?u=${encodeURIComponent(prof.handle)}&planet=${encodeURIComponent(savedRow.slug)}`;
+      document.getElementById("cr-share-url").value = latestCreatedShareUrl;
+      document.getElementById("creator-share-result")?.classList.remove("hidden");
+      switchUniverse(boundRole || "custom", hydrated.id);
+      sound.init();
+      sound.playDiscoverWaypoint?.(true);
+      showWonderToast(`🪐 「${cfg.planetName}」已永久点亮在 @${prof.handle} 的星系中！`, 4800);
+      trackEvent("云端铸造个人照片星球", { handle: prof.handle, name: cfg.planetName, photos: waypoints.length });
+      return;
+    } catch (err) {
+      showWonderToast(`⚠️ 云端造星遇到风雪：${err?.message || "已为你自动降级为免登录分享卡"}`, 4800);
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "🪐 点亮新星球并生成微信串门邀请链接";
+      }
+    }
+  }
+
+  // 分支 B：未登录游客快速体验 -> 零后端 Base64 轻量客座星球（若选了照片也提示登录可永久存图）
+  if (pendingCreatorFiles.length > 0 && !isCloudLoggedIn()) {
+    showWonderToast("💡 提示：游客链接不含大图文件；点右上角「🪪 行者护照」10 秒注册即可把真照片永久装上星球！", 5200);
+  }
   const token = encodeGuestPlanetPayload(cfg);
   const rawMini = {
     o: cfg.ownerName, n: cfg.planetName, e: cfg.elevation,
@@ -4716,8 +5817,7 @@ document.getElementById("creator-form")?.addEventListener("submit", (e) => {
   const hydrated = hydrateGuestPlanet(rawMini);
   guestPlanets.push(hydrated);
   latestCreatedGuestPlanet = hydrated;
-  const baseUrl = window.location.origin + window.location.pathname;
-  latestCreatedShareUrl = `${baseUrl}?guest=${token}`;
+  latestCreatedShareUrl = `${baseOrigin}?guest=${token}`;
 
   document.getElementById("cr-share-url").value = latestCreatedShareUrl;
   document.getElementById("creator-share-result")?.classList.remove("hidden");
@@ -4792,8 +5892,81 @@ function bootFromUrlParams() {
       }, 950);
     }
   }
+  const userHandleParam = (sp.get("u") || sp.get("user") || "").trim().toLowerCase();
+  const qPlanetRaw = (sp.get("planet") || "").trim();
   const flagToken = sp.get("flag");
-  if (flagToken) {
+
+  // 0ms 瞬时恢复本地缓存的行者护照档案，避免点击「开始旅程」比网络快时掉回清哥默认宇宙
+  const cachedBootProf = getCurrentProfile();
+  if (isCloudLoggedIn() && cachedBootProf && !userHandleParam) {
+    const cachedBound =
+      cachedBootProf.legacy_role && HOST_REGISTRY[cachedBootProf.legacy_role]
+        ? cachedBootProf.legacy_role
+        : null;
+    activeCustomProfile = cachedBootProf;
+    refreshPassportBadgesUI();
+    if (cachedBound) {
+      applyHostRoleUI(cachedBound, false);
+    } else if (!hostParam) {
+      syncIndependentHostUI(cachedBootProf);
+      switchUniverse("custom");
+    }
+  }
+
+  // 先静默恢复星际行者护照会话；若当前未访问他人 ?u=，也把自己的云端星球预加载到星图 Tab
+  restoreCloudSession()
+    .then(async (authState) => {
+      const prof = authState?.profile || getCurrentProfile();
+      refreshPassportBadgesUI();
+      if (prof && !userHandleParam) {
+        const boundRole = prof.legacy_role && HOST_REGISTRY[prof.legacy_role] ? prof.legacy_role : null;
+        const wasHomeBefore =
+          currentUniverse === "custom" || currentUniverse === boundRole || mode === "title" || mode === "prologue";
+        activeCustomProfile = prof;
+        const myRows = await fetchCloudUserPlanets(prof.handle);
+        customUserPlanets.length = 0;
+        if (Array.isArray(myRows) && myRows.length > 0) {
+          customUserPlanets.push(...myRows.map((r) => hydrateCloudPlanetRow(r, boundRole, prof)));
+        }
+        if (boundRole) {
+          applyHostRoleUI(boundRole, false);
+          if (currentUniverse === boundRole) switchUniverse(boundRole);
+        } else {
+          syncIndependentHostUI(prof);
+          if (!hostParam && wasHomeBefore) {
+            switchUniverse("custom");
+          } else {
+            syncTopUniverseBar();
+          }
+        }
+        // 若静默恢复会话前停留在未登录总序章扉页，登录恢复完成后自动切入个人专属扉页！
+        if (mode === "prologue") {
+          setupTitleScene();
+        }
+      }
+    })
+    .catch(() => {});
+
+  // 专属个人宇宙直达：?u=<handle> [&planet=<slug>] [&flag=<token>]
+  if (userHandleParam) {
+    setupTitleScene();
+    loadUserUniverseByHandle(userHandleParam, {
+      autoOpenMap: !qPlanetRaw,
+      targetSlug: qPlanetRaw || null,
+    }).then((ok) => {
+      if (ok && flagToken) {
+        const incomingFlag = decodeFlagToken(flagToken);
+        if (incomingFlag) {
+          const savedFlag = savePlantedFlag(incomingFlag);
+          const targetDir = new THREE.Vector3(...savedFlag.up).normalize();
+          showGuideArcToDir(targetDir, "#fbbf24");
+          showWonderToast(`🚩 收到来自「${savedFlag.author}」的山脊串门旗：“${savedFlag.msg}”`, 6000);
+        }
+      }
+    });
+    return;
+  }
+  if (flagToken && !userHandleParam) {
     const incomingFlag = decodeFlagToken(flagToken);
     if (incomingFlag) {
       const savedFlag = savePlantedFlag(incomingFlag);
@@ -4862,7 +6035,11 @@ function bootFromUrlParams() {
   } else {
     switchUniverse(activeHostRole);
   }
-  setupTitleScene();
+  if ((isCloudLoggedIn() && Boolean(getCurrentProfile())) || Boolean(hostParam)) {
+    setupTitleScene();
+  } else {
+    setupPrologueScene();
+  }
 }
 
 window.addEventListener("hashchange", () => {

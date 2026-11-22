@@ -3,7 +3,7 @@
  * 从 planetBuilder3D.js 独立拆出，职责单一且无循环依赖
  */
 import * as THREE from "three";
-import { STORYBOOK_GRAD } from "./sphereMath.js?v=4.2.5-release";
+import { STORYBOOK_GRAD } from "./sphereMath.js?v=5.2.4-dual-mirror";
 
 export function buildHikerCharacter() {
   // 复刻腾格里沙漠照造型：酒红冲锋衣 + 深灰宽檐渔夫帽 + 亮橙红镀膜大风镜 + 护脸面罩 + 双小辫女生 + 银灰蛋巢垫毛球重装包
@@ -659,6 +659,24 @@ export function buildHikerCharacter() {
     "luca-tianshan": {
       jacket: "#0d9488", zip: "#ccfbf1", pants: "#1e293b", pack: "#334155", visor: "#fb923c",
       hatType: "helmet", hatColor: "#e2e8f0", mask: false, heavyGear: false, gaiter: "#f8fafc", duck: false, isLucaBoy: true,
+    },
+    // 行者护照四大自选 3D 装扮配色（与注册/预览铭牌 100% 对应）
+    gold: {
+      jacket: "#d97706", zip: "#fef3c7", pants: "#2c3240", pack: "#275248", visor: "#ff551a",
+      hatType: "beanie", hatColor: "#f5b829", cuffColor: "#e6a81c", earColor: "#a85518", browColor: "#fffbeb",
+      mask: false, heavyGear: true, gaiter: null, duck: false,
+    },
+    pink: {
+      jacket: "#f472b6", zip: "#fdf2f8", pants: "#f8fafc", pack: "#7dd3fc", visor: "#38bdf8",
+      hatType: "beanie", hatColor: "#fff5f7", mask: false, heavyGear: false, gaiter: null, duck: false, catEars: true,
+    },
+    mint: {
+      jacket: "#10b981", zip: "#ecfdf5", pants: "#1e293b", pack: "#fbbf24", visor: "#fde047",
+      hatType: "beanie", hatColor: "#fffbeb", mask: false, heavyGear: true, gaiter: "#10b981", duck: true, sheepEars: true,
+    },
+    cyan: {
+      jacket: "#0284c7", zip: "#e0f2fe", pants: "#1e293b", pack: "#0f172a", visor: "#ff551a",
+      hatType: "helmet", hatColor: "#eef4f8", mask: false, heavyGear: false, gaiter: "#ffffff", duck: false, isLucaBoy: true,
     },
   };
 
