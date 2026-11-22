@@ -4445,71 +4445,73 @@ a[href*="netlify.com?utm_source"] {
   }
 }
 
-/* ==================== SCREEN 0: COSMIC PROLOGUE GATE ==================== */
+/* ==================== SCREEN 0: COSMIC PROLOGUE GATE (无框天幕 · 上下分景构图) ==================== */
 #screen-prologue {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 24px 24px 72px;
+  justify-content: space-between;
+  padding: 20px 28px 16px;
+  pointer-events: none;
 }
 
 .prologue-center {
   position: relative;
-  max-width: 560px;
+  max-width: 1120px;
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   text-align: center;
-  padding: 24px 30px 20px;
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(16, 27, 58, 0.64) 0%, rgba(10, 18, 40, 0.72) 100%);
-  border: 1px solid rgba(240, 199, 104, 0.36);
-  box-shadow: 0 24px 60px rgba(4, 8, 22, 0.52), 0 0 36px rgba(240, 199, 104, 0.08), inset 0 1px 0 rgba(247, 240, 224, 0.18);
-  backdrop-filter: blur(10px);
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  pointer-events: none;
+}
+
+.prologue-sky-header {
   pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 760px;
 }
 
 .prologue-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 11.5px;
   letter-spacing: 0.24em;
   color: var(--gold);
-  margin-bottom: 12px;
-  opacity: 0.92;
+  margin-bottom: 4px;
+  opacity: 0.94;
+  text-shadow: 0 2px 12px rgba(4, 8, 22, 0.95);
 }
 
 .prologue-heading {
   font-family: var(--font-display);
-  font-size: clamp(38px, 5vw, 58px);
+  font-size: clamp(36px, 4.4vw, 50px);
   font-weight: 400;
   letter-spacing: 0.18em;
   color: #fdf6e6;
-  text-shadow: 0 4px 28px rgba(8, 13, 30, 0.9), 0 0 28px rgba(240, 199, 104, 0.28);
+  text-shadow: 0 4px 28px rgba(4, 9, 24, 0.96), 0 0 30px rgba(240, 199, 104, 0.32);
   margin: 0;
-  line-height: 1.2;
-}
-
-.prologue-ornament {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin: 10px 0 12px;
-  color: var(--gold);
-}
-
-.prologue-ornament .ornament-line.rev {
-  background: linear-gradient(270deg, rgba(240, 199, 104, 0.7), rgba(240, 199, 104, 0.05));
+  line-height: 1.15;
 }
 
 .prologue-poem {
-  font-size: 15px;
-  line-height: 1.82;
+  font-size: 14px;
+  line-height: 1.65;
   letter-spacing: 0.06em;
-  color: rgba(255, 251, 240, 0.94);
-  margin: 0 auto 14px;
-  max-width: 500px;
+  color: rgba(255, 251, 240, 0.92);
+  text-shadow: 0 2px 14px rgba(4, 9, 24, 0.98);
+  margin: 6px auto 10px;
+  max-width: 680px;
 }
 
 .prologue-census-bar {
@@ -4517,15 +4519,34 @@ a[href*="netlify.com?utm_source"] {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 10px 14px;
-  margin: 0 auto 20px;
-  padding: 8px 18px;
+  gap: 8px 14px;
+  margin: 0 auto;
+  padding: 6px 18px;
   border-radius: 999px;
-  background: rgba(12, 22, 48, 0.72);
+  background: rgba(10, 18, 40, 0.58);
   border: 1px solid rgba(240, 199, 104, 0.34);
   box-shadow: inset 0 1px 0 rgba(247, 240, 224, 0.12), 0 6px 20px rgba(4, 9, 24, 0.38);
-  font-size: 13px;
+  backdrop-filter: blur(6px);
+  font-size: 12.5px;
   color: #f4efe4;
+}
+
+.prologue-hover-pill {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(10, 19, 42, 0.84);
+  border: 1px dashed rgba(240, 199, 104, 0.72);
+  box-shadow: 0 0 28px rgba(240, 199, 104, 0.24), 0 10px 26px rgba(4, 8, 22, 0.62);
+  color: #fef3c7;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  z-index: 6;
+  transition: opacity 0.18s ease;
 }
 
 .census-metric {
@@ -4580,57 +4601,70 @@ a[href*="netlify.com?utm_source"] {
   letter-spacing: 0.04em;
 }
 
-.prologue-actions {
+.prologue-bottom-dock {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 960px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  padding: 12px 22px 10px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(11, 20, 44, 0.54) 0%, rgba(8, 14, 32, 0.80) 100%);
+  border: 1px solid rgba(240, 199, 104, 0.32);
+  box-shadow: 0 16px 40px rgba(4, 8, 22, 0.52), inset 0 1px 0 rgba(247, 240, 224, 0.14);
+  backdrop-filter: blur(8px);
+}
+
+.prologue-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 12px;
+  width: 100%;
 }
 
 .prologue-primary-btn {
-  width: 100%;
-  max-width: 420px;
-  padding: 14px 24px;
+  width: auto;
+  padding: 11px 24px;
   border-radius: 999px;
   border: 1px solid rgba(253, 230, 138, 0.75);
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 52%, #b45309 100%);
   color: #fffbeb;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .prologue-primary-btn:hover {
   transform: translateY(-2px);
   filter: brightness(1.06);
-  box-shadow: 0 14px 34px rgba(245, 158, 11, 0.5);
-}
-
-.prologue-secondary-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.48);
 }
 
 .prologue-founders-strip {
-  margin-top: 22px;
-  padding-top: 16px;
-  border-top: 1px dashed rgba(240, 199, 104, 0.24);
+  margin-top: 0;
+  padding-top: 8px;
+  width: 100%;
+  border-top: 1px dashed rgba(240, 199, 104, 0.22);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 6px 10px;
 }
 
 .prologue-founders-label {
   font-size: 12px;
-  letter-spacing: 0.1em;
-  color: rgba(244, 213, 132, 0.82);
+  letter-spacing: 0.08em;
+  color: rgba(244, 213, 132, 0.85);
 }
 
 .prologue-founders-pills {
@@ -4641,12 +4675,12 @@ a[href*="netlify.com?utm_source"] {
 }
 
 .prologue-founder-pill {
-  padding: 6px 13px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(240, 199, 104, 0.28);
   color: #f8efd8;
-  font-size: 12.5px;
+  font-size: 12px;
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -4658,42 +4692,55 @@ a[href*="netlify.com?utm_source"] {
   transform: translateY(-1px);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 760px) {
   #screen-prologue {
-    padding: 18px 14px 86px;
-  }
-  .prologue-center {
-    padding: 24px 18px 20px;
-    border-radius: 20px;
+    padding: 12px 10px 12px;
   }
   .prologue-badge {
-    font-size: 10.5px;
-    letter-spacing: 0.14em;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+  .prologue-heading {
+    font-size: 30px;
   }
   .prologue-poem {
-    font-size: 13.5px;
-    line-height: 1.75;
-    margin-bottom: 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin: 4px auto 8px;
+    max-width: 340px;
   }
   .prologue-census-bar {
-    padding: 7px 14px;
-    font-size: 12px;
-    margin-bottom: 16px;
-    gap: 6px 10px;
+    padding: 5px 12px;
+    font-size: 11.5px;
+    gap: 5px 9px;
   }
   .census-num {
-    font-size: 16.5px;
+    font-size: 15.5px;
   }
   .prologue-census-bar .hide-xs {
     display: none;
   }
+  .prologue-bottom-dock {
+    padding: 10px 12px 9px;
+    border-radius: 18px;
+    gap: 7px;
+  }
   .prologue-primary-btn {
-    padding: 12px 16px;
-    font-size: 13.5px;
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .prologue-actions .neighbor-title-btn {
+    flex: 1 1 44%;
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+  .prologue-founders-label {
+    display: none;
   }
   .prologue-founder-pill {
-    font-size: 11.5px;
-    padding: 5px 10px;
+    font-size: 11px;
+    padding: 4px 9px;
   }
 }
 

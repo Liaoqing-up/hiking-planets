@@ -13,8 +13,8 @@ import {
   getSurfaceRadius,
   seededRand,
   placeOnSphere,
-} from "./sphereMath.js?v=5.3.2-shanhai-astrolabe";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.2-shanhai-astrolabe";
+} from "./sphereMath.js?v=5.3.3-panoramic-shanhai";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.3-panoramic-shanhai";
 
 export {
   PLANET_RADIUS,

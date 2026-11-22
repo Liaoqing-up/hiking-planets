@@ -1,7 +1,7 @@
-import { renderPlanetIllustration } from "./planetArt2D.js?v=5.3.2-shanhai-astrolabe";
-import { CREATURE_CATALOG } from "./creatures3D.js?v=5.3.2-shanhai-astrolabe";
-import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.3.2-shanhai-astrolabe";
-import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=5.3.2-shanhai-astrolabe";
+import { renderPlanetIllustration } from "./planetArt2D.js?v=5.3.3-panoramic-shanhai";
+import { CREATURE_CATALOG } from "./creatures3D.js?v=5.3.3-panoramic-shanhai";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.3.3-panoramic-shanhai";
+import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=5.3.3-panoramic-shanhai";
 
 const PORTRAIT_BG = {
   tengger: ["#2e1a12", "#8b4b22"],

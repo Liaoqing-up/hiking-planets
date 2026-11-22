@@ -23,9 +23,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=5.3.2-shanhai-astrolabe" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=5.3.2-shanhai-astrolabe" />
-  <link rel="manifest" href="./manifest.webmanifest?v=5.3.2-shanhai-astrolabe" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=5.3.3-panoramic-shanhai" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=5.3.3-panoramic-shanhai" />
+  <link rel="manifest" href="./manifest.webmanifest?v=5.3.3-panoramic-shanhai" />
   <script type="importmap">
     {
       "imports": {
@@ -69,7 +69,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=5.3.2-shanhai-astrolabe" />
+  <link rel="stylesheet" href="./styles.css?v=5.3.3-panoramic-shanhai" />
   <script>
     window.addEventListener("load", function () {
       setTimeout(function () {
@@ -157,50 +157,51 @@
     ♪ 星音
   </button>
 
-  <!-- 2.5. Screen 0 — Cosmic Prologue Gate (未登录访客初始总扉页；登录后方进入个人专属扉页) -->
+  <!-- 2.5. Screen 0 — Cosmic Prologue Gate (无框天幕 · 上下分景构图，腾出正中央全景山海星海) -->
   <section id="screen-prologue" class="screen active" aria-label="山海星海总序章扉页">
     <div class="prologue-center">
-      <div class="prologue-badge">
-        <span class="star-glyph" aria-hidden="true">✦</span>
-        <span>TRAILS AMONG THE STARS · 山海皆星辰</span>
-        <span class="star-glyph" aria-hidden="true">✦</span>
-      </div>
-      <h1 class="prologue-heading">行者的星球</h1>
-      <div class="prologue-ornament" aria-hidden="true">
-        <span class="ornament-line"></span>
-        <span class="ornament-star">🪐</span>
-        <span class="ornament-line rev"></span>
-      </div>
-      <p class="prologue-poem">
-        每一座用双脚丈量过的雪山、荒漠、峡谷与海湾，<br />
-        都会在夜空深处，凝结成一颗独属于你的 3D 记忆星球。
-      </p>
+      <!-- 顶部轻盈无框悬浮天题 -->
+      <header class="prologue-sky-header">
+        <div class="prologue-badge">
+          <span class="star-glyph" aria-hidden="true">✦</span>
+          <span>TRAILS AMONG THE STARS · 山海皆星辰</span>
+          <span class="star-glyph" aria-hidden="true">✦</span>
+        </div>
+        <h1 class="prologue-heading">行者的星球</h1>
+        <p class="prologue-poem">
+          每一座用双脚丈量过的雪山、荒漠、峡谷与海湾，都会在夜空深处凝结成独属于你的 3D 记忆星球。
+        </p>
 
-      <!-- 实时全宇宙星主与星球统计星盘 -->
-      <div class="prologue-census-bar" role="status" aria-live="polite" aria-label="全宇宙星主与星球实时名录">
-        <div class="census-metric">
-          <span class="census-dot live"></span>
-          <span class="census-label">已入驻星主</span>
-          <strong id="prologue-stat-hosts" class="census-num">—</strong>
-          <span class="census-unit">位</span>
+        <!-- 实时全宇宙星主与星球统计星盘 -->
+        <div class="prologue-census-bar" role="status" aria-live="polite" aria-label="全宇宙星主与星球实时名录">
+          <div class="census-metric">
+            <span class="census-dot live"></span>
+            <span class="census-label">已入驻星主</span>
+            <strong id="prologue-stat-hosts" class="census-num">—</strong>
+            <span class="census-unit">位</span>
+          </div>
+          <span class="census-divider" aria-hidden="true">✦</span>
+          <div class="census-metric">
+            <span class="census-label">已点亮山海星球</span>
+            <strong id="prologue-stat-planets" class="census-num">—</strong>
+            <span class="census-unit">颗</span>
+          </div>
+          <span class="census-divider hide-xs" aria-hidden="true">·</span>
+          <div class="census-metric hide-xs">
+            <span class="census-dark-hint">✦ 轻触星海中的未知星系与微缩星球即可探索</span>
+          </div>
         </div>
-        <span class="census-divider" aria-hidden="true">✦</span>
-        <div class="census-metric">
-          <span class="census-label">已点亮山海星球</span>
-          <strong id="prologue-stat-planets" class="census-num">—</strong>
-          <span class="census-unit">颗</span>
-        </div>
-        <span class="census-divider hide-xs" aria-hidden="true">·</span>
-        <div class="census-metric hide-xs">
-          <span class="census-dark-hint">✦ 星海深处尚有万千未名星系待你点亮</span>
-        </div>
-      </div>
+      </header>
 
-      <div class="prologue-actions">
-        <button id="btn-prologue-login" type="button" class="prologue-primary-btn">
-          🪪 登录 / 申领星际行者护照 · 开启专属宇宙
-        </button>
-        <div class="prologue-secondary-row">
+      <!-- 中央 3D 星系悬停灵动提示胶囊（悬停星盘或星球时浮现） -->
+      <div id="prologue-hover-pill" class="prologue-hover-pill hidden" aria-live="polite"></div>
+
+      <!-- 底部山脊观星行动坞 -->
+      <footer class="prologue-bottom-dock">
+        <div class="prologue-actions">
+          <button id="btn-prologue-login" type="button" class="prologue-primary-btn">
+            🪪 登录 / 申领星际行者护照 · 开启专属宇宙
+          </button>
           <button id="btn-prologue-observatory" type="button" class="neighbor-title-btn observatory-cta-btn">
             🔭 免登录逛逛 · 万星观星台
           </button>
@@ -208,17 +209,17 @@
             🌠 虫洞漫游 · 随机降落星辰
           </button>
         </div>
-      </div>
 
-      <div class="prologue-founders-strip" aria-label="四大创世领航星系直通车">
-        <span class="prologue-founders-label">👑 创世领航星系免登录体验：</span>
-        <div class="prologue-founders-pills">
-          <button type="button" class="prologue-founder-pill" data-prologue-founder="mine">🏔️ 清哥 · 苍山星河</button>
-          <button type="button" class="prologue-founder-pill" data-prologue-founder="kitty">🐾 Kitty · 猫耳星云</button>
-          <button type="button" class="prologue-founder-pill" data-prologue-founder="miemie">🐑 咩咩 · 绵羊星云</button>
-          <button type="button" class="prologue-founder-pill" data-prologue-founder="luca">🚴 Luca · 追风星云</button>
+        <div class="prologue-founders-strip" aria-label="四大创世领航星系直通车">
+          <span class="prologue-founders-label">👑 创世领航星系免登录体验：</span>
+          <div class="prologue-founders-pills">
+            <button type="button" class="prologue-founder-pill" data-prologue-founder="mine">🏔️ 清哥 · 苍山星河</button>
+            <button type="button" class="prologue-founder-pill" data-prologue-founder="kitty">🐾 Kitty · 猫耳星云</button>
+            <button type="button" class="prologue-founder-pill" data-prologue-founder="miemie">🐑 咩咩 · 绵羊星云</button>
+            <button type="button" class="prologue-founder-pill" data-prologue-founder="luca">🚴 Luca · 追风星云</button>
+          </div>
         </div>
-      </div>
+      </footer>
     </div>
   </section>
 
@@ -1079,7 +1080,7 @@
       }
     }, 1000);
   </script>
-  <script type="module" src="./js/app.bundle.js?v=5.3.2-shanhai-astrolabe"></script>
+  <script type="module" src="./js/app.bundle.js?v=5.3.3-panoramic-shanhai"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       let swReloading = false;

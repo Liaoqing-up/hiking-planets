@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.2-shanhai-astrolabe";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.2-shanhai-astrolabe";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.3-panoramic-shanhai";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.3-panoramic-shanhai";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.3.2-shanhai-astrolabe";
+} from "./universeRegistry.js?v=5.3.3-panoramic-shanhai";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.3.2-shanhai-astrolabe";
-import { sound } from "./audio.js?v=5.3.2-shanhai-astrolabe";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.2-shanhai-astrolabe";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.2-shanhai-astrolabe";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.2-shanhai-astrolabe";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.2-shanhai-astrolabe";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.2-shanhai-astrolabe";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.3.2-shanhai-astrolabe";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.2-shanhai-astrolabe";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.2-shanhai-astrolabe";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.2-shanhai-astrolabe";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.3.2-shanhai-astrolabe";
+} from "./neighborSocial.js?v=5.3.3-panoramic-shanhai";
+import { sound } from "./audio.js?v=5.3.3-panoramic-shanhai";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.3-panoramic-shanhai";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.3-panoramic-shanhai";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.3-panoramic-shanhai";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.3-panoramic-shanhai";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.3-panoramic-shanhai";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.3.3-panoramic-shanhai";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.3-panoramic-shanhai";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.3-panoramic-shanhai";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.3-panoramic-shanhai";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.3.3-panoramic-shanhai";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.3.2-shanhai-astrolabe";
-import { createFootprintTrail } from "./footprints3D.js?v=5.3.2-shanhai-astrolabe";
+} from "./trailSocialExtras.js?v=5.3.3-panoramic-shanhai";
+import { createFootprintTrail } from "./footprints3D.js?v=5.3.3-panoramic-shanhai";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.3.2-shanhai-astrolabe";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.2-shanhai-astrolabe";
+} from "./bestiaryAndExtras.js?v=5.3.3-panoramic-shanhai";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.3-panoramic-shanhai";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,20 +75,20 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.3.2-shanhai-astrolabe";
+} from "./cloudClient.js?v=5.3.3-panoramic-shanhai";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.3.2-shanhai-astrolabe";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.2-shanhai-astrolabe";
+} from "./photoPlanetBuilder.js?v=5.3.3-panoramic-shanhai";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.3-panoramic-shanhai";
 import {
   createObservatoryController,
   recordVisitedGalaxy,
   markSessionPlanetSeen,
   resetSessionSeenPlanets,
-} from "./starObservatory.js?v=5.3.2-shanhai-astrolabe";
-import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.2-shanhai-astrolabe";
+} from "./starObservatory.js?v=5.3.3-panoramic-shanhai";
+import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.3-panoramic-shanhai";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
@@ -590,6 +590,9 @@ function setScreen(nextMode) {
   elScreenTitle.classList.toggle("active", mode === "title");
   elScreenMap.classList.toggle("active", mode === "map");
   elScreenHud.classList.toggle("active", mode === "planet");
+  if (mode !== "prologue") {
+    document.getElementById("prologue-hover-pill")?.classList.add("hidden");
+  }
   if (mode !== "planet" && isPhotoMode) togglePhotoMode(false);
   if (mode !== "title" && mode !== "prologue") ensureHistoryGuard();
 }
@@ -599,10 +602,9 @@ function updateTitleLayout() {
   if (mode === "prologue") {
     const isMobile = window.innerWidth <= 820;
     currentWorld.group.position.set(0, 0, 0);
-    // 移动端纵向窄视窗稍微拉远并向内收拢比例，确保左右彩色旋臂星云完整入画！
-    currentWorld.group.scale.setScalar(isMobile ? 0.68 : 1.0);
-    camera.position.set(0, 1.0, isMobile ? 27 : 23.5);
-    camera.lookAt(0, 0.8, -12);
+    currentWorld.group.scale.setScalar(isMobile ? 0.72 : 1.0);
+    camera.position.set(0, 1.0, isMobile ? 26.5 : 23.2);
+    camera.lookAt(0, 1.0, -12);
     return;
   }
   if (mode !== "title") return;
@@ -2903,6 +2905,27 @@ const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 
 renderer.domElement.addEventListener("pointerdown", (e) => {
+  if (mode === "prologue" && !isAnyModalOpen() && currentWorld?.getClickableMeshes) {
+    ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
+    ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObjects(currentWorld.getClickableMeshes(), false);
+    if (hits.length > 0) {
+      const ud = hits[0].object.userData || {};
+      sound.init();
+      sound.playSelectPlanet();
+      document.getElementById("prologue-hover-pill")?.classList.add("hidden");
+      if (ud.prologueAction === "uncharted-galaxy") {
+        openPassportModal(true);
+        showWonderToast("🪪 这片未名星系正静候它的主人——10 秒铸造护照即可在此点亮第一颗山海星！", 4200);
+      } else if (ud.prologueAction === "lit-planet" && ud.founderRole) {
+        switchUniverse(ud.founderRole, ud.planetId);
+        const pIdx = PLANETS.findIndex((p) => p.id === ud.planetId);
+        enterPlanet(pIdx >= 0 ? pIdx : 0);
+      }
+    }
+    return;
+  }
   if (mode === "title") {
     sound.init();
     sound.playSelectPlanet();
@@ -2943,6 +2966,31 @@ window.addEventListener("pointermove", (e) => {
     return;
   }
   if (!isPointerDown || e.pointerId !== canvasPointerId || mode !== "planet") {
+    // 总扉页全景星海悬停视差与星系/微缩星球灵动高亮感应
+    if (e.pointerType === "mouse" && mode === "prologue" && !isAnyModalOpen() && currentWorld?.getClickableMeshes) {
+      ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
+      ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      currentWorld.setParallax?.(ndc.x, ndc.y);
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObjects(currentWorld.getClickableMeshes(), false);
+      const pill = document.getElementById("prologue-hover-pill");
+      if (hits.length > 0) {
+        const ud = hits[0].object.userData || {};
+        currentWorld.setHoveredWrap?.(ud.wrapRef || null);
+        renderer.domElement.style.cursor = "pointer";
+        if (pill && ud.hoverTitle) {
+          pill.textContent = ud.hoverTitle;
+          pill.style.left = `${THREE.MathUtils.clamp(e.clientX, 180, window.innerWidth - 180)}px`;
+          pill.style.top = `${THREE.MathUtils.clamp(e.clientY - 34, 96, window.innerHeight - 130)}px`;
+          pill.classList.remove("hidden");
+        }
+      } else {
+        currentWorld.setHoveredWrap?.(null);
+        renderer.domElement.style.cursor = "";
+        pill?.classList.add("hidden");
+      }
+      return;
+    }
     // 电脑端悬停感知：鼠标移到夜空邻近星球或玛尼堆上时自动变为小手并让星球微光呼吸放大
     if (e.pointerType === "mouse" && mode === "planet" && !isAnyModalOpen()) {
       ndc.x = (e.clientX / window.innerWidth) * 2 - 1;

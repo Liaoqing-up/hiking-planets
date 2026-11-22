@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.3.2-shanhai-astrolabe";
+import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.3.3-panoramic-shanhai";
 
 const POOL_SIZE = 34;
 const RIPPLE_POOL_SIZE = 14;
