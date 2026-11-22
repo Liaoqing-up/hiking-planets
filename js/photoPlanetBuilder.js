@@ -2,8 +2,8 @@
  * 旅途照片客户端压缩（WebP/JPEG ~250KB）+ AI 灵感诗句/色板预埋契约
  * 无需外部依赖，纯 Canvas + DataView 实现
  */
-import { getAccessToken, uploadPlanetMediaFile } from "./cloudClient.js?v=5.3.0-little-prince";
-import { resolveCloudApiBase } from "./cloudConfig.js?v=5.3.0-little-prince";
+import { getAccessToken, uploadPlanetMediaFile } from "./cloudClient.js?v=5.3.1-uncharted-galaxies";
+import { resolveCloudApiBase } from "./cloudConfig.js?v=5.3.1-uncharted-galaxies";
 
 /**
  * 将用户选中的单张手机原图无损视角缩放至 maxSide 像素以内，输出高清轻量 WebP（不支持时回退 JPEG）

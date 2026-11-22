@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.0-little-prince";
+import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.1-uncharted-galaxies";
 
 const SEED_NOTES = {
   tengger: [

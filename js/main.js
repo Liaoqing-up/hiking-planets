@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.0-little-prince";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.0-little-prince";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.1-uncharted-galaxies";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.1-uncharted-galaxies";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.3.0-little-prince";
+} from "./universeRegistry.js?v=5.3.1-uncharted-galaxies";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.3.0-little-prince";
-import { sound } from "./audio.js?v=5.3.0-little-prince";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.0-little-prince";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.0-little-prince";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.0-little-prince";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.0-little-prince";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.0-little-prince";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.3.0-little-prince";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.0-little-prince";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.0-little-prince";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.0-little-prince";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.3.0-little-prince";
+} from "./neighborSocial.js?v=5.3.1-uncharted-galaxies";
+import { sound } from "./audio.js?v=5.3.1-uncharted-galaxies";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.1-uncharted-galaxies";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.1-uncharted-galaxies";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.1-uncharted-galaxies";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.1-uncharted-galaxies";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.1-uncharted-galaxies";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.3.1-uncharted-galaxies";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.1-uncharted-galaxies";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.1-uncharted-galaxies";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.1-uncharted-galaxies";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.3.1-uncharted-galaxies";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.3.0-little-prince";
-import { createFootprintTrail } from "./footprints3D.js?v=5.3.0-little-prince";
+} from "./trailSocialExtras.js?v=5.3.1-uncharted-galaxies";
+import { createFootprintTrail } from "./footprints3D.js?v=5.3.1-uncharted-galaxies";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.3.0-little-prince";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.0-little-prince";
+} from "./bestiaryAndExtras.js?v=5.3.1-uncharted-galaxies";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.1-uncharted-galaxies";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,20 +75,20 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.3.0-little-prince";
+} from "./cloudClient.js?v=5.3.1-uncharted-galaxies";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.3.0-little-prince";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.0-little-prince";
+} from "./photoPlanetBuilder.js?v=5.3.1-uncharted-galaxies";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.1-uncharted-galaxies";
 import {
   createObservatoryController,
   recordVisitedGalaxy,
   markSessionPlanetSeen,
   resetSessionSeenPlanets,
-} from "./starObservatory.js?v=5.3.0-little-prince";
-import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.0-little-prince";
+} from "./starObservatory.js?v=5.3.1-uncharted-galaxies";
+import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.1-uncharted-galaxies";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净

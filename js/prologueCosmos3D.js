@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { STORYBOOK_GRAD } from "./sphereMath.js?v=5.3.0-little-prince";
+import { STORYBOOK_GRAD } from "./sphereMath.js?v=5.3.1-uncharted-galaxies";
 
 /**
  * 绘制《小王子》水彩绘本风暮光天幕贴图：
@@ -92,6 +92,96 @@ function createFourPointStarTexture() {
   ctx.quadraticCurveTo(29.5, 29.5, 32, 4);
   ctx.closePath();
   ctx.fill();
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * 绘制《小王子》古典手绘星图风「未知星系旋涡星云圆盘贴图」（乳白鎏金虚线星轨 + 水彩柔光旋臂）
+ */
+function createChartSwirlTexture(tintHex = "#e0e7ff") {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  const cx = 128;
+  const cy = 128;
+  const c = new THREE.Color(tintHex);
+  const rgb = (a) => `rgba(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)},${a})`;
+
+  const base = ctx.createRadialGradient(cx, cy, 4, cx, cy, 122);
+  base.addColorStop(0, "rgba(255, 253, 244, 0.78)");
+  base.addColorStop(0.38, rgb(0.42));
+  base.addColorStop(0.78, rgb(0.14));
+  base.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, 256, 256);
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(254, 240, 138, 0.65)";
+  ctx.lineWidth = 1.8;
+  ctx.setLineDash([7, 6]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, 102, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 66, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  for (let arm = 0; arm < 2; arm++) {
+    ctx.strokeStyle = arm === 0 ? "rgba(255, 251, 235, 0.62)" : rgb(0.55);
+    ctx.lineWidth = 5.5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    for (let s = 0; s < 42; s++) {
+      const t = s / 42;
+      const ang = arm * Math.PI + t * 3.6;
+      const rad = 10 + t * 98;
+      const x = cx + Math.cos(ang) * rad;
+      const y = cy + Math.sin(ang) * rad;
+      if (s === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * 绘制手绘绘本风「未知星系微缩星图铭牌」贴图（如「✦ 未知星系 · B-???」）
+ */
+function createUnknownLabelTexture(titleText, subText = "") {
+  const canvas = document.createElement("canvas");
+  canvas.width = 340;
+  canvas.height = 104;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "rgba(38, 54, 102, 0.58)";
+  ctx.strokeStyle = "rgba(253, 230, 138, 0.78)";
+  ctx.lineWidth = 2.2;
+  ctx.setLineDash([7, 5]);
+  ctx.beginPath();
+  ctx.roundRect(12, 14, 316, subText ? 76 : 58, 30);
+  ctx.fill();
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#fef3c7";
+  ctx.font = "600 24px 'Songti SC', 'Kaiti SC', serif";
+  ctx.fillText(titleText, 170, subText ? 46 : 51);
+
+  if (subText) {
+    ctx.fillStyle = "rgba(224, 242, 254, 0.92)";
+    ctx.font = "17px 'Songti SC', serif";
+    ctx.fillText(subText, 170, 74);
+  }
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -367,34 +457,141 @@ export function buildPrologueCosmosWorld() {
     group.add(line);
   }
 
-  // 5. 远处柔雾晨曦中「尚未被命名的朦胧小星球剪影」（柔和薰衣草粉蓝水彩剪影，温暖诗意不暗黑！）
-  const mistySpecs = [
-    { pos: [-15.2, 1.2, -13.5], r: 1.25, col: "#7c83bc", rim: "#fde68a", phase: 0.8 },
-    { pos: [15.6, 1.5, -13.8], r: 1.32, col: "#8b7cb8", rim: "#fbcfe8", phase: 2.2 },
-    { pos: [-5.6, 10.6, -15.5], r: 1.18, col: "#6b8cae", rim: "#bae6fd", phase: 3.6 },
-    { pos: [6.2, 10.8, -16.0], r: 1.12, col: "#9d7ea8", rim: "#fed7aa", phase: 5.0 },
+  // 5. 暮霞深处的「未知星系群落（Uncharted Galaxies）」：
+  // 手绘古典星图旋涡圆盘 + 多颗柔雾未命名小星球串联成虚线星座 + 悬停绘本问号铭牌！
+  const unknownGalaxies = [];
+  const unchartedSpecs = [
+    {
+      center: [-15.8, 1.1, -13.5],
+      tilt: [0.95, 0.28, -0.22],
+      discSize: 8.6,
+      tint: "#c4b5fd",
+      title: "✦ 未知星系 · ？",
+      sub: "待新行者点亮命名",
+      satellites: [
+        [-1.8, 0.5, 0.4, 0.72],
+        [0.2, 0.15, -0.2, 1.08],
+        [2.1, -0.45, 0.5, 0.64],
+      ],
+      phase: 0.6,
+    },
+    {
+      center: [16.0, 1.3, -13.8],
+      tilt: [0.92, -0.30, 0.24],
+      discSize: 8.8,
+      tint: "#bae6fd",
+      title: "✦ 迷雾星云 · B-???",
+      sub: "尚无足迹抵达的远方",
+      satellites: [
+        [-2.0, -0.3, 0.5, 0.68],
+        [-0.1, 0.2, 0.1, 1.12],
+        [1.9, 0.55, -0.4, 0.76],
+      ],
+      phase: 2.1,
+    },
+    {
+      center: [-6.6, 10.2, -16.2],
+      tilt: [1.05, 0.18, -0.15],
+      discSize: 7.4,
+      tint: "#fbcfe8",
+      title: "✦ 无名星座 · ？",
+      sub: "",
+      satellites: [
+        [-1.5, 0.2, 0.3, 0.58],
+        [0.3, 0.0, 0.0, 0.92],
+        [1.7, -0.25, -0.2, 0.55],
+      ],
+      phase: 3.5,
+    },
+    {
+      center: [6.8, 10.4, -16.5],
+      tilt: [1.02, -0.22, 0.18],
+      discSize: 7.2,
+      tint: "#fde68a",
+      title: "✦ 远方星群 · ？",
+      sub: "",
+      satellites: [
+        [-1.4, -0.2, 0.2, 0.56],
+        [0.1, 0.1, 0.1, 0.88],
+        [1.6, 0.3, -0.3, 0.60],
+      ],
+      phase: 4.9,
+    },
   ];
-  for (const ms of mistySpecs) {
-    const g = new THREE.Group();
-    g.position.set(...ms.pos);
-    const body = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(ms.r, 2),
-      new THREE.MeshToonMaterial({
-        color: ms.col,
-        gradientMap: STORYBOOK_GRAD,
+
+  for (const ug of unchartedSpecs) {
+    const ugWrap = new THREE.Group();
+    ugWrap.position.set(...ug.center);
+
+    // (a) 古典绘本手绘旋涡星云圆盘（倾斜透视，缓慢自转）
+    const swirlDisc = new THREE.Mesh(
+      new THREE.PlaneGeometry(ug.discSize, ug.discSize),
+      new THREE.MeshBasicMaterial({
+        map: createChartSwirlTexture(ug.tint),
+        transparent: true,
+        opacity: 0.88,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    swirlDisc.rotation.set(...ug.tilt);
+    ugWrap.add(swirlDisc);
+
+    // (b) 构成这座未知星系的多颗柔雾粉蓝未探索小星球 + 虚线星座连线
+    const satPts = [];
+    for (const [sx, sy, sz, sr] of ug.satellites) {
+      const pPos = new THREE.Vector3(sx, sy, sz);
+      satPts.push(pPos);
+      const mistPlanet = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(sr, 2),
+        new THREE.MeshToonMaterial({
+          color: "#818cf8",
+          gradientMap: STORYBOOK_GRAD,
+          transparent: true,
+          opacity: 0.78,
+        })
+      );
+      mistPlanet.position.copy(pPos);
+      ugWrap.add(mistPlanet);
+
+      // 外围金色虚线待探索光环
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(sr * 1.38, 0.025, 6, 32),
+        new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.55 })
+      );
+      ring.position.copy(pPos);
+      ring.rotation.set(1.2, 0.3, -0.2);
+      ugWrap.add(ring);
+    }
+
+    const constLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(satPts),
+      new THREE.LineDashedMaterial({
+        color: "#fef08a",
+        dashSize: 0.28,
+        gapSize: 0.22,
         transparent: true,
         opacity: 0.72,
       })
     );
-    g.add(body);
-    const qStar = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: starTex, color: ms.rim, transparent: true, opacity: 0.85 })
+    constLine.computeLineDistances();
+    ugWrap.add(constLine);
+
+    // (c) 悬停在未知星系上方的《小王子》绘本虚线铭牌（「✦ 未知星系 · ？」）
+    const labelSp = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: createUnknownLabelTexture(ug.title, ug.sub),
+        transparent: true,
+        opacity: 0.92,
+        depthWrite: false,
+      })
     );
-    qStar.position.set(0, ms.r * 1.35, 0);
-    qStar.scale.setScalar(0.85);
-    g.add(qStar);
-    group.add(g);
-    miniPlanets.push({ wrap: g, sphere: body, cloudGrp: null, ringMesh: null, baseY: ms.pos[1], phase: ms.phase });
+    labelSp.position.set(0, ug.sub ? 2.15 : 1.75, 0.6);
+    labelSp.scale.set(ug.sub ? 4.8 : 4.1, ug.sub ? 1.48 : 1.26, 1);
+    ugWrap.add(labelSp);
+
+    group.add(ugWrap);
+    unknownGalaxies.push({ ugWrap, swirlDisc, labelSp, baseY: ug.center[1], phase: ug.phase });
   }
 
   // 6. 最底端保留并精心雕琢：B-612 童话风绿茵野花小行星 + 小人伫立仰望 + 红玫瑰玻璃罩 + 暖黄铸铁小路灯！
@@ -415,6 +612,11 @@ export function buildPrologueCosmosWorld() {
       for (const nb of nebulaSprites) {
         const s = nb.baseScale * (1 + Math.sin(elapsed * 0.5 + nb.phase) * 0.04);
         nb.sp.scale.setScalar(s);
+      }
+      for (const ug of unknownGalaxies) {
+        ug.ugWrap.position.y = ug.baseY + Math.sin(elapsed * 0.65 + ug.phase) * 0.2;
+        ug.swirlDisc.rotation.z += dt * 0.16;
+        ug.labelSp.material.opacity = 0.78 + Math.sin(elapsed * 1.6 + ug.phase) * 0.18;
       }
       fourPointStars.rotation.z = Math.sin(elapsed * 0.06) * 0.02;
     },
