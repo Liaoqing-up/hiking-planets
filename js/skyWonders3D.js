@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.2.9-luminous-galaxies";
+import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.3.0-little-prince";
 
 function drawPlanetLabelCanvas(canvas, text, progressStr = "", isCleared = false) {
   const ctx = canvas.getContext("2d");

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.9-luminous-galaxies";
+import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.0-little-prince";
 
 const UP = new THREE.Vector3(0, 1, 0);
 

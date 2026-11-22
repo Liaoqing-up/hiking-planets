@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.9-luminous-galaxies";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.9-luminous-galaxies";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.0-little-prince";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.0-little-prince";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.2.9-luminous-galaxies";
+} from "./universeRegistry.js?v=5.3.0-little-prince";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.2.9-luminous-galaxies";
-import { sound } from "./audio.js?v=5.2.9-luminous-galaxies";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.9-luminous-galaxies";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.9-luminous-galaxies";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.9-luminous-galaxies";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.9-luminous-galaxies";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.9-luminous-galaxies";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.2.9-luminous-galaxies";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.9-luminous-galaxies";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.9-luminous-galaxies";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.9-luminous-galaxies";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.2.9-luminous-galaxies";
+} from "./neighborSocial.js?v=5.3.0-little-prince";
+import { sound } from "./audio.js?v=5.3.0-little-prince";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.0-little-prince";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.0-little-prince";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.0-little-prince";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.0-little-prince";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.0-little-prince";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.3.0-little-prince";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.0-little-prince";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.0-little-prince";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.0-little-prince";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.3.0-little-prince";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.2.9-luminous-galaxies";
-import { createFootprintTrail } from "./footprints3D.js?v=5.2.9-luminous-galaxies";
+} from "./trailSocialExtras.js?v=5.3.0-little-prince";
+import { createFootprintTrail } from "./footprints3D.js?v=5.3.0-little-prince";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.2.9-luminous-galaxies";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.9-luminous-galaxies";
+} from "./bestiaryAndExtras.js?v=5.3.0-little-prince";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.0-little-prince";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,20 +75,20 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.2.9-luminous-galaxies";
+} from "./cloudClient.js?v=5.3.0-little-prince";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.2.9-luminous-galaxies";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.9-luminous-galaxies";
+} from "./photoPlanetBuilder.js?v=5.3.0-little-prince";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.0-little-prince";
 import {
   createObservatoryController,
   recordVisitedGalaxy,
   markSessionPlanetSeen,
   resetSessionSeenPlanets,
-} from "./starObservatory.js?v=5.2.9-luminous-galaxies";
-import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.2.9-luminous-galaxies";
+} from "./starObservatory.js?v=5.3.0-little-prince";
+import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.0-little-prince";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
@@ -721,39 +721,38 @@ function syncIndependentHostUI(prof) {
 function setupPrologueScene() {
   disposeCurrentWorld();
   activePlanet = null;
-  skyPhase = "night";
-  isNight = true;
+  skyPhase = "day";
+  isNight = false;
   document.title = "行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS";
   hiker.setOutfit("gold");
   hiker.setCycling(false);
-  hiker.root.scale.setScalar(1.08);
-  hiker.setHeadlamp(true);
+  hiker.root.scale.setScalar(1.12);
+  hiker.setHeadlamp(false);
   sound.setPlanetBGM("space");
 
-  // 温润靛蓝星光 + 柔和边缘光，照亮小人与前景山海剪影轮廓
-  hemiLight.intensity = 0.72;
-  sunLight.intensity = 0.55;
-  rimLight.intensity = 1.25;
+  // 《小王子》温暖绘本水彩天光：明亮柔和的暖金日照与矢车菊蓝环境光！
+  hemiLight.intensity = 1.28;
+  sunLight.intensity = 1.65;
+  rimLight.intensity = 0.85;
 
   currentWorld = buildPrologueCosmosWorld();
   currentWorld.group.position.set(0, 0, 0);
   currentWorld.group.visible = true;
   scene.add(currentWorld.group);
 
-  // 行者伫立于前景观星小行星脊顶，背对镜头微侧仰望漫天银河系与远处未探索暗星剪影
+  // 最底端保留行者小人：伫立在绿茵野花与玻璃罩红玫瑰、暖黄小街灯之间，仰望漫天彩色小星球
   if (hiker.root.parent !== currentWorld.pedestal) {
     currentWorld.pedestal.add(hiker.root);
   }
-  hiker.root.position.set(-1.1, 5.78, 0.45);
-  hiker.root.rotation.set(0.06, Math.PI * 0.84, 0);
+  hiker.root.position.set(-0.65, 5.56, 0.55);
+  hiker.root.rotation.set(0.08, Math.PI * 0.86, 0);
   hiker.root.visible = true;
 
-  scene.background.set("#0a1532");
+  scene.background.set("#2b4582");
   camera.up.set(0, 1, 0);
   setScreen("prologue");
   updateTitleLayout();
 
-  // 静默拉取星海实时入驻星主数与总星球数，同时预热虫洞与观星台缓存！
   observatoryCtrl?.refreshData(false).catch(() => {});
 }
 

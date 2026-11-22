@@ -13,8 +13,8 @@ import {
   getSurfaceRadius,
   seededRand,
   placeOnSphere,
-} from "./sphereMath.js?v=5.2.9-luminous-galaxies";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.9-luminous-galaxies";
+} from "./sphereMath.js?v=5.3.0-little-prince";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.0-little-prince";
 
 export {
   PLANET_RADIUS,
