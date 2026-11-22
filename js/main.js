@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.6-clean-prologue";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.6-clean-prologue";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.7-guest-identity";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.7-guest-identity";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.2.6-clean-prologue";
+} from "./universeRegistry.js?v=5.2.7-guest-identity";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.2.6-clean-prologue";
-import { sound } from "./audio.js?v=5.2.6-clean-prologue";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.6-clean-prologue";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.6-clean-prologue";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.6-clean-prologue";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.6-clean-prologue";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.6-clean-prologue";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.2.6-clean-prologue";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.6-clean-prologue";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.6-clean-prologue";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.6-clean-prologue";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.2.6-clean-prologue";
+} from "./neighborSocial.js?v=5.2.7-guest-identity";
+import { sound } from "./audio.js?v=5.2.7-guest-identity";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.7-guest-identity";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.7-guest-identity";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.7-guest-identity";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.7-guest-identity";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.7-guest-identity";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.2.7-guest-identity";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.7-guest-identity";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.7-guest-identity";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.7-guest-identity";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.2.7-guest-identity";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.2.6-clean-prologue";
-import { createFootprintTrail } from "./footprints3D.js?v=5.2.6-clean-prologue";
+} from "./trailSocialExtras.js?v=5.2.7-guest-identity";
+import { createFootprintTrail } from "./footprints3D.js?v=5.2.7-guest-identity";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.2.6-clean-prologue";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.6-clean-prologue";
+} from "./bestiaryAndExtras.js?v=5.2.7-guest-identity";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.7-guest-identity";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,19 +75,19 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.2.6-clean-prologue";
+} from "./cloudClient.js?v=5.2.7-guest-identity";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.2.6-clean-prologue";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.6-clean-prologue";
+} from "./photoPlanetBuilder.js?v=5.2.7-guest-identity";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.7-guest-identity";
 import {
   createObservatoryController,
   recordVisitedGalaxy,
   markSessionPlanetSeen,
   resetSessionSeenPlanets,
-} from "./starObservatory.js?v=5.2.6-clean-prologue";
+} from "./starObservatory.js?v=5.2.7-guest-identity";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
@@ -627,9 +627,12 @@ function applyHostRoleUI(role, rebuildScene = false) {
     b.classList.toggle("active", b.dataset.hostRole === activeHostRole);
   });
 
-  const presetNames = new Set(["", "清哥", "Kitty", "咩咩", "Luca", "山海行者"]);
+  const presetNames = new Set(["", "清哥", "Kitty", "咩咩", "Luca", "山海行者", "远方旅人"]);
   if (presetNames.has((saveData.travelerName || "").trim())) {
-    saveData.travelerName = hostCfg.name;
+    const myProf = getCurrentProfile();
+    saveData.travelerName = isCloudLoggedIn() && myProf
+      ? myProf.display_name || myProf.handle || "山海行者"
+      : "远方旅人";
     const tInput = document.getElementById("ticket-traveler-input");
     if (tInput) tInput.value = saveData.travelerName;
     persistSave();
@@ -670,27 +673,29 @@ function syncTopUniverseBar() {
       homeLabel = `${myProf.avatar_icon || "🪐"} 我的星系 (${myProf.display_name || myProf.handle})`;
       isAtHome = currentUniverse === "custom" && activeCustomProfile?.handle === myProf.handle;
     }
+    if (homeBtn) {
+      homeBtn.classList.remove("hidden");
+      homeBtn.textContent = homeLabel;
+      homeBtn.classList.toggle("active", isAtHome);
+    }
   } else {
-    const hCfg = HOST_REGISTRY[activeHostRole] || HOST_REGISTRY.mine;
-    homeLabel = `${hCfg.icon} ${hCfg.name}的星系`;
-    isAtHome = currentUniverse === activeHostRole;
-  }
-
-  if (homeBtn) {
-    homeBtn.textContent = homeLabel;
-    homeBtn.classList.toggle("active", isAtHome);
+    // 未登录游客没有绑定的主场星系（绝不强行挂出「清哥的星系」）
+    if (homeBtn) {
+      homeBtn.classList.add("hidden");
+      homeBtn.classList.remove("active");
+    }
   }
 
   if (obsBtn) {
-    if (isAtHome) {
+    if (loggedIn && isAtHome) {
       obsBtn.textContent = "🔭 星海串门 · 发现星友 ▾";
       obsBtn.classList.remove("active");
     } else if (currentUniverse === "custom" && activeCustomProfile) {
-      obsBtn.textContent = `🔭 正在串门：${activeCustomProfile.avatar_icon || "🪐"} ${activeCustomProfile.display_name || activeCustomProfile.handle} ▾`;
+      obsBtn.textContent = `🔭 正在游历：${activeCustomProfile.avatar_icon || "🪐"} ${activeCustomProfile.display_name || activeCustomProfile.handle}的星系 ▾`;
       obsBtn.classList.add("active");
     } else {
       const targetCfg = HOST_REGISTRY[currentUniverse] || HOST_REGISTRY.mine;
-      obsBtn.textContent = `🔭 正在串门：${targetCfg.icon} ${targetCfg.name}的星系 ▾`;
+      obsBtn.textContent = `🔭 正在游历：${targetCfg.icon} ${targetCfg.name}的星系 ▾`;
       obsBtn.classList.add("active");
     }
   }
@@ -791,7 +796,13 @@ const elMapTitle = document.getElementById("map-title");
 const elMapStats = document.getElementById("map-stats");
 const elMapQuote = document.getElementById("map-quote");
 
-const hasResonanceWithActiveHost = (planet) => checkPlanetResonance(planet, activeHostRole);
+const hasResonanceWithActiveHost = (planet) => {
+  const myProf = getCurrentProfile();
+  const myBound = isCloudLoggedIn() && myProf?.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+  // 无论是否登录，亚丁 / 扎尕那 / 天山等跨星主同频星球都保留跨宇宙水晶碑，方便探索多元星系！
+  if (myBound) return checkPlanetResonance(planet, myBound);
+  return RESONANCE_CLUSTERS.some((c) => c.ids.includes(planet?.id));
+};
 
 const planetNodeEls = [];
 
@@ -1003,7 +1014,9 @@ function switchUniverse(uniId, targetPlanetId = null) {
           : `欢迎串门踏入行者 ${activeCustomProfile.display_name} 亲手点亮的 3D 记忆星系`);
     }
   } else {
-    const isSelfUni = currentUniverse === activeHostRole;
+    const myProf = getCurrentProfile();
+    const myBound = isCloudLoggedIn() && myProf?.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+    const isSelfUni = Boolean(myBound && currentUniverse === myBound);
     if (headingEl) {
       headingEl.textContent = isSelfUni ? uniCfg.mapHeadingSelf : uniCfg.mapHeadingNeighbor;
     }
@@ -1210,24 +1223,16 @@ function enterPlanet(idx) {
   disposeCurrentWorld();
   const planetOwner = p.owner || "mine";
   const myProf = getCurrentProfile();
-  const myBound = myProf?.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
-  const isSelfOwnedPlanet = myProf
+  const isLogged = isCloudLoggedIn() && Boolean(myProf);
+  const myBound = isLogged && myProf.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+  // 未登录游客一律视为访客（isSelfOwnedPlanet = false），从而能看到星球真正的星主站在营地热情迎宾！
+  const isSelfOwnedPlanet = isLogged
     ? myBound
       ? planetOwner === myBound || p.legacyRole === myBound
       : Boolean(p.ownerHandle && p.ownerHandle === myProf.handle)
-    : planetOwner === activeHostRole;
-  // 已登录行者穿自己护照选定的冲锋衣配色；未登录四位创世星主串门时穿各自招牌穿搭，在自己星球穿路线主题服
-  const hostOutfit = myProf?.outfit
-    ? myProf.outfit
-    : activeHostRole === "kitty" && !isSelfOwnedPlanet
-      ? "kitty-host"
-      : activeHostRole === "miemie" && !isSelfOwnedPlanet
-        ? "miemie-host"
-        : activeHostRole === "luca" && !isSelfOwnedPlanet
-          ? "luca-host"
-          : activeHostRole === "mine" && !isSelfOwnedPlanet
-            ? "mine-host"
-            : p.id;
+    : false;
+  // 已登录行者穿自己护照选定的冲锋衣配色；未登录游客穿清爽远行装或路线主题装
+  const hostOutfit = isLogged && myProf?.outfit ? myProf.outfit : p.id;
   hiker.setOutfit(hostOutfit);
   // 「银河与日落八分钟」默认开启紫金暮色；「麝香洞·地心宇宙」默认进入幽蓝地心星夜并点亮探洞头灯！
   if (p.id === "kitty-sunset") {
@@ -3754,26 +3759,32 @@ function updatePlanetExploration(dt, elapsed) {
     }
     if (nb.justGreeted && activePlanet) {
       const pOwner = activePlanet.owner || "mine";
-      const visitorLabel =
-        activeHostRole === "kitty"
-          ? "Kitty"
-          : activeHostRole === "miemie"
-            ? "咩咩"
-            : activeHostRole === "luca"
-              ? "Luca"
-              : "清哥";
+      const myProf = getCurrentProfile();
+      const isLogged = isCloudLoggedIn() && Boolean(myProf);
+      const myBound = isLogged && myProf.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+      const isMyOwnPlanet = isLogged
+        ? myBound
+          ? pOwner === myBound || activePlanet.legacyRole === myBound
+          : Boolean(activePlanet.ownerHandle && activePlanet.ownerHandle === myProf.handle)
+        : false;
+      const visitorLabel = isLogged
+        ? myProf.display_name || myProf.handle || "远方行者"
+        : "远方旅人";
       const resPartner = getResidentPartnerName();
-      const greetMsg =
-        pOwner !== activeHostRole
-          ? activePlanet.hostSpotGreeting ||
-            (pOwner === "kitty"
-              ? `🐾 Kitty 朝 ${visitorLabel} 开心挥手：欢迎来「${activePlanet.name}」串门！`
-              : pOwner === "miemie"
-                ? `🐑 咩咩朝 ${visitorLabel} 开心挥手：欢迎来「${activePlanet.name}」串门探秘！`
-                : pOwner === "luca"
-                  ? `🚴 Luca 扶着头盔朝 ${visitorLabel} 爽朗挥手：欢迎来「${activePlanet.name}」兜风串门！`
-                  : `🏔️ 清哥朝 ${visitorLabel} 开心挥手：欢迎来「${activePlanet.name}」串门吹风！`)
-          : `⚡ 同频偶遇！邻居 ${resPartner} 也在同一片山脉向你挥手致意～`;
+      const ownerDisplay =
+        HOST_REGISTRY[pOwner]?.name || activePlanet.ownerName || activeCustomProfile?.display_name || "星球主人";
+      const greetMsg = !isMyOwnPlanet
+        ? activePlanet.hostSpotGreeting ||
+          (pOwner === "kitty"
+            ? `🐾 Kitty 朝${visitorLabel}开心挥手：欢迎来「${activePlanet.name}」串门！`
+            : pOwner === "miemie"
+              ? `🐑 咩咩朝${visitorLabel}开心挥手：欢迎来「${activePlanet.name}」串门探秘！`
+              : pOwner === "luca"
+                ? `🚴 Luca 扶着头盔朝${visitorLabel}爽朗挥手：欢迎来「${activePlanet.name}」兜风串门！`
+                : pOwner === "mine"
+                  ? `🏔️ 清哥朝${visitorLabel}开心挥手：欢迎来「${activePlanet.name}」串门吹风！`
+                  : `🪐 ${ownerDisplay} 朝${visitorLabel}开心挥手：欢迎来「${activePlanet.name}」串门看星星！`)
+        : `⚡ 同频偶遇！邻居 ${resPartner} 也在同一片山脉向你挥手致意～`;
       showWonderToast(greetMsg, 4600);
     }
   }
@@ -3854,7 +3865,15 @@ function updatePlanetExploration(dt, elapsed) {
     elPromptInteract.classList.remove("hidden");
   } else if (activeBottleNear && !isAnyModalOpen() && !isCampfireMode) {
     const pOwner = activePlanet?.owner || "mine";
-    const visitingOther = pOwner !== activeHostRole;
+    const myProf = getCurrentProfile();
+    const isLogged = isCloudLoggedIn() && Boolean(myProf);
+    const myBound = isLogged && myProf.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+    const isMyOwn = isLogged
+      ? myBound
+        ? pOwner === myBound || activePlanet?.legacyRole === myBound
+        : Boolean(activePlanet?.ownerHandle && activePlanet.ownerHandle === myProf.handle)
+      : false;
+    const visitingOther = !isMyOwn;
     elPromptText.textContent = visitingOther
       ? isMobileShort
         ? "🍾 点击打开星际漂流瓶留言"
@@ -4625,17 +4644,18 @@ function openNeighborHubModal() {
   const p = activePlanet || PLANETS[selectedPlanetIdx];
   const pOwner = p?.owner || currentUniverse;
   const myProf = getCurrentProfile();
-  const myBound = myProf?.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
-  const isHome = myProf
+  const isLogged = isCloudLoggedIn() && Boolean(myProf);
+  const myBound = isLogged && myProf.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+  const isHome = isLogged
     ? myBound
       ? pOwner === myBound || p?.legacyRole === myBound
       : Boolean(p?.ownerHandle && p.ownerHandle === myProf.handle) ||
         (currentUniverse === "custom" && activeCustomProfile?.handle === myProf.handle)
-    : pOwner === activeHostRole;
+    : false;
   const hostName = HOST_REGISTRY[pOwner]?.name || p?.ownerName || activeCustomProfile?.display_name || "清哥";
-  const selfVisitorName =
-    myProf?.display_name ||
-    (activeHostRole === "mine" ? saveData.travelerName || "清哥" : HOST_REGISTRY[activeHostRole].name);
+  const selfVisitorName = isLogged
+    ? myProf.display_name || myProf.handle || "星海行者"
+    : "远方旅人";
   const bucketKey = getNeighborBucketKey();
   if (!isHome) {
     recordBottleVisitor(bucketKey, selfVisitorName);
@@ -5400,15 +5420,11 @@ document.getElementById("neighbor-note-form")?.addEventListener("submit", (e) =>
   const textEl = document.getElementById("neighbor-note-text");
   const text = (textEl?.value || "").trim();
   if (!text) return;
-  const defaultName =
-    getCurrentProfile()?.display_name ||
-    (activeHostRole === "kitty"
-      ? "Kitty"
-      : activeHostRole === "miemie"
-        ? "咩咩"
-        : activeHostRole === "luca"
-          ? "Luca"
-          : saveData.travelerName || "清哥");
+  const myProf = getCurrentProfile();
+  const isLogged = isCloudLoggedIn() && Boolean(myProf);
+  const defaultName = isLogged
+    ? myProf.display_name || myProf.handle || "远方旅人"
+    : "远方旅人";
   const from = (authorEl?.value || "").trim() || defaultName;
   const key = getNeighborBucketKey();
   if (!Array.isArray(socialState.notes[key])) socialState.notes[key] = [];
@@ -5488,8 +5504,13 @@ function captureCoopPolaroid() {
   }
 
   renderer.render(scene, camera);
-  const visitor = saveData.travelerName || HOST_REGISTRY[activeHostRole].name;
-  const url = generateCoopSnapshotDataUrl(renderer.domElement, activePlanet, visitor, activeHostRole);
+  const myProf = getCurrentProfile();
+  const isLogged = isCloudLoggedIn() && Boolean(myProf);
+  const visitor = isLogged
+    ? myProf.display_name || myProf.handle || "远方旅人"
+    : "远方旅人";
+  const snapRole = isLogged && myProf.legacy_role ? myProf.legacy_role : "guest";
+  const url = generateCoopSnapshotDataUrl(renderer.domElement, activePlanet, visitor, snapRole);
 
   // 抓拍完毕毫秒级无损还原正常游戏相机，不干扰后续操作
   camera.position.copy(savedPos);

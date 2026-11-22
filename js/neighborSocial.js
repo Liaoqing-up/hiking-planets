@@ -12,9 +12,9 @@ import {
   latLonToUnitVec,
   getSurfaceRadius,
   registerGuestTerrain,
-} from "./sphereMath.js?v=5.2.6-clean-prologue";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.6-clean-prologue";
-import { drawSiteQrStamp, drawPostmarkSeal } from "./qrStamp.js?v=5.2.6-clean-prologue";
+} from "./sphereMath.js?v=5.2.7-guest-identity";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.7-guest-identity";
+import { drawSiteQrStamp, drawPostmarkSeal } from "./qrStamp.js?v=5.2.7-guest-identity";
 
 const UP = new THREE.Vector3(0, 1, 0);
 const SOCIAL_STORAGE_KEY = "hiking_planets_neighbor_social_v4";
@@ -263,10 +263,9 @@ export function buildNeighborSocialRig(planet, resonanceInfo = null, activeHostR
 
   // 选定迎宾站位：homeHostUp 记录初始营地驻守位，hostUp 为星主实时球面坐标（支持并肩同行跟随！）
   const wp0 = planet.waypoints[0] || { lat: 20, lon: 10 };
-  const homeHostUp =
-    planetOwner !== activeHostRole
-      ? latLonToUnitVec(wp0.lat - 5, wp0.lon - 28)
-      : latLonToUnitVec(wp0.lat + 7, wp0.lon - 18);
+  const homeHostUp = isNotHome
+    ? latLonToUnitVec(wp0.lat - 5, wp0.lon - 28)
+    : latLonToUnitVec(wp0.lat + 7, wp0.lon - 18);
   const hostUp = homeHostUp.clone();
   const resUp = latLonToUnitVec(wp0.lat + 8, wp0.lon - 22);
 
