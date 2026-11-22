@@ -1,4 +1,4 @@
-const CACHE_NAME = "hikerplanets-v5.2.5-wormhole-dedup";
+const CACHE_NAME = "hikerplanets-v5.2.6-clean-prologue";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

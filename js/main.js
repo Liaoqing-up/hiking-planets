@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.5-wormhole-dedup";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.5-wormhole-dedup";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.6-clean-prologue";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.6-clean-prologue";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.2.5-wormhole-dedup";
+} from "./universeRegistry.js?v=5.2.6-clean-prologue";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.2.5-wormhole-dedup";
-import { sound } from "./audio.js?v=5.2.5-wormhole-dedup";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.5-wormhole-dedup";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.5-wormhole-dedup";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.5-wormhole-dedup";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.5-wormhole-dedup";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.5-wormhole-dedup";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.2.5-wormhole-dedup";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.5-wormhole-dedup";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.5-wormhole-dedup";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.5-wormhole-dedup";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.2.5-wormhole-dedup";
+} from "./neighborSocial.js?v=5.2.6-clean-prologue";
+import { sound } from "./audio.js?v=5.2.6-clean-prologue";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.6-clean-prologue";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.6-clean-prologue";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.6-clean-prologue";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.6-clean-prologue";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.6-clean-prologue";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.2.6-clean-prologue";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.6-clean-prologue";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.6-clean-prologue";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.6-clean-prologue";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.2.6-clean-prologue";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.2.5-wormhole-dedup";
-import { createFootprintTrail } from "./footprints3D.js?v=5.2.5-wormhole-dedup";
+} from "./trailSocialExtras.js?v=5.2.6-clean-prologue";
+import { createFootprintTrail } from "./footprints3D.js?v=5.2.6-clean-prologue";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.2.5-wormhole-dedup";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.5-wormhole-dedup";
+} from "./bestiaryAndExtras.js?v=5.2.6-clean-prologue";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.6-clean-prologue";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,19 +75,19 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.2.5-wormhole-dedup";
+} from "./cloudClient.js?v=5.2.6-clean-prologue";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.2.5-wormhole-dedup";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.5-wormhole-dedup";
+} from "./photoPlanetBuilder.js?v=5.2.6-clean-prologue";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.6-clean-prologue";
 import {
   createObservatoryController,
   recordVisitedGalaxy,
   markSessionPlanetSeen,
   resetSessionSeenPlanets,
-} from "./starObservatory.js?v=5.2.5-wormhole-dedup";
+} from "./starObservatory.js?v=5.2.6-clean-prologue";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
@@ -3177,7 +3177,6 @@ document.getElementById("btn-prologue-login")?.addEventListener("click", () => {
 });
 
 document.getElementById("btn-prologue-observatory")?.addEventListener("click", openObservatoryModal);
-document.getElementById("btn-prologue-observatory-top")?.addEventListener("click", openObservatoryModal);
 document.getElementById("btn-prologue-warp")?.addEventListener("click", () => {
   sound.init();
   observatoryCtrl.triggerWormholeWarp();
@@ -5164,7 +5163,7 @@ document.getElementById("btn-uni-home")?.addEventListener("click", async () => {
   switchUniverse(activeHostRole);
 });
 
-["btn-open-observatory-title", "btn-open-observatory-cta", "btn-open-observatory-map", "btn-hud-observatory"].forEach(
+["btn-open-observatory-cta", "btn-open-observatory-map", "btn-hud-observatory"].forEach(
   (id) => {
     document.getElementById(id)?.addEventListener("click", openObservatoryModal);
   }
