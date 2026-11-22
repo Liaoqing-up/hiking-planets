@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.3.3-panoramic-shanhai";
+import { getSurfaceRadius, PLANET_RADIUS } from "./sphereMath.js?v=5.3.4-crisp-shanhai";
 
 function drawPlanetLabelCanvas(canvas, text, progressStr = "", isCleared = false) {
   const ctx = canvas.getContext("2d");

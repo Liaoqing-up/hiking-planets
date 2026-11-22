@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.3-panoramic-shanhai";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.3-panoramic-shanhai";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.4-crisp-shanhai";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.4-crisp-shanhai";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.3.3-panoramic-shanhai";
+} from "./universeRegistry.js?v=5.3.4-crisp-shanhai";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.3.3-panoramic-shanhai";
-import { sound } from "./audio.js?v=5.3.3-panoramic-shanhai";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.3-panoramic-shanhai";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.3-panoramic-shanhai";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.3-panoramic-shanhai";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.3-panoramic-shanhai";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.3-panoramic-shanhai";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.3.3-panoramic-shanhai";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.3-panoramic-shanhai";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.3-panoramic-shanhai";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.3-panoramic-shanhai";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.3.3-panoramic-shanhai";
+} from "./neighborSocial.js?v=5.3.4-crisp-shanhai";
+import { sound } from "./audio.js?v=5.3.4-crisp-shanhai";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.4-crisp-shanhai";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.4-crisp-shanhai";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.4-crisp-shanhai";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.4-crisp-shanhai";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.4-crisp-shanhai";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.3.4-crisp-shanhai";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.4-crisp-shanhai";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.4-crisp-shanhai";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.4-crisp-shanhai";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.3.4-crisp-shanhai";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.3.3-panoramic-shanhai";
-import { createFootprintTrail } from "./footprints3D.js?v=5.3.3-panoramic-shanhai";
+} from "./trailSocialExtras.js?v=5.3.4-crisp-shanhai";
+import { createFootprintTrail } from "./footprints3D.js?v=5.3.4-crisp-shanhai";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.3.3-panoramic-shanhai";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.3-panoramic-shanhai";
+} from "./bestiaryAndExtras.js?v=5.3.4-crisp-shanhai";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.4-crisp-shanhai";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,20 +75,20 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.3.3-panoramic-shanhai";
+} from "./cloudClient.js?v=5.3.4-crisp-shanhai";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.3.3-panoramic-shanhai";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.3-panoramic-shanhai";
+} from "./photoPlanetBuilder.js?v=5.3.4-crisp-shanhai";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.4-crisp-shanhai";
 import {
   createObservatoryController,
   recordVisitedGalaxy,
   markSessionPlanetSeen,
   resetSessionSeenPlanets,
-} from "./starObservatory.js?v=5.3.3-panoramic-shanhai";
-import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.3-panoramic-shanhai";
+} from "./starObservatory.js?v=5.3.4-crisp-shanhai";
+import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.4-crisp-shanhai";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
@@ -602,9 +602,10 @@ function updateTitleLayout() {
   if (mode === "prologue") {
     const isMobile = window.innerWidth <= 820;
     currentWorld.group.position.set(0, 0, 0);
-    currentWorld.group.scale.setScalar(isMobile ? 0.72 : 1.0);
-    camera.position.set(0, 1.0, isMobile ? 26.5 : 23.2);
-    camera.lookAt(0, 1.0, -12);
+    currentWorld.group.scale.setScalar(isMobile ? 0.75 : 1.0);
+    currentWorld.setViewportLayout?.(window.innerWidth, window.innerHeight);
+    camera.position.set(0, 1.0, isMobile ? 25.5 : 22.8);
+    camera.lookAt(0, 0.85, -12);
     return;
   }
   if (mode !== "title") return;
@@ -728,7 +729,7 @@ function setupPrologueScene() {
   document.title = "行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS";
   hiker.setOutfit("gold");
   hiker.setCycling(false);
-  hiker.root.scale.setScalar(1.08);
+  hiker.root.scale.setScalar(1.22);
   hiker.setHeadlamp(false);
   sound.setPlanetBGM("space");
 
@@ -4023,11 +4024,11 @@ function animate() {
   }
 
   if (mode === "prologue" && currentWorld) {
-    const baseZ = window.innerWidth <= 820 ? 27 : 23.5;
-    camera.position.x = Math.sin(elapsed * 0.22) * 0.95;
-    camera.position.y = 1.0 + Math.cos(elapsed * 0.16) * 0.35;
+    const baseZ = window.innerWidth <= 820 ? 25.5 : 22.8;
+    camera.position.x = Math.sin(elapsed * 0.22) * 0.42;
+    camera.position.y = 1.0 + Math.cos(elapsed * 0.16) * 0.22;
     camera.position.z = baseZ;
-    camera.lookAt(0, 0.8, -12);
+    camera.lookAt(0, 0.85, -12);
     hiker.update(dt, elapsed, 0.08);
   } else if (mode === "title" && currentWorld) {
     const baseY = currentWorld.group.userData.baseY ?? -1.2;

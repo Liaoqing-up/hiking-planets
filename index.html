@@ -23,9 +23,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=5.3.3-panoramic-shanhai" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=5.3.3-panoramic-shanhai" />
-  <link rel="manifest" href="./manifest.webmanifest?v=5.3.3-panoramic-shanhai" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=5.3.4-crisp-shanhai" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=5.3.4-crisp-shanhai" />
+  <link rel="manifest" href="./manifest.webmanifest?v=5.3.4-crisp-shanhai" />
   <script type="importmap">
     {
       "imports": {
@@ -69,7 +69,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=5.3.3-panoramic-shanhai" />
+  <link rel="stylesheet" href="./styles.css?v=5.3.4-crisp-shanhai" />
   <script>
     window.addEventListener("load", function () {
       setTimeout(function () {
@@ -196,22 +196,24 @@
       <!-- 中央 3D 星系悬停灵动提示胶囊（悬停星盘或星球时浮现） -->
       <div id="prologue-hover-pill" class="prologue-hover-pill hidden" aria-live="polite"></div>
 
-      <!-- 底部山脊观星行动坞 -->
-      <footer class="prologue-bottom-dock">
-        <div class="prologue-actions">
+      <!-- 底部山脊双翼观星坞（左右对称分列，把正中央完整让给高山松林营地与仰望星海的小人！） -->
+      <footer class="prologue-bottom-wings">
+        <div class="prologue-wing-card wing-left">
           <button id="btn-prologue-login" type="button" class="prologue-primary-btn">
             🪪 登录 / 申领星际行者护照 · 开启专属宇宙
           </button>
-          <button id="btn-prologue-observatory" type="button" class="neighbor-title-btn observatory-cta-btn">
-            🔭 免登录逛逛 · 万星观星台
-          </button>
-          <button id="btn-prologue-warp" type="button" class="neighbor-title-btn miemie-btn">
-            🌠 虫洞漫游 · 随机降落星辰
-          </button>
+          <div class="prologue-wing-subrow">
+            <button id="btn-prologue-observatory" type="button" class="neighbor-title-btn observatory-cta-btn">
+              🔭 万星观星台
+            </button>
+            <button id="btn-prologue-warp" type="button" class="neighbor-title-btn miemie-btn">
+              🌠 虫洞随机漫游
+            </button>
+          </div>
         </div>
 
-        <div class="prologue-founders-strip" aria-label="四大创世领航星系直通车">
-          <span class="prologue-founders-label">👑 创世领航星系免登录体验：</span>
+        <div class="prologue-wing-card wing-right" aria-label="四大创世领航星系直通车">
+          <span class="prologue-founders-label">👑 创世领航星系 · 免登录直达体验</span>
           <div class="prologue-founders-pills">
             <button type="button" class="prologue-founder-pill" data-prologue-founder="mine">🏔️ 清哥 · 苍山星河</button>
             <button type="button" class="prologue-founder-pill" data-prologue-founder="kitty">🐾 Kitty · 猫耳星云</button>
@@ -1080,7 +1082,7 @@
       }
     }, 1000);
   </script>
-  <script type="module" src="./js/app.bundle.js?v=5.3.3-panoramic-shanhai"></script>
+  <script type="module" src="./js/app.bundle.js?v=5.3.4-crisp-shanhai"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       let swReloading = false;
