@@ -161,6 +161,7 @@ export function createObservatoryController({
   async function refreshData(force = false) {
     renderAll();
     if (!force && Date.now() - cache.loadedAt < 25000 && (cache.profiles.length || cache.planets.length)) {
+      syncPrologueCensusStats();
       return;
     }
     if (communityGrid && !cache.loadedAt) {
@@ -168,7 +169,28 @@ export function createObservatoryController({
     }
     const data = await fetchDirectory();
     cache = { ...data, loadedAt: Date.now() };
+    syncPrologueCensusStats();
     renderAll();
+  }
+
+  function computeCosmosCensus() {
+    const corePlanetCount = FOUNDER_META.reduce(
+      (sum, f) => sum + ((queryCorePlanets(f.role) || []).length),
+      0
+    );
+    const communityEntries = buildCommunityEntries();
+    const totalHosts = FOUNDER_META.length + communityEntries.length;
+    const totalPlanets = corePlanetCount + (cache.planets?.length || 0);
+    return { totalHosts, totalPlanets };
+  }
+
+  function syncPrologueCensusStats() {
+    const elHosts = document.getElementById("prologue-stat-hosts");
+    const elPlanets = document.getElementById("prologue-stat-planets");
+    if (!elHosts && !elPlanets) return;
+    const { totalHosts, totalPlanets } = computeCosmosCensus();
+    if (elHosts) elHosts.textContent = String(totalHosts);
+    if (elPlanets) elPlanets.textContent = String(totalPlanets);
   }
 
   function renderFounders(visitedSet, q) {
@@ -470,10 +492,13 @@ export function createObservatoryController({
     onOpenCreator?.();
   });
 
+  syncPrologueCensusStats();
+
   return {
     refreshData,
     renderAll,
     triggerWormholeWarp,
+    syncPrologueCensusStats,
   };
 }
 

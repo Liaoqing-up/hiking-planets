@@ -3,7 +3,7 @@ import {
   QR_ROWS_HIKERSTARS_KITTY,
   QR_ROWS_HIKERSTARS_MIEMIE,
   QR_ROWS_HIKERSTARS_LUCA,
-} from "./hikerstarsQrMatrices.js?v=5.2.7-guest-identity";
+} from "./hikerstarsQrMatrices.js?v=5.2.8-prologue-cosmos";
 
 // 经 Apple CoreImage & Vision 100% 校验的 https://hikerplanets.pages.dev 标准 29x29 QR(M) 矩阵（兼容备份）
 const QR_ROWS = [

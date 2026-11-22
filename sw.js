@@ -1,4 +1,4 @@
-const CACHE_NAME = "hikerplanets-v5.2.7-guest-identity";
+const CACHE_NAME = "hikerplanets-v5.2.8-prologue-cosmos";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

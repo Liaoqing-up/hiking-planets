@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { getSurfaceRadius } from "./sphereMath.js?v=5.2.7-guest-identity";
-import { drawSiteQrStamp } from "./qrStamp.js?v=5.2.7-guest-identity";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.7-guest-identity";
-import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=5.2.7-guest-identity";
+import { getSurfaceRadius } from "./sphereMath.js?v=5.2.8-prologue-cosmos";
+import { drawSiteQrStamp } from "./qrStamp.js?v=5.2.8-prologue-cosmos";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.8-prologue-cosmos";
+import { computeSmartPhotoCrop, getSavedPhotoPan } from "./photoFocus.js?v=5.2.8-prologue-cosmos";
 
 const UP = new THREE.Vector3(0, 1, 0);
 const FLAG_STORAGE_KEY = "hiking_planets_flags_v1";

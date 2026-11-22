@@ -23,9 +23,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=5.2.7-guest-identity" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=5.2.7-guest-identity" />
-  <link rel="manifest" href="./manifest.webmanifest?v=5.2.7-guest-identity" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=5.2.8-prologue-cosmos" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=5.2.8-prologue-cosmos" />
+  <link rel="manifest" href="./manifest.webmanifest?v=5.2.8-prologue-cosmos" />
   <script type="importmap">
     {
       "imports": {
@@ -69,7 +69,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=5.2.7-guest-identity" />
+  <link rel="stylesheet" href="./styles.css?v=5.2.8-prologue-cosmos" />
   <script>
     window.addEventListener("load", function () {
       setTimeout(function () {
@@ -175,6 +175,26 @@
         每一座用双脚丈量过的雪山、荒漠、峡谷与海湾，<br />
         都会在夜空深处，凝结成一颗独属于你的 3D 记忆星球。
       </p>
+
+      <!-- 实时全宇宙星主与星球统计星盘 -->
+      <div class="prologue-census-bar" role="status" aria-live="polite" aria-label="全宇宙星主与星球实时名录">
+        <div class="census-metric">
+          <span class="census-dot live"></span>
+          <span class="census-label">已入驻星主</span>
+          <strong id="prologue-stat-hosts" class="census-num">—</strong>
+          <span class="census-unit">位</span>
+        </div>
+        <span class="census-divider" aria-hidden="true">✦</span>
+        <div class="census-metric">
+          <span class="census-label">已点亮山海星球</span>
+          <strong id="prologue-stat-planets" class="census-num">—</strong>
+          <span class="census-unit">颗</span>
+        </div>
+        <span class="census-divider hide-xs" aria-hidden="true">·</span>
+        <div class="census-metric hide-xs">
+          <span class="census-dark-hint">🌑 深空仍有万千暗星待你命名</span>
+        </div>
+      </div>
 
       <div class="prologue-actions">
         <button id="btn-prologue-login" type="button" class="prologue-primary-btn">
@@ -1059,7 +1079,7 @@
       }
     }, 1000);
   </script>
-  <script type="module" src="./js/app.bundle.js?v=5.2.7-guest-identity"></script>
+  <script type="module" src="./js/app.bundle.js?v=5.2.8-prologue-cosmos"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       window.addEventListener("load", () => {

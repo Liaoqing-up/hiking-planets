@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.7-guest-identity";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.7-guest-identity";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.8-prologue-cosmos";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.8-prologue-cosmos";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.2.7-guest-identity";
+} from "./universeRegistry.js?v=5.2.8-prologue-cosmos";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.2.7-guest-identity";
-import { sound } from "./audio.js?v=5.2.7-guest-identity";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.7-guest-identity";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.7-guest-identity";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.7-guest-identity";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.7-guest-identity";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.7-guest-identity";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.2.7-guest-identity";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.7-guest-identity";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.7-guest-identity";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.7-guest-identity";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.2.7-guest-identity";
+} from "./neighborSocial.js?v=5.2.8-prologue-cosmos";
+import { sound } from "./audio.js?v=5.2.8-prologue-cosmos";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.8-prologue-cosmos";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.8-prologue-cosmos";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.8-prologue-cosmos";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.8-prologue-cosmos";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.8-prologue-cosmos";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.2.8-prologue-cosmos";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.8-prologue-cosmos";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.8-prologue-cosmos";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.8-prologue-cosmos";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.2.8-prologue-cosmos";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.2.7-guest-identity";
-import { createFootprintTrail } from "./footprints3D.js?v=5.2.7-guest-identity";
+} from "./trailSocialExtras.js?v=5.2.8-prologue-cosmos";
+import { createFootprintTrail } from "./footprints3D.js?v=5.2.8-prologue-cosmos";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.2.7-guest-identity";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.7-guest-identity";
+} from "./bestiaryAndExtras.js?v=5.2.8-prologue-cosmos";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.8-prologue-cosmos";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,19 +75,20 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.2.7-guest-identity";
+} from "./cloudClient.js?v=5.2.8-prologue-cosmos";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.2.7-guest-identity";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.7-guest-identity";
+} from "./photoPlanetBuilder.js?v=5.2.8-prologue-cosmos";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.8-prologue-cosmos";
 import {
   createObservatoryController,
   recordVisitedGalaxy,
   markSessionPlanetSeen,
   resetSessionSeenPlanets,
-} from "./starObservatory.js?v=5.2.7-guest-identity";
+} from "./starObservatory.js?v=5.2.8-prologue-cosmos";
+import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.2.8-prologue-cosmos";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
@@ -595,10 +596,10 @@ function setScreen(nextMode) {
 function updateTitleLayout() {
   if (!currentWorld) return;
   if (mode === "prologue") {
-    currentWorld.group.position.x = 0;
-    currentWorld.group.userData.baseY = -7.8;
-    camera.position.set(0, 2.0, 41);
-    camera.lookAt(0, -1.8, 0);
+    const isMobile = window.innerWidth <= 820;
+    currentWorld.group.position.set(0, 0, 0);
+    camera.position.set(0, 1.2, isMobile ? 31 : 25);
+    camera.lookAt(0, 0.8, -10);
     return;
   }
   if (mode !== "title") return;
@@ -717,31 +718,40 @@ function syncIndependentHostUI(prof) {
 function setupPrologueScene() {
   disposeCurrentWorld();
   activePlanet = null;
-  skyPhase = "day";
-  isNight = false;
+  skyPhase = "night";
+  isNight = true;
   document.title = "行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS";
-  const coverCfg = HOST_REGISTRY.mine.coverWorld;
   hiker.setOutfit("gold");
   hiker.setCycling(false);
-  hiker.root.scale.setScalar(1.0);
-  hiker.setHeadlamp(false);
+  hiker.root.scale.setScalar(1.08);
+  hiker.setHeadlamp(true);
   sound.setPlanetBGM("space");
 
-  currentWorld = buildPlanetWorld(coverCfg);
-  currentWorld.group.userData.baseY = -7.8;
-  currentWorld.group.position.set(0, -7.8, 0);
+  // 深空微光调暗主直射日照、增强冷蓝边缘光，让未探索的暗星呈现极具电影感的日食剪影轮廓！
+  hemiLight.intensity = 0.42;
+  sunLight.intensity = 0.28;
+  rimLight.intensity = 1.15;
+
+  currentWorld = buildPrologueCosmosWorld();
+  currentWorld.group.position.set(0, 0, 0);
   currentWorld.group.visible = true;
-  hiker.root.visible = true;
   scene.add(currentWorld.group);
 
-  const standDir = latLonToUnitVec(84, -15);
-  const standFwd = new THREE.Vector3(-0.35, 0, 0.9).normalize();
-  orientHikerOnSphere(currentWorld.group, standDir, standFwd, "title");
+  // 行者伫立于前景观星小行星脊顶，背对镜头微侧仰望漫天银河系与远处未探索暗星剪影
+  if (hiker.root.parent !== currentWorld.pedestal) {
+    currentWorld.pedestal.add(hiker.root);
+  }
+  hiker.root.position.set(-1.35, 6.18, 0.45);
+  hiker.root.rotation.set(0.06, Math.PI * 0.84, 0);
+  hiker.root.visible = true;
 
-  scene.background.set("#0a1228");
+  scene.background.set("#050918");
   camera.up.set(0, 1, 0);
   setScreen("prologue");
   updateTitleLayout();
+
+  // 静默拉取星海实时入驻星主数与总星球数，同时预热虫洞与观星台缓存！
+  observatoryCtrl?.refreshData(false).catch(() => {});
 }
 
 function setupTitleScene() {
@@ -749,6 +759,9 @@ function setupTitleScene() {
   activePlanet = null;
   skyPhase = "day";
   isNight = false;
+  hemiLight.intensity = 1.15;
+  sunLight.intensity = 1.85;
+  rimLight.intensity = 0.75;
   applyHostRoleUI(activeHostRole, false);
   const myProf = getCurrentProfile();
   const isIndepUser = isCloudLoggedIn() && myProf && !(myProf.legacy_role && HOST_REGISTRY[myProf.legacy_role]);
@@ -3958,10 +3971,11 @@ function animate() {
   }
 
   if (mode === "prologue" && currentWorld) {
-    const baseY = currentWorld.group.userData.baseY ?? -7.8;
-    currentWorld.group.position.y = baseY + Math.sin(elapsed * 0.8) * 0.22;
-    currentWorld.group.rotation.set(0, elapsed * 0.1, 0);
-    hiker.update(dt, elapsed, 0.12);
+    // 轻微深空呼吸漂移，让远近旋臂银河与暗星剪影呈现立体视差景深
+    camera.position.x = Math.sin(elapsed * 0.18) * 1.15;
+    camera.position.y = 1.2 + Math.cos(elapsed * 0.14) * 0.42;
+    camera.lookAt(0, 0.8, -10);
+    hiker.update(dt, elapsed, 0.08);
   } else if (mode === "title" && currentWorld) {
     const baseY = currentWorld.group.userData.baseY ?? -1.2;
     currentWorld.group.position.y = baseY + Math.sin(elapsed * 0.9) * 0.25;
