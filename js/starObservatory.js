@@ -8,6 +8,35 @@
  */
 
 const VISITED_STORAGE_KEY = "hp_visited_galaxies_v1";
+const SESSION_WARP_SEEN_KEY = "hp_wormhole_session_seen_v1";
+
+function loadSessionSeenPlanets() {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(SESSION_WARP_SEEN_KEY) || "[]");
+    return new Set(Array.isArray(raw) ? raw : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function markSessionPlanetSeen(planetKey) {
+  if (!planetKey) return;
+  const set = loadSessionSeenPlanets();
+  set.add(String(planetKey));
+  try {
+    sessionStorage.setItem(SESSION_WARP_SEEN_KEY, JSON.stringify([...set]));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function resetSessionSeenPlanets() {
+  try {
+    sessionStorage.removeItem(SESSION_WARP_SEEN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 const FOUNDER_META = [
   { role: "mine", accent: "#f59e0b", tag: "苍山星河", galaxyName: "清哥的苍山星河" },
@@ -317,38 +346,90 @@ export function createObservatoryController({
       await refreshData(false);
     }
     const state = getCurrentUniverseState();
-    const pool = [];
+    const seen = loadSessionSeenPlanets();
+    if (state.activePlanetId) {
+      seen.add(String(state.activePlanetId));
+    }
+
+    // 收集全宇宙所有可降落的具体星球（每颗星球独立成签，不再只按星主抽 1 颗）
+    const allCandidates = [];
 
     for (const f of FOUNDER_META) {
-      if (state.currentUniverse !== f.role) {
-        const planets = queryCorePlanets(f.role) || [];
-        const pick = planets[Math.floor(Math.random() * planets.length)];
-        pool.push({ type: "founder", role: f.role, label: hostRegistry[f.role]?.name, planetId: pick?.id, planetName: pick?.name });
+      // 仅排除玩家本人绑定的创始星系（防止跳回自己家），其余创世星主的全部 6 颗手工星球均纳入星池
+      if (state.myBoundRole && state.myBoundRole === f.role) continue;
+      const planets = queryCorePlanets(f.role) || [];
+      for (const p of planets) {
+        if (!p?.id) continue;
+        allCandidates.push({
+          key: p.id,
+          weight: 1,
+          type: "founder",
+          role: f.role,
+          label: hostRegistry[f.role]?.name,
+          planetId: p.id,
+          planetName: p.name,
+        });
       }
     }
 
     for (const pl of cache.planets) {
-      if (!pl?.owner_handle) continue;
-      if (state.currentUniverse === "custom" && state.activeCustomHandle === pl.owner_handle) continue;
-      // 给予社区真实自建星球更高权重，鼓励山友互相串门发现
-      pool.push({ type: "user", handle: pl.owner_handle, label: pl.owner_name || pl.owner_handle, slug: pl.slug, planetName: pl.planet_name });
-      pool.push({ type: "user", handle: pl.owner_handle, label: pl.owner_name || pl.owner_handle, slug: pl.slug, planetName: pl.planet_name });
+      if (!pl?.owner_handle || !pl?.slug) continue;
+      // 排除玩家自己的自建星球
+      if (state.myHandle && state.myHandle === pl.owner_handle) continue;
+      allCandidates.push({
+        key: pl.slug,
+        weight: 2, // 社区真实山友自建星球赋予 2 倍偶遇权重
+        type: "user",
+        handle: pl.owner_handle,
+        label: pl.owner_name || pl.owner_handle,
+        slug: pl.slug,
+        planetName: pl.planet_name,
+      });
     }
 
-    if (!pool.length) {
+    if (!allCandidates.length) {
       onVisitFounder("kitty");
       return;
     }
 
-    const chosen = pool[Math.floor(Math.random() * pool.length)];
+    // 优先从「本次登录/会话尚未去过」的星球中抽取！
+    let freshCandidates = allCandidates.filter((c) => !seen.has(c.key));
+    let exhaustedCycle = false;
+
+    // 若本次登录已把全宇宙所有星球逛遍一轮，清空本轮已去记录（仅排除脚下当前这颗星），开启新一轮！
+    if (!freshCandidates.length) {
+      exhaustedCycle = true;
+      resetSessionSeenPlanets();
+      if (state.activePlanetId) markSessionPlanetSeen(state.activePlanetId);
+      freshCandidates = allCandidates.filter((c) => c.key !== state.activePlanetId);
+      if (!freshCandidates.length) freshCandidates = allCandidates;
+    }
+
+    const weightedPool = [];
+    for (const c of freshCandidates) {
+      const w = Math.max(1, Number(c.weight) || 1);
+      for (let i = 0; i < w; i += 1) weightedPool.push(c);
+    }
+
+    const chosen = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+    markSessionPlanetSeen(chosen.key);
+    const remainingCount = Math.max(0, freshCandidates.length - 1);
+    const cyclePrefix = exhaustedCycle ? "🌌 已逛遍本轮全星海，开启新巡航 · " : "";
+
     playSelect?.();
     if (chosen.type === "user") {
       recordVisitedGalaxy(`u:${chosen.handle}`);
-      onToast?.(`🌠 虫洞跃迁成功！随机降落至 @${chosen.handle} 的「${chosen.planetName}」`, 4600);
+      onToast?.(
+        `🌠 ${cyclePrefix}虫洞降落至 @${chosen.handle} 的「${chosen.planetName}」（本轮还有 ${remainingCount} 颗未知星辰待偶遇）`,
+        4600
+      );
       onVisitUserHandle(chosen.handle, chosen.slug);
     } else {
       recordVisitedGalaxy(`role:${chosen.role}`);
-      onToast?.(`🌠 虫洞跃迁成功！已穿梭至「${chosen.label}的星系 · ${chosen.planetName || ""}」`, 4400);
+      onToast?.(
+        `🌠 ${cyclePrefix}虫洞穿梭至「${chosen.label} · ${chosen.planetName || ""}」（本轮还有 ${remainingCount} 颗未知星辰待偶遇）`,
+        4400
+      );
       onVisitFounder(chosen.role, chosen.planetId);
     }
   }

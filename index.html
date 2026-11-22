@@ -23,9 +23,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="行者的星球" />
   <title>行者的星球 · 山海皆星辰 | TRAILS AMONG THE STARS</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=5.2.4-dual-mirror" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=5.2.4-dual-mirror" />
-  <link rel="manifest" href="./manifest.webmanifest?v=5.2.4-dual-mirror" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png?v=5.2.5-wormhole-dedup" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=5.2.5-wormhole-dedup" />
+  <link rel="manifest" href="./manifest.webmanifest?v=5.2.5-wormhole-dedup" />
   <script type="importmap">
     {
       "imports": {
@@ -69,7 +69,7 @@
       50% { transform: scale(1.12); opacity: 1; }
     }
   </style>
-  <link rel="stylesheet" href="./styles.css?v=5.2.4-dual-mirror" />
+  <link rel="stylesheet" href="./styles.css?v=5.2.5-wormhole-dedup" />
   <script>
     window.addEventListener("load", function () {
       setTimeout(function () {
@@ -407,6 +407,9 @@
       </button>
       <button id="btn-hud-observatory" type="button" class="dock-btn" title="打开《星海观星台 · 万星名录》串门其他星友 [O]">
         🔭 串门
+      </button>
+      <button id="btn-hud-warp" type="button" class="dock-btn" title="启动虫洞跃迁 · 直接随机跳往下一颗本次尚未去过的星球">
+        🌠 虫洞
       </button>
       <button id="btn-plant-flag" type="button" class="dock-btn" title="在脚下插一面 3D 串门纪念营旗 · 可复制坐标链接发给好友 [F]">
         🚩 插旗
@@ -1061,7 +1064,7 @@
       }
     }, 1000);
   </script>
-  <script type="module" src="./js/app.bundle.js?v=5.2.4-dual-mirror"></script>
+  <script type="module" src="./js/app.bundle.js?v=5.2.5-wormhole-dedup"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       window.addEventListener("load", () => {

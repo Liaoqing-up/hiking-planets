@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.4-dual-mirror";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.4-dual-mirror";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.5-wormhole-dedup";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.2.5-wormhole-dedup";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.2.4-dual-mirror";
+} from "./universeRegistry.js?v=5.2.5-wormhole-dedup";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.2.4-dual-mirror";
-import { sound } from "./audio.js?v=5.2.4-dual-mirror";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.4-dual-mirror";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.4-dual-mirror";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.4-dual-mirror";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.4-dual-mirror";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.4-dual-mirror";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.2.4-dual-mirror";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.4-dual-mirror";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.4-dual-mirror";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.4-dual-mirror";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.2.4-dual-mirror";
+} from "./neighborSocial.js?v=5.2.5-wormhole-dedup";
+import { sound } from "./audio.js?v=5.2.5-wormhole-dedup";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.2.5-wormhole-dedup";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.2.5-wormhole-dedup";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.2.5-wormhole-dedup";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.2.5-wormhole-dedup";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.2.5-wormhole-dedup";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.2.5-wormhole-dedup";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.2.5-wormhole-dedup";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.2.5-wormhole-dedup";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.2.5-wormhole-dedup";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.2.5-wormhole-dedup";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.2.4-dual-mirror";
-import { createFootprintTrail } from "./footprints3D.js?v=5.2.4-dual-mirror";
+} from "./trailSocialExtras.js?v=5.2.5-wormhole-dedup";
+import { createFootprintTrail } from "./footprints3D.js?v=5.2.5-wormhole-dedup";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.2.4-dual-mirror";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.4-dual-mirror";
+} from "./bestiaryAndExtras.js?v=5.2.5-wormhole-dedup";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.2.5-wormhole-dedup";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,14 +75,19 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.2.4-dual-mirror";
+} from "./cloudClient.js?v=5.2.5-wormhole-dedup";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.2.4-dual-mirror";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.4-dual-mirror";
-import { createObservatoryController, recordVisitedGalaxy } from "./starObservatory.js?v=5.2.4-dual-mirror";
+} from "./photoPlanetBuilder.js?v=5.2.5-wormhole-dedup";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.2.5-wormhole-dedup";
+import {
+  createObservatoryController,
+  recordVisitedGalaxy,
+  markSessionPlanetSeen,
+  resetSessionSeenPlanets,
+} from "./starObservatory.js?v=5.2.5-wormhole-dedup";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净
@@ -1201,6 +1206,7 @@ function enterPlanet(idx) {
   selectedPlanetIdx = idx;
   const p = PLANETS[idx];
   activePlanet = p;
+  if (p.id) markSessionPlanetSeen(p.id);
   disposeCurrentWorld();
   const planetOwner = p.owner || "mine";
   const myProf = getCurrentProfile();
@@ -5069,10 +5075,18 @@ const observatoryCtrl = createObservatoryController({
   hostRegistry: HOST_REGISTRY,
   queryCorePlanets: queryCoreUniversePlanets,
   fetchDirectory: fetchStarObservatoryDirectory,
-  getCurrentUniverseState: () => ({
-    currentUniverse,
-    activeCustomHandle: activeCustomProfile?.handle || null,
-  }),
+  getCurrentUniverseState: () => {
+    const myProf = getCurrentProfile();
+    const myBoundRole =
+      myProf?.legacy_role && HOST_REGISTRY[myProf.legacy_role] ? myProf.legacy_role : null;
+    return {
+      currentUniverse,
+      activeCustomHandle: activeCustomProfile?.handle || null,
+      activePlanetId: activePlanet?.id || null,
+      myHandle: myProf?.handle || null,
+      myBoundRole,
+    };
+  },
   onVisitFounder: async (role, targetPlanetId = null) => {
     closeObservatoryModal();
     const cleanRole = normalizeHostRole(role);
@@ -5161,9 +5175,11 @@ document.getElementById("modal-observatory")?.addEventListener("click", (e) => {
   if (e.target?.id === "modal-observatory") closeObservatoryModal();
 });
 
-document.getElementById("btn-random-warp-title")?.addEventListener("click", () => {
-  sound.init();
-  observatoryCtrl.triggerWormholeWarp();
+["btn-random-warp-title", "btn-hud-warp"].forEach((id) => {
+  document.getElementById(id)?.addEventListener("click", () => {
+    sound.init();
+    observatoryCtrl.triggerWormholeWarp();
+  });
 });
 
 document.getElementById("btn-open-creator")?.addEventListener("click", openCreatorModal);
@@ -5226,6 +5242,7 @@ document.getElementById("btn-pp-enter-my-uni")?.addEventListener("click", async 
 
 document.getElementById("btn-pp-logout")?.addEventListener("click", async () => {
   await signOutHikerPassport();
+  resetSessionSeenPlanets();
   activeCustomProfile = null;
   customUserPlanets.length = 0;
   closePassportModal();
@@ -5250,6 +5267,7 @@ document.getElementById("passport-auth-form")?.addEventListener("submit", async 
 
   if (subBtn) subBtn.disabled = true;
   try {
+    resetSessionSeenPlanets();
     if (passportAuthMode === "signup") {
       const { profile } = await signUpHikerPassport({
         email,

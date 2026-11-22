@@ -1,5 +1,5 @@
-import { renderPlanetIllustration } from "./planetArt2D.js?v=5.2.4-dual-mirror";
-import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.2.4-dual-mirror";
+import { renderPlanetIllustration } from "./planetArt2D.js?v=5.2.5-wormhole-dedup";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.2.5-wormhole-dedup";
 
 function loadImg(url) {
   return new Promise((resolve) => {

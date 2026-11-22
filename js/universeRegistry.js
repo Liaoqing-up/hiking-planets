@@ -5,11 +5,11 @@
  */
 
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.4-dual-mirror";
-import { KITTY_PLANETS, NEIGHBOR_PROFILES } from "./kittyUniverse.js?v=5.2.4-dual-mirror";
-import { MIEMIE_PLANETS } from "./miemieUniverse.js?v=5.2.4-dual-mirror";
-import { LUCA_PLANETS } from "./lucaUniverse.js?v=5.2.4-dual-mirror";
-import { latLonToUnitVec } from "./sphereMath.js?v=5.2.4-dual-mirror";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.2.5-wormhole-dedup";
+import { KITTY_PLANETS, NEIGHBOR_PROFILES } from "./kittyUniverse.js?v=5.2.5-wormhole-dedup";
+import { MIEMIE_PLANETS } from "./miemieUniverse.js?v=5.2.5-wormhole-dedup";
+import { LUCA_PLANETS } from "./lucaUniverse.js?v=5.2.5-wormhole-dedup";
+import { latLonToUnitVec } from "./sphereMath.js?v=5.2.5-wormhole-dedup";
 
 export const VALID_HOST_ROLES = ["mine", "kitty", "miemie", "luca"];
 

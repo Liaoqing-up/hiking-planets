@@ -16,7 +16,7 @@ import {
   STORAGE_BUCKET_MEDIA,
   SUPABASE_ANON_KEY,
   resolveCloudApiBase,
-} from "./cloudConfig.js?v=5.2.4-dual-mirror";
+} from "./cloudConfig.js?v=5.2.5-wormhole-dedup";
 
 const SESSION_STORAGE_KEY = "hikerstars_auth_session_v1";
 
@@ -80,6 +80,13 @@ async function cloudFetch(subPath, options = {}) {
       }
     }
     if (!res) throw networkErr;
+  }
+
+  // 如果访问令牌失效/过期导致公开读取返回 401，自动剥离失效会话并回退匿名公钥重试！
+  if (res.status === 401 && !authToken && getAccessToken()) {
+    saveSession(null);
+    reqHeaders.Authorization = `Bearer ${SUPABASE_ANON_KEY}`;
+    res = await tryOnce(activeApiBase);
   }
 
   const text = await res.text();
