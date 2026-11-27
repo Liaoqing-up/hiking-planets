@@ -25,17 +25,14 @@ export const STORAGE_BUCKET_MEDIA = "planet-media";
 export function resolveCloudApiBase() {
   if (typeof window === "undefined") return DIRECT_SUPABASE_URL;
   const host = window.location.hostname;
-  if (
-    host === "hikerstars.com" ||
-    host.endsWith(".hikerstars.com") ||
-    host.endsWith(".pages.dev")
-  ) {
+  if (host.endsWith(".pages.dev")) {
     return `${window.location.origin}/sb`;
   }
   if (host === "127.0.0.1" || host === "localhost") {
     // 若通过 node scripts/dev-cloud-server.mjs 启动，同源 /sb 已内置穿透代理；否则回退至线上网关
     return `${window.location.origin}/sb`;
   }
+  // hikerstars.com / github.io 等纯静态高速节点：优先直连东京 Supabase，若遇国内运营商阻断则由 cloudClient 自动秒切至 FALLBACK_PAGES_ORIGIN/sb 边缘网关！
   return DIRECT_SUPABASE_URL;
 }
 

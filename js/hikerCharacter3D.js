@@ -3,7 +3,7 @@
  * 从 planetBuilder3D.js 独立拆出，职责单一且无循环依赖
  */
 import * as THREE from "three";
-import { STORYBOOK_GRAD } from "./sphereMath.js?v=5.3.4-crisp-shanhai";
+import { STORYBOOK_GRAD } from "./sphereMath.js?v=5.3.5-hikerstars-domain";
 
 export function buildHikerCharacter() {
   // 复刻腾格里沙漠照造型：酒红冲锋衣 + 深灰宽檐渔夫帽 + 亮橙红镀膜大风镜 + 护脸面罩 + 双小辫女生 + 银灰蛋巢垫毛球重装包

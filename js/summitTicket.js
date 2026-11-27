@@ -1,5 +1,5 @@
-import { renderPlanetIllustration } from "./planetArt2D.js?v=5.3.4-crisp-shanhai";
-import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.3.4-crisp-shanhai";
+import { renderPlanetIllustration } from "./planetArt2D.js?v=5.3.5-hikerstars-domain";
+import { drawSiteQrStamp, drawPostmarkSeal, drawTravelerNameplate, resolveQrDomainLabel } from "./qrStamp.js?v=5.3.5-hikerstars-domain";
 
 function loadImg(url) {
   return new Promise((resolve) => {

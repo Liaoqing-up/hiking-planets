@@ -1,4 +1,4 @@
-const CACHE_NAME = "hikerplanets-v5.3.4-crisp-shanhai";
+const CACHE_NAME = "hikerplanets-v5.3.5-hikerstars-domain";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

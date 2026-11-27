@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.4-crisp-shanhai";
+import { latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.5-hikerstars-domain";
 
 const SEED_NOTES = {
   tengger: [

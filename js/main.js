@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.4-crisp-shanhai";
-import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.4-crisp-shanhai";
+import { PLANETS as MY_PLANETS } from "./data.js?v=5.3.5-hikerstars-domain";
+import { RESONANCE_LINKS } from "./kittyUniverse.js?v=5.3.5-hikerstars-domain";
 import {
   HOST_REGISTRY,
   RESONANCE_CLUSTERS,
@@ -15,7 +15,7 @@ import {
   checkPlanetResonance,
   isLucaCyclingPlanet,
   getUniverseProfile,
-} from "./universeRegistry.js?v=5.3.4-crisp-shanhai";
+} from "./universeRegistry.js?v=5.3.5-hikerstars-domain";
 import {
   loadSocialState,
   saveSocialState,
@@ -27,18 +27,18 @@ import {
   generateNeighborInviteCardDataUrl,
   encodeReplyLetter,
   decodeReplyLetter,
-} from "./neighborSocial.js?v=5.3.4-crisp-shanhai";
-import { sound } from "./audio.js?v=5.3.4-crisp-shanhai";
-import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.4-crisp-shanhai";
-import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.4-crisp-shanhai";
-import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.4-crisp-shanhai";
-import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.4-crisp-shanhai";
-import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.4-crisp-shanhai";
-import { createSkyWonders } from "./skyWonders3D.js?v=5.3.4-crisp-shanhai";
-import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.4-crisp-shanhai";
-import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.4-crisp-shanhai";
-import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.4-crisp-shanhai";
-import { buildCampfireRig } from "./campfireRadio.js?v=5.3.4-crisp-shanhai";
+} from "./neighborSocial.js?v=5.3.5-hikerstars-domain";
+import { sound } from "./audio.js?v=5.3.5-hikerstars-domain";
+import { renderPlanetIllustration, renderPostcardScene } from "./planetArt2D.js?v=5.3.5-hikerstars-domain";
+import { PLANET_RADIUS, latLonToUnitVec, getSurfaceRadius } from "./sphereMath.js?v=5.3.5-hikerstars-domain";
+import { buildPlanetWorld } from "./planetBuilder3D.js?v=5.3.5-hikerstars-domain";
+import { buildHikerCharacter } from "./hikerCharacter3D.js?v=5.3.5-hikerstars-domain";
+import { buildPlanetCreature, CREATURE_CATALOG } from "./creatures3D.js?v=5.3.5-hikerstars-domain";
+import { createSkyWonders } from "./skyWonders3D.js?v=5.3.5-hikerstars-domain";
+import { buildManiCairn3D, loadManiNotes, addManiNote } from "./maniCairn.js?v=5.3.5-hikerstars-domain";
+import { generateSummitTicketDataUrl, PLANET_SEAL_TITLE } from "./summitTicket.js?v=5.3.5-hikerstars-domain";
+import { applySmartPhotoPosition, savePhotoPan } from "./photoFocus.js?v=5.3.5-hikerstars-domain";
+import { buildCampfireRig } from "./campfireRadio.js?v=5.3.5-hikerstars-domain";
 import {
   buildHotpotRig,
   encodeFlagToken,
@@ -47,15 +47,15 @@ import {
   savePlantedFlag,
   buildFlagMesh,
   generateDuoFinisherCertDataUrl,
-} from "./trailSocialExtras.js?v=5.3.4-crisp-shanhai";
-import { createFootprintTrail } from "./footprints3D.js?v=5.3.4-crisp-shanhai";
+} from "./trailSocialExtras.js?v=5.3.5-hikerstars-domain";
+import { createFootprintTrail } from "./footprints3D.js?v=5.3.5-hikerstars-domain";
 import {
   renderCreaturePortrait,
   capturePhotoWallpaper,
   generateGrandPassportDataUrl,
   generatePostcardBookmarkDataUrl,
-} from "./bestiaryAndExtras.js?v=5.3.4-crisp-shanhai";
-import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.4-crisp-shanhai";
+} from "./bestiaryAndExtras.js?v=5.3.5-hikerstars-domain";
+import { resolveShareSiteOrigin, normalizeCloudMediaUrl } from "./cloudConfig.js?v=5.3.5-hikerstars-domain";
 import {
   restoreCloudSession,
   getCurrentProfile,
@@ -75,20 +75,20 @@ import {
   postCloudBottleNote,
   fetchCloudPlantedFlags,
   saveCloudPlantedFlag,
-} from "./cloudClient.js?v=5.3.4-crisp-shanhai";
+} from "./cloudClient.js?v=5.3.5-hikerstars-domain";
 import {
   compressTravelPhoto,
   compressAndUploadPhotos,
   requestPlanetAiInspiration,
-} from "./photoPlanetBuilder.js?v=5.3.4-crisp-shanhai";
-import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.4-crisp-shanhai";
+} from "./photoPlanetBuilder.js?v=5.3.5-hikerstars-domain";
+import { parseGpxTrackFile } from "./gpxTrackParser.js?v=5.3.5-hikerstars-domain";
 import {
   createObservatoryController,
   recordVisitedGalaxy,
   markSessionPlanetSeen,
   resetSessionSeenPlanets,
-} from "./starObservatory.js?v=5.3.4-crisp-shanhai";
-import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.4-crisp-shanhai";
+} from "./starObservatory.js?v=5.3.5-hikerstars-domain";
+import { buildPrologueCosmosWorld } from "./prologueCosmos3D.js?v=5.3.5-hikerstars-domain";
 
 const socialState = loadSocialState();
 // 自动清理早期测试「造星工坊」残留在本地缓存里的示例星球「武功山顶」，确保清哥原生 6 星纯净

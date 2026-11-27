@@ -18,7 +18,7 @@ import {
   getSurfaceRadius,
   latLonToUnitVec,
   seededRand,
-} from "./sphereMath.js?v=5.3.4-crisp-shanhai";
+} from "./sphereMath.js?v=5.3.5-hikerstars-domain";
 
 // 4 阶高对比度清透绘本色阶贴图（NearestFilter 让微缩星球的山脊明暗交界线干净利落不发糊！）
 function createCrispToonRamp() {
